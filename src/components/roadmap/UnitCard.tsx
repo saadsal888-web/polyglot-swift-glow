@@ -3,10 +3,20 @@ import { Lock, Play, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ProgressBar } from '@/components/common/ProgressBar';
-import { Unit } from '@/types';
+
+interface UnitData {
+  id: string;
+  title: string;
+  wordsCount: number;
+  sectionsCount: number;
+  completedSections: number;
+  progress: number;
+  isLocked: boolean;
+  isActive: boolean;
+}
 
 interface UnitCardProps {
-  unit: Unit;
+  unit: UnitData;
   index: number;
 }
 
@@ -24,7 +34,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, index }) => {
       <div className="flex flex-col items-center">
         <motion.button
           whileTap={!unit.isLocked ? { scale: 0.9 } : undefined}
-          onClick={() => !unit.isLocked && navigate('/exercise')}
+          onClick={() => !unit.isLocked && navigate(`/exercise?unit=${unit.id}`)}
           className={`w-10 h-10 rounded-full flex items-center justify-center z-10 ${
             unit.isActive
               ? 'gradient-primary text-primary-foreground'
@@ -52,7 +62,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, index }) => {
           unit.isActive ? 'border border-primary' : ''
         }`}
         whileTap={!unit.isLocked ? { scale: 0.98 } : undefined}
-        onClick={() => !unit.isLocked && navigate('/exercise')}
+        onClick={() => !unit.isLocked && navigate(`/exercise?unit=${unit.id}`)}
       >
         <h3 className="font-bold text-sm mb-0.5">{unit.title}</h3>
         <p className="text-muted-foreground text-xs mb-1.5">

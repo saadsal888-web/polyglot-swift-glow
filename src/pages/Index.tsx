@@ -9,14 +9,30 @@ import { PromoBanner } from '@/components/home/PromoBanner';
 import { RoadmapCard } from '@/components/home/RoadmapCard';
 import { TrainingCenterCard } from '@/components/home/TrainingCenterCard';
 import { LibrarySection } from '@/components/home/LibrarySection';
-import { mockUserProgress, mockUserProfile } from '@/data/mockData';
-import { Language } from '@/types';
+import { useLanguages } from '@/hooks/useLanguages';
+import { useUnits } from '@/hooks/useUnits';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    mockUserProfile.selectedLanguage
-  );
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+
+  const { data: languages, isLoading: languagesLoading } = useLanguages();
+  const { data: units, isLoading: unitsLoading } = useUnits(selectedLanguage);
+
+  // Calculate stats from units
+  const totalUnits = units?.length || 0;
+  const totalWords = units?.reduce((acc, unit) => acc + (unit.words_count || 0), 0) || 0;
+  const currentUnit = units?.[0];
+  const currentLevel = currentUnit?.difficulty || 'A1';
+
+  // Mock user stats (will be replaced when auth is added)
+  const userStats = {
+    streak: 7,
+    dailyGoal: 3,
+    dailyProgress: 1,
+    masteredWords: 0,
+  };
 
   return (
     <AppLayout>
@@ -27,10 +43,15 @@ const Index: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between"
         >
-          <LanguageSelector
-            selectedLanguage={selectedLanguage}
-            onSelect={setSelectedLanguage}
-          />
+          {languagesLoading ? (
+            <Skeleton className="w-16 h-8 rounded-full" />
+          ) : (
+            <LanguageSelector
+              languages={languages || []}
+              selectedLanguage={selectedLanguage}
+              onSelect={setSelectedLanguage}
+            />
+          )}
 
           <div className="text-center">
             <h1 className="text-base font-bold">رحلة الإتقان</h1>
@@ -62,30 +83,34 @@ const Index: React.FC = () => {
 
         {/* Daily Goal */}
         <DailyGoalCard
-          progress={mockUserProgress.dailyProgress}
-          goal={mockUserProgress.dailyGoal}
-          streak={mockUserProgress.streak}
+          progress={userStats.dailyProgress}
+          goal={userStats.dailyGoal}
+          streak={userStats.streak}
         />
 
         {/* Promo Banner */}
-        {!mockUserProfile.isPremium && <PromoBanner />}
+        <PromoBanner />
 
         {/* Roadmap Card */}
-        <RoadmapCard
-          level={mockUserProgress.currentLevel}
-          unitNumber={mockUserProgress.currentUnit}
-          progress={12}
-          masteredItems={mockUserProgress.masteredWords}
-          totalItems={mockUserProgress.masteredWords + mockUserProgress.remainingWords}
-        />
+        {unitsLoading ? (
+          <Skeleton className="h-32 rounded-2xl" />
+        ) : currentUnit ? (
+          <RoadmapCard
+            level={currentLevel as any}
+            unitNumber={1}
+            progress={0}
+            masteredItems={userStats.masteredWords}
+            totalItems={currentUnit.words_count || 0}
+          />
+        ) : null}
 
         {/* Training Center */}
         <TrainingCenterCard />
 
         {/* Library Section */}
         <LibrarySection
-          difficultWords={8}
-          masteredWords={mockUserProgress.masteredWords}
+          difficultWords={totalWords}
+          masteredWords={userStats.masteredWords}
           deletedWords={0}
         />
       </div>
