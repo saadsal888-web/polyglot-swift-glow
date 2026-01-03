@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RoadmapHeader } from '@/components/roadmap/RoadmapHeader';
 import { UnitCard } from '@/components/roadmap/UnitCard';
 import { useUnits } from '@/hooks/useUnits';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Roadmap: React.FC = () => {
-  const [selectedLanguage] = useState('en');
+  const { selectedLanguage } = useLanguage();
   const { data: units, isLoading } = useUnits(selectedLanguage);
 
   // Group units by difficulty level
