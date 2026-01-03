@@ -23,3 +23,36 @@ export const useLanguages = () => {
     },
   });
 };
+
+// Hook to get only languages that have units
+export const useActiveLanguages = () => {
+  return useQuery({
+    queryKey: ['active-languages'],
+    queryFn: async () => {
+      // Get all languages
+      const { data: languages, error: langError } = await supabase
+        .from('languages')
+        .select('*')
+        .order('name_ar');
+      
+      if (langError) throw langError;
+
+      // Get distinct languages from units
+      const { data: unitLanguages, error: unitError } = await supabase
+        .from('units')
+        .select('language');
+      
+      if (unitError) throw unitError;
+
+      // Get unique language codes that have units
+      const activeLanguageCodes = [...new Set(unitLanguages?.map(u => u.language) || [])];
+      
+      // Filter languages to only those with units
+      const activeLanguages = languages?.filter(lang => 
+        activeLanguageCodes.includes(lang.code)
+      ) || [];
+
+      return activeLanguages as DbLanguage[];
+    },
+  });
+};
