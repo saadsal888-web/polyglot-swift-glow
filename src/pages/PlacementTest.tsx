@@ -27,9 +27,24 @@ const PlacementTest: React.FC = () => {
   const [testEnded, setTestEnded] = useState(false);
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
 
-  // Get questions for selected language
+  // Shuffle array helper
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Get questions for selected language with shuffled options
   const allQuestions = useMemo(() => {
-    return getQuestionsByLanguage(selectedLanguage);
+    const questions = getQuestionsByLanguage(selectedLanguage);
+    // Shuffle options for each question
+    return questions.map(q => ({
+      ...q,
+      options: shuffleArray(q.options)
+    }));
   }, [selectedLanguage]);
 
   // Get questions for current level only
