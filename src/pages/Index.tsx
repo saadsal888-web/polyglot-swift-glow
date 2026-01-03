@@ -2,6 +2,7 @@ import React from 'react';
 import { User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LanguageSelector } from '@/components/home/LanguageSelector';
 import { DailyGoalCard } from '@/components/home/DailyGoalCard';
@@ -13,6 +14,7 @@ import { useActiveLanguages } from '@/hooks/useLanguages';
 import { useUnits } from '@/hooks/useUnits';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +22,45 @@ const Index: React.FC = () => {
 
   const { data: languages, isLoading: languagesLoading } = useActiveLanguages();
   const { data: units, isLoading: unitsLoading } = useUnits(selectedLanguage);
+
+  // Fetch library stats for selected language
+  const { data: libraryStats } = useQuery({
+    queryKey: ['library-stats', selectedLanguage],
+    queryFn: async () => {
+      // Get words for this language
+      const { data: words } = await supabase
+        .from('words')
+        .select('id')
+        .eq('language', selectedLanguage);
+
+      const wordIds = words?.map(w => w.id) || [];
+
+      if (wordIds.length === 0) {
+        return { difficultWords: 0, masteredWords: 0, deletedWords: 0 };
+      }
+
+      // Get user progress for these words
+      const { data: progress } = await supabase
+        .from('user_word_progress')
+        .select('word_id, times_correct, times_reviewed, mastery_level, is_deleted')
+        .in('word_id', wordIds);
+
+      // Difficult words: answered incorrectly (times_reviewed > times_correct)
+      const difficultWords = progress?.filter(p => 
+        !p.is_deleted && p.times_reviewed > 0 && p.times_correct < p.times_reviewed
+      ).length || 0;
+
+      // Mastered words
+      const masteredWords = progress?.filter(p => 
+        !p.is_deleted && p.mastery_level === 'mastered'
+      ).length || 0;
+
+      // Deleted words
+      const deletedWords = progress?.filter(p => p.is_deleted).length || 0;
+
+      return { difficultWords, masteredWords, deletedWords };
+    },
+  });
 
   // Calculate stats from units
   const totalUnits = units?.length || 0;
@@ -32,7 +73,6 @@ const Index: React.FC = () => {
     streak: 7,
     dailyGoal: 3,
     dailyProgress: 1,
-    masteredWords: 0,
   };
 
   return (
@@ -100,7 +140,7 @@ const Index: React.FC = () => {
             level={currentLevel as any}
             unitNumber={1}
             progress={0}
-            masteredItems={userStats.masteredWords}
+            masteredItems={libraryStats?.masteredWords || 0}
             totalItems={currentUnit.words_count || 0}
           />
         ) : null}
@@ -110,9 +150,9 @@ const Index: React.FC = () => {
 
         {/* Library Section */}
         <LibrarySection
-          difficultWords={totalWords}
-          masteredWords={userStats.masteredWords}
-          deletedWords={0}
+          difficultWords={libraryStats?.difficultWords || 0}
+          masteredWords={libraryStats?.masteredWords || 0}
+          deletedWords={libraryStats?.deletedWords || 0}
         />
       </div>
     </AppLayout>
