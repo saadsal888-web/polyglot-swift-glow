@@ -9,7 +9,7 @@ import { PromoBanner } from '@/components/home/PromoBanner';
 import { RoadmapCard } from '@/components/home/RoadmapCard';
 import { TrainingCenterCard } from '@/components/home/TrainingCenterCard';
 import { LibrarySection } from '@/components/home/LibrarySection';
-import { useLanguages } from '@/hooks/useLanguages';
+import { useActiveLanguages } from '@/hooks/useLanguages';
 import { useUnits } from '@/hooks/useUnits';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -17,7 +17,7 @@ const Index: React.FC = () => {
   const navigate = useNavigate();
   const [selectedLanguage, setSelectedLanguage] = useState('en');
 
-  const { data: languages, isLoading: languagesLoading } = useLanguages();
+  const { data: languages, isLoading: languagesLoading } = useActiveLanguages();
   const { data: units, isLoading: unitsLoading } = useUnits(selectedLanguage);
 
   // Calculate stats from units
