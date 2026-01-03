@@ -79,6 +79,7 @@ export const SettingsSection: React.FC = () => {
             </div>
           }
           label="سياسة الخصوصية"
+          onClick={() => window.open('https://learn-languages4.netlify.app/privacy-policy', '_blank')}
           delay={0.3}
         />
         <SettingsItem
