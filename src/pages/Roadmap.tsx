@@ -13,46 +13,106 @@ const Roadmap: React.FC = () => {
   const { selectedLanguage } = useLanguage();
   const { data: units, isLoading } = useUnits(selectedLanguage);
 
-  // Fetch user word progress for mastered words count
-  const { data: userProgress } = useQuery({
-    queryKey: ['user-word-progress-stats'],
+  // Fetch user's current level for this language
+  const { data: userLevel } = useQuery({
+    queryKey: ['user-level', selectedLanguage],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { masteredWords: 0 };
+      if (!user) return 'A1';
       
-      const { count } = await supabase
-        .from('user_word_progress')
-        .select('*', { count: 'exact', head: true })
+      const { data } = await supabase
+        .from('user_language_levels')
+        .select('level')
         .eq('user_id', user.id)
-        .eq('mastery_level', 'mastered');
+        .eq('language', selectedLanguage)
+        .maybeSingle();
       
-      return { masteredWords: count || 0 };
+      return data?.level || 'A1';
     },
   });
 
-  // Group units by difficulty level
-  const unitsByLevel = units?.reduce((acc, unit) => {
-    const level = unit.difficulty || 'A1';
-    if (!acc[level]) acc[level] = [];
-    acc[level].push(unit);
-    return acc;
-  }, {} as Record<string, typeof units>) || {};
+  // Fetch unit progress - mastered words per unit
+  const { data: unitProgressData } = useQuery({
+    queryKey: ['unit-progress', selectedLanguage],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return {};
+      
+      // Get all mastered word IDs for this user
+      const { data: masteredWords } = await supabase
+        .from('user_word_progress')
+        .select('word_id')
+        .eq('user_id', user.id)
+        .eq('mastery_level', 'mastered');
+      
+      if (!masteredWords || masteredWords.length === 0) return {};
+      
+      const masteredWordIds = masteredWords.map(w => w.word_id);
+      
+      // Get unit_items to map words to units
+      const { data: unitItems } = await supabase
+        .from('unit_items')
+        .select('unit_id, word_id')
+        .in('word_id', masteredWordIds);
+      
+      if (!unitItems) return {};
+      
+      // Count mastered words per unit
+      return unitItems.reduce((acc, item) => {
+        acc[item.unit_id] = (acc[item.unit_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+    },
+  });
 
-  const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-  const currentLevel = units?.[0]?.difficulty || 'A1';
+  // Filter units by user's current level only
+  const currentLevelUnits = useMemo(() => {
+    if (!units || !userLevel) return [];
+    return units.filter(u => u.difficulty === userLevel).sort((a, b) => a.sort_order - b.sort_order);
+  }, [units, userLevel]);
 
-  // Calculate real progress from database
+  // Calculate unit states with sequential unlocking
+  const unitsWithProgress = useMemo(() => {
+    return currentLevelUnits.map((unit, index) => {
+      const masteredInUnit = unitProgressData?.[unit.id] || 0;
+      const totalInUnit = unit.words_count || 0;
+      const progress = totalInUnit > 0 ? Math.round((masteredInUnit / totalInUnit) * 100) : 0;
+      
+      // Check if previous unit is complete
+      let prevUnitComplete = true;
+      if (index > 0) {
+        const prevUnit = currentLevelUnits[index - 1];
+        const prevMastered = unitProgressData?.[prevUnit.id] || 0;
+        const prevTotal = prevUnit.words_count || 0;
+        prevUnitComplete = prevTotal > 0 && prevMastered >= prevTotal;
+      }
+      
+      const isLocked = !prevUnitComplete;
+      const isActive = prevUnitComplete && progress < 100;
+      
+      return {
+        ...unit,
+        progress,
+        isLocked,
+        isActive,
+        masteredWords: masteredInUnit,
+      };
+    });
+  }, [currentLevelUnits, unitProgressData]);
+
+  // Calculate overall progress for header
   const progress = useMemo(() => {
-    const totalUnits = units?.length || 0;
-    const totalWords = units?.reduce((acc, u) => acc + (u.words_count || 0), 0) || 0;
-    const masteredWords = userProgress?.masteredWords || 0;
+    const totalUnits = currentLevelUnits.length;
+    const totalWords = currentLevelUnits.reduce((acc, u) => acc + (u.words_count || 0), 0);
+    const masteredWords = Object.values(unitProgressData || {}).reduce((acc, count) => acc + count, 0);
     const remainingWords = Math.max(0, totalWords - masteredWords);
     
-    // Find current unit (first unit with incomplete words)
-    const currentUnit = 1; // Will be calculated when we have per-unit progress
+    // Find current unit number (first incomplete unit)
+    const currentUnitIndex = unitsWithProgress.findIndex(u => u.progress < 100);
+    const currentUnit = currentUnitIndex === -1 ? totalUnits : currentUnitIndex + 1;
     
     return {
-      currentLevel,
+      currentLevel: userLevel || 'A1',
       currentUnit,
       totalUnits,
       masteredWords,
@@ -63,11 +123,11 @@ const Roadmap: React.FC = () => {
       hearts: 5,
       lightning: 150,
     };
-  }, [units, userProgress, currentLevel]);
+  }, [currentLevelUnits, unitProgressData, unitsWithProgress, userLevel]);
 
   return (
     <AppLayout showNav={false}>
-      <RoadmapHeader level={currentLevel as any} progress={progress as any} />
+      <RoadmapHeader level={(userLevel || 'A1') as any} progress={progress as any} />
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -82,40 +142,31 @@ const Roadmap: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {levels.map((level) => {
-              const levelUnits = unitsByLevel[level];
-              if (!levelUnits || levelUnits.length === 0) return null;
-
-              return (
-                <div key={level} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="level-badge text-xs">{level}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {levelUnits.length} وحدة
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {levelUnits.map((unit, index) => (
-                      <UnitCard
-                        key={unit.id}
-                        unit={{
-                          id: unit.id,
-                          title: unit.name_ar,
-                          wordsCount: unit.words_count || 0,
-                          sectionsCount: 1,
-                          completedSections: 0,
-                          progress: 0,
-                          isLocked: index > 0,
-                          isActive: index === 0,
-                        }}
-                        index={index}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="level-badge text-xs">{userLevel || 'A1'}</span>
+              <span className="text-xs text-muted-foreground">
+                {currentLevelUnits.length} وحدة
+              </span>
+            </div>
+            
+            <div className="space-y-3">
+              {unitsWithProgress.map((unit, index) => (
+                <UnitCard
+                  key={unit.id}
+                  unit={{
+                    id: unit.id,
+                    title: unit.name_ar,
+                    wordsCount: unit.words_count || 0,
+                    sectionsCount: 1,
+                    completedSections: unit.progress === 100 ? 1 : 0,
+                    progress: unit.progress,
+                    isLocked: unit.isLocked,
+                    isActive: unit.isActive,
+                  }}
+                  index={index}
+                />
+              ))}
+            </div>
           </div>
         )}
       </motion.div>
