@@ -32,7 +32,7 @@ export const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({ level, progress })
           </div>
         </div>
         <motion.button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           whileTap={{ scale: 0.9 }}
           className="w-8 h-8 bg-card rounded-full flex items-center justify-center card-shadow"
         >
