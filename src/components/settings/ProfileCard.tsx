@@ -1,10 +1,13 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { UserProfile } from '@/types';
 
 interface ProfileCardProps {
-  profile: UserProfile;
+  profile: {
+    name: string;
+    email: string;
+    level: string;
+  };
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
@@ -17,7 +20,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
       <div className="flex flex-col items-center">
         <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-3">
           <span className="text-2xl text-primary font-bold">
-            {profile.name.charAt(0)}
+            {profile.name.charAt(0).toUpperCase()}
           </span>
         </div>
 
