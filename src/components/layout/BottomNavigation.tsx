@@ -4,7 +4,6 @@ import { Home, BookOpen, Target, User, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const navItems = [
-  { path: '/library', icon: BookOpen, label: 'المكتبة' },
   { path: '/', icon: Home, label: 'الرئيسية' },
   { path: '/roadmap', icon: Target, label: 'خارطة الطريق' },
 ];
