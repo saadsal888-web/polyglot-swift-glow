@@ -13,9 +13,9 @@ const Roadmap: React.FC = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="px-5 pb-8"
+        className="px-4 pb-6"
       >
-        <div className="space-y-4">
+        <div className="space-y-3">
           {mockUnits.map((unit, index) => (
             <UnitCard key={unit.id} unit={unit} index={index} />
           ))}

@@ -26,35 +26,35 @@ export const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
     <motion.header
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="px-5 py-4"
+      className="px-4 py-2"
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <motion.button
           onClick={() => navigate(-1)}
           whileTap={{ scale: 0.9 }}
-          className="w-10 h-10 flex items-center justify-center"
+          className="w-8 h-8 flex items-center justify-center"
         >
-          <X size={24} className="text-muted-foreground" />
+          <X size={18} className="text-muted-foreground" />
         </motion.button>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">
             {currentQuestion} من {totalQuestions}
           </span>
           {timeRemaining && (
-            <span className="text-sm text-accent">
-              ⏱ ≈ {timeRemaining}د
+            <span className="text-xs text-accent">
+              ⏱ {timeRemaining}د
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="lightning-badge text-sm py-1 px-2">
-            <Zap size={16} />
+        <div className="flex items-center gap-1.5">
+          <div className="lightning-badge">
+            <Zap size={12} />
             <span>{lightning}</span>
           </div>
-          <div className="hearts-badge text-sm py-1 px-2">
-            <Heart size={16} fill="currentColor" />
+          <div className="hearts-badge">
+            <Heart size={12} fill="currentColor" />
             <span>{hearts}</span>
           </div>
         </div>

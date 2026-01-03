@@ -9,7 +9,7 @@ interface AppLayoutProps {
 export const AppLayout: React.FC<AppLayoutProps> = ({ children, showNav = true }) => {
   return (
     <div className="app-container">
-      <main className={`min-h-screen ${showNav ? 'pb-24' : ''} safe-area-top`}>
+      <main className={`min-h-screen ${showNav ? 'pb-16' : ''} safe-area-top`}>
         {children}
       </main>
       {showNav && <BottomNavigation />}

@@ -18,14 +18,14 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, index }) => {
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="relative flex items-start gap-4"
+      className="relative flex items-start gap-3"
     >
       {/* Timeline */}
       <div className="flex flex-col items-center">
         <motion.button
           whileTap={!unit.isLocked ? { scale: 0.9 } : undefined}
           onClick={() => !unit.isLocked && navigate('/exercise')}
-          className={`w-14 h-14 rounded-full flex items-center justify-center z-10 ${
+          className={`w-10 h-10 rounded-full flex items-center justify-center z-10 ${
             unit.isActive
               ? 'gradient-primary text-primary-foreground'
               : unit.isLocked
@@ -34,39 +34,39 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, index }) => {
           }`}
         >
           {unit.isLocked ? (
-            <Lock size={24} />
+            <Lock size={16} />
           ) : unit.isActive ? (
-            <Play size={24} />
+            <Play size={16} />
           ) : (
-            <BookOpen size={24} />
+            <BookOpen size={16} />
           )}
         </motion.button>
         {index < 4 && (
-          <div className="w-0.5 h-24 bg-border mt-2" />
+          <div className="w-0.5 h-16 bg-border mt-1.5" />
         )}
       </div>
 
       {/* Content */}
       <motion.div
-        className={`flex-1 bg-card rounded-3xl p-5 card-shadow ${
-          unit.isActive ? 'border-2 border-primary' : ''
+        className={`flex-1 bg-card rounded-xl p-3 card-shadow ${
+          unit.isActive ? 'border border-primary' : ''
         }`}
         whileTap={!unit.isLocked ? { scale: 0.98 } : undefined}
         onClick={() => !unit.isLocked && navigate('/exercise')}
       >
-        <h3 className="font-bold text-lg mb-1">{unit.title}</h3>
-        <p className="text-muted-foreground text-sm mb-2">
+        <h3 className="font-bold text-sm mb-0.5">{unit.title}</h3>
+        <p className="text-muted-foreground text-xs mb-1.5">
           {unit.wordsCount} كلمة وجملة
         </p>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-sm">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <span className="text-xs">
             {unit.completedSections}/{unit.sectionsCount} أقسام
           </span>
-          <div className="flex gap-1">
+          <div className="flex gap-0.5">
             {[...Array(unit.sectionsCount)].map((_, i) => (
               <div
                 key={i}
-                className={`w-2 h-2 rounded-full ${
+                className={`w-1.5 h-1.5 rounded-full ${
                   i < unit.completedSections
                     ? 'bg-primary'
                     : i === unit.completedSections && unit.isActive
@@ -78,14 +78,14 @@ export const UnitCard: React.FC<UnitCardProps> = ({ unit, index }) => {
           </div>
         </div>
         {unit.isActive && (
-          <p className="text-primary text-sm mb-3">
+          <p className="text-primary text-xs mb-2">
             أكمل جميع الأقسام لفتح الوحدة التالية
           </p>
         )}
         {!unit.isLocked && (
           <>
-            <ProgressBar progress={unit.progress} className="mb-2" />
-            <span className="text-primary text-sm font-semibold">
+            <ProgressBar progress={unit.progress} className="mb-1" />
+            <span className="text-primary text-xs font-medium">
               %{unit.progress} مكتمل
             </span>
           </>
