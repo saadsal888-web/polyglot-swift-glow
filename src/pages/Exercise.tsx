@@ -164,8 +164,12 @@ const Exercise: React.FC = () => {
               options: currentExercise.options,
               word: {
                 id: currentExercise.word.id,
-                word: currentExercise.word.word,
-                translation: currentExercise.word.translation,
+                word: currentExercise.type === 'meaning' 
+                  ? currentExercise.word.word 
+                  : currentExercise.word.translation,
+                translation: currentExercise.type === 'meaning'
+                  ? currentExercise.word.translation
+                  : currentExercise.word.word,
                 pronunciation: currentExercise.word.pronunciation || undefined,
                 audioUrl: currentExercise.word.audio_url || undefined,
                 difficulty: (currentExercise.word.difficulty as 'easy' | 'medium' | 'hard') || 'easy',
@@ -177,7 +181,7 @@ const Exercise: React.FC = () => {
 
           <div className="mt-4">
             <p className="text-center text-muted-foreground text-xs mb-3">
-              {currentExercise.type === 'meaning' ? 'ما معنى' : 'ترجم إلى الإنجليزية'}
+              {currentExercise.type === 'meaning' ? 'اختر الترجمة الصحيحة' : 'اختر الكلمة الإنجليزية'}
             </p>
             <OptionsGrid
               options={currentExercise.options}
