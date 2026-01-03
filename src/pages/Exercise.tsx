@@ -27,9 +27,9 @@ const generateExercises = (words: DbWord[]): ExerciseData[] => {
   return words.slice(0, 10).map((word, index) => {
     const type: ExerciseType = index % 2 === 0 ? 'meaning' : 'translation';
     
-    // Get 3 random wrong options
+    // Get 2 random wrong options (3 total options)
     const otherWords = words.filter(w => w.id !== word.id);
-    const shuffled = otherWords.sort(() => Math.random() - 0.5).slice(0, 3);
+    const shuffled = otherWords.sort(() => Math.random() - 0.5).slice(0, 2);
     
     const correctAnswer = type === 'meaning' ? word.translation : word.word;
     const wrongOptions = shuffled.map(w => 
