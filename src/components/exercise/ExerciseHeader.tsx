@@ -10,6 +10,7 @@ interface ExerciseHeaderProps {
   hearts: number;
   lightning: number;
   timeRemaining?: number;
+  isPremium?: boolean;
 }
 
 export const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
@@ -18,6 +19,7 @@ export const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
   hearts,
   lightning,
   timeRemaining,
+  isPremium = false,
 }) => {
   const navigate = useNavigate();
   const progress = (currentQuestion / totalQuestions) * 100;
@@ -53,9 +55,9 @@ export const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
             <Zap size={12} />
             <span>{lightning}</span>
           </div>
-          <div className="hearts-badge">
+          <div className={`hearts-badge ${isPremium ? 'bg-gradient-to-r from-amber-500 to-amber-600' : ''}`}>
             <Heart size={12} fill="currentColor" />
-            <span>{hearts}</span>
+            <span>{isPremium ? '∞' : hearts}</span>
           </div>
         </div>
       </div>
