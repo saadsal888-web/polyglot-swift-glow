@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -36,6 +37,8 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 );
 
 export const SettingsSection: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="px-4 py-4 space-y-3">
       {/* Language & Level */}
@@ -61,6 +64,7 @@ export const SettingsSection: React.FC = () => {
             </div>
           }
           label="إعادة اختبار المستوى"
+          onClick={() => navigate('/placement-test')}
           delay={0.2}
         />
       </motion.div>
