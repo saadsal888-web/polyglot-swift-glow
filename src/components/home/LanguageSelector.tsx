@@ -23,6 +23,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 bg-card rounded-full px-2.5 py-1.5 card-shadow"
         whileTap={{ scale: 0.95 }}
+        type="button"
       >
         <span className="text-base">{selected?.flag_emoji || '🌍'}</span>
         <ChevronDown
