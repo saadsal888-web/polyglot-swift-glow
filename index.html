@@ -26,6 +26,19 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Premium Status Bridge for Android WebView
+      window.__IS_PREMIUM__ = false;
+      window.setPremiumStatus = function(isPremium) {
+        window.__IS_PREMIUM__ = isPremium;
+        if (isPremium) {
+          document.body.classList.add("premium-user");
+        } else {
+          document.body.classList.remove("premium-user");
+        }
+        window.dispatchEvent(new CustomEvent('premiumStatusChanged', { detail: isPremium }));
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
