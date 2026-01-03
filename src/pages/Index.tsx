@@ -1,13 +1,95 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React, { useState } from 'react';
+import { User } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { LanguageSelector } from '@/components/home/LanguageSelector';
+import { DailyGoalCard } from '@/components/home/DailyGoalCard';
+import { PromoBanner } from '@/components/home/PromoBanner';
+import { RoadmapCard } from '@/components/home/RoadmapCard';
+import { TrainingCenterCard } from '@/components/home/TrainingCenterCard';
+import { LibrarySection } from '@/components/home/LibrarySection';
+import { mockUserProgress, mockUserProfile } from '@/data/mockData';
+import { Language } from '@/types';
 
-const Index = () => {
+const Index: React.FC = () => {
+  const navigate = useNavigate();
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    mockUserProfile.selectedLanguage
+  );
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <AppLayout>
+      <div className="px-5 py-6 space-y-5">
+        {/* Header */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between"
+        >
+          <LanguageSelector
+            selectedLanguage={selectedLanguage}
+            onSelect={setSelectedLanguage}
+          />
+
+          <div className="text-center">
+            <h1 className="text-xl font-bold">رحلة الإتقان</h1>
+            <p className="text-sm text-primary">خُطوتك نحو التميّز</p>
+          </div>
+
+          <motion.button
+            onClick={() => navigate('/settings')}
+            whileTap={{ scale: 0.9 }}
+            className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center"
+          >
+            <User size={24} className="text-primary-foreground" />
+          </motion.button>
+        </motion.header>
+
+        {/* Welcome Message */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="text-center py-2"
+        >
+          <h2 className="text-2xl font-bold flex items-center justify-center gap-2">
+            <span>👋</span>
+            <span>مرحباً</span>
+          </h2>
+          <p className="text-muted-foreground">جاهز لمغامرة لغوية جديدة اليوم؟</p>
+        </motion.div>
+
+        {/* Daily Goal */}
+        <DailyGoalCard
+          progress={mockUserProgress.dailyProgress}
+          goal={mockUserProgress.dailyGoal}
+          streak={mockUserProgress.streak}
+        />
+
+        {/* Promo Banner */}
+        {!mockUserProfile.isPremium && <PromoBanner />}
+
+        {/* Roadmap Card */}
+        <RoadmapCard
+          level={mockUserProgress.currentLevel}
+          unitNumber={mockUserProgress.currentUnit}
+          progress={12}
+          masteredItems={mockUserProgress.masteredWords}
+          totalItems={mockUserProgress.masteredWords + mockUserProgress.remainingWords}
+        />
+
+        {/* Training Center */}
+        <TrainingCenterCard />
+
+        {/* Library Section */}
+        <LibrarySection
+          difficultWords={8}
+          masteredWords={mockUserProgress.masteredWords}
+          deletedWords={0}
+        />
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
