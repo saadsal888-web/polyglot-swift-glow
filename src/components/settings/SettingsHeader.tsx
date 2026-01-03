@@ -15,7 +15,7 @@ export const SettingsHeader: React.FC = () => {
       <div />
       <h1 className="text-base font-bold">الإعدادات</h1>
       <motion.button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate('/')}
         whileTap={{ scale: 0.9 }}
         className="w-8 h-8 bg-card rounded-full flex items-center justify-center card-shadow"
       >
