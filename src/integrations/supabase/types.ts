@@ -520,6 +520,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_language_levels: {
+        Row: {
+          created_at: string | null
+          id: string
+          language: string
+          level: string
+          test_completed_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language: string
+          level?: string
+          test_completed_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language?: string
+          level?: string
+          test_completed_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_phrase_progress: {
         Row: {
           created_at: string | null
