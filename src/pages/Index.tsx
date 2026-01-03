@@ -20,7 +20,7 @@ const Index: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="px-5 py-6 space-y-5">
+      <div className="px-4 py-4 space-y-4">
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -20 }}
@@ -33,16 +33,16 @@ const Index: React.FC = () => {
           />
 
           <div className="text-center">
-            <h1 className="text-xl font-bold">رحلة الإتقان</h1>
-            <p className="text-sm text-primary">خُطوتك نحو التميّز</p>
+            <h1 className="text-base font-bold">رحلة الإتقان</h1>
+            <p className="text-xs text-primary">خُطوتك نحو التميّز</p>
           </div>
 
           <motion.button
             onClick={() => navigate('/settings')}
             whileTap={{ scale: 0.9 }}
-            className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center"
+            className="w-9 h-9 gradient-primary rounded-full flex items-center justify-center"
           >
-            <User size={24} className="text-primary-foreground" />
+            <User size={16} className="text-primary-foreground" />
           </motion.button>
         </motion.header>
 
@@ -51,13 +51,13 @@ const Index: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-center py-2"
+          className="text-center py-1"
         >
-          <h2 className="text-2xl font-bold flex items-center justify-center gap-2">
+          <h2 className="text-lg font-bold flex items-center justify-center gap-1.5">
             <span>👋</span>
             <span>مرحباً</span>
           </h2>
-          <p className="text-muted-foreground">جاهز لمغامرة لغوية جديدة اليوم؟</p>
+          <p className="text-muted-foreground text-xs">جاهز لمغامرة لغوية جديدة اليوم؟</p>
         </motion.div>
 
         {/* Daily Goal */}

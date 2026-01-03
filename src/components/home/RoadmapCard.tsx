@@ -27,34 +27,34 @@ export const RoadmapCard: React.FC<RoadmapCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="bg-card rounded-3xl p-5 card-shadow"
+      className="bg-card rounded-2xl p-4 card-shadow"
     >
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3">
         <span className="level-badge">{level}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🗺️</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-base">🗺️</span>
           <div className="text-right">
-            <h3 className="font-bold text-lg">خارطة الطريق</h3>
-            <p className="text-primary font-medium">الوحدة {unitNumber}</p>
+            <h3 className="font-bold text-sm">خارطة الطريق</h3>
+            <p className="text-primary text-xs font-medium">الوحدة {unitNumber}</p>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-muted-foreground text-sm">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-muted-foreground text-xs">
           {masteredItems} من {totalItems} عناصر متقنة
         </p>
-        <span className="text-primary font-semibold">%{progress}</span>
+        <span className="text-primary text-xs font-semibold">%{progress}</span>
       </div>
 
-      <ProgressBar progress={progress} className="mb-4" />
+      <ProgressBar progress={progress} className="mb-3" />
 
       <motion.button
         onClick={() => navigate('/roadmap')}
         whileTap={{ scale: 0.98 }}
-        className="btn-primary flex items-center justify-center gap-2"
+        className="btn-primary flex items-center justify-center gap-1.5"
       >
-        <ChevronLeft size={20} />
+        <ChevronLeft size={16} />
         <span>استكمال الوحدة {unitNumber}</span>
       </motion.button>
     </motion.div>

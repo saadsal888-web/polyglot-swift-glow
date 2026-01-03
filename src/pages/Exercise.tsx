@@ -56,13 +56,13 @@ const Exercise: React.FC = () => {
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -50 }}
-          className="pb-32"
+          className="pb-28"
         >
           <QuestionCard exercise={currentExercise} showTranslation={isReviewMode} />
 
           {!isReviewMode && (
-            <div className="mt-6">
-              <p className="text-center text-muted-foreground mb-4">ما معنى</p>
+            <div className="mt-4">
+              <p className="text-center text-muted-foreground text-xs mb-3">ما معنى</p>
               <OptionsGrid
                 options={currentExercise.options}
                 selectedOption={selectedOption}

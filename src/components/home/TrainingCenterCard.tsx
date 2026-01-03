@@ -9,17 +9,17 @@ export const TrainingCenterCard: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
       whileTap={{ scale: 0.98 }}
-      className="w-full bg-card rounded-3xl p-5 card-shadow flex items-center justify-between"
+      className="w-full bg-card rounded-2xl p-4 card-shadow flex items-center justify-between"
     >
-      <ChevronLeft size={24} className="text-muted-foreground" />
-      <div className="flex-1 text-right mr-4">
-        <h3 className="font-bold text-lg">مركز التدريب المكثف</h3>
-        <p className="text-muted-foreground text-sm">
+      <ChevronLeft size={18} className="text-muted-foreground" />
+      <div className="flex-1 text-right mr-3">
+        <h3 className="font-bold text-sm">مركز التدريب المكثف</h3>
+        <p className="text-muted-foreground text-xs">
           مارس الاستماع، المطابقة، والإتقان
         </p>
       </div>
-      <div className="w-14 h-14 gradient-accent rounded-2xl flex items-center justify-center">
-        <Brain size={28} className="text-accent-foreground" />
+      <div className="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center">
+        <Brain size={20} className="text-accent-foreground" />
       </div>
     </motion.button>
   );

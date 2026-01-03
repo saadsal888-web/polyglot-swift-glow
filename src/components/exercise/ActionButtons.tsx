@@ -26,9 +26,9 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="fixed bottom-0 left-0 right-0 bg-background p-5 safe-area-bottom"
+      className="fixed bottom-0 left-0 right-0 bg-background p-4 safe-area-bottom"
     >
-      <div className="max-w-md mx-auto space-y-3">
+      <div className="max-w-sm mx-auto space-y-2">
         {isReviewMode ? (
           <motion.button
             onClick={onNext}
@@ -41,7 +41,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           <motion.button
             onClick={onNext}
             whileTap={{ scale: 0.98 }}
-            className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all ${
+            className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all ${
               isCorrect
                 ? 'bg-success text-success-foreground'
                 : 'bg-destructive text-destructive-foreground'
@@ -53,7 +53,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           <motion.button
             onClick={onCheck}
             whileTap={hasSelection ? { scale: 0.98 } : undefined}
-            className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all ${
+            className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all ${
               hasSelection
                 ? 'gradient-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground'
@@ -67,10 +67,10 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
         {!isReviewMode && !isAnswered && (
           <button
             onClick={onSkip}
-            className="w-full flex items-center justify-center gap-2 py-2 text-muted-foreground"
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-muted-foreground"
           >
-            <SkipForward size={18} />
-            <span>تخطي التمرين</span>
+            <SkipForward size={14} />
+            <span>تخطي</span>
           </button>
         )}
       </div>

@@ -128,15 +128,16 @@
 
 @layer utilities {
   .app-container {
-    @apply max-w-md mx-auto min-h-screen bg-background relative;
+    @apply max-w-sm mx-auto min-h-screen bg-background relative;
+    max-width: 375px;
   }
 
   .card-shadow {
-    box-shadow: 0 2px 8px -2px hsl(var(--foreground) / 0.08);
+    box-shadow: 0 1px 4px -1px hsl(var(--foreground) / 0.06);
   }
 
   .card-shadow-lg {
-    box-shadow: 0 4px 16px -4px hsl(var(--foreground) / 0.12);
+    box-shadow: 0 2px 8px -2px hsl(var(--foreground) / 0.1);
   }
 
   .gradient-primary {
@@ -156,11 +157,11 @@
   }
 
   .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 1rem);
+    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
   }
 
   .safe-area-top {
-    padding-top: env(safe-area-inset-top, 1rem);
+    padding-top: env(safe-area-inset-top, 0.5rem);
   }
 
   .touch-manipulation {
@@ -179,19 +180,19 @@
 
 @layer components {
   .btn-primary {
-    @apply gradient-primary text-primary-foreground font-semibold py-4 px-6 rounded-2xl w-full transition-all duration-200 active:scale-[0.98] touch-manipulation;
+    @apply gradient-primary text-primary-foreground font-medium py-3 px-4 rounded-xl w-full text-sm transition-all duration-200 active:scale-[0.98] touch-manipulation;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground font-semibold py-4 px-6 rounded-2xl w-full transition-all duration-200 active:scale-[0.98] touch-manipulation;
+    @apply bg-secondary text-secondary-foreground font-medium py-3 px-4 rounded-xl w-full text-sm transition-all duration-200 active:scale-[0.98] touch-manipulation;
   }
 
   .btn-promo {
-    @apply gradient-promo text-promo-foreground font-semibold py-4 px-6 rounded-2xl w-full transition-all duration-200 active:scale-[0.98] touch-manipulation;
+    @apply gradient-promo text-promo-foreground font-medium py-3 px-4 rounded-xl w-full text-sm transition-all duration-200 active:scale-[0.98] touch-manipulation;
   }
 
   .option-card {
-    @apply bg-card border-2 border-border rounded-2xl p-4 text-center font-semibold transition-all duration-200 active:scale-[0.98] touch-manipulation;
+    @apply bg-card border border-border rounded-xl py-3 px-4 text-center text-sm font-medium transition-all duration-200 active:scale-[0.98] touch-manipulation;
   }
 
   .option-card.selected {
@@ -207,23 +208,23 @@
   }
 
   .level-badge {
-    @apply bg-success text-success-foreground text-sm font-bold px-3 py-1 rounded-full;
+    @apply bg-success text-success-foreground text-xs font-bold px-2 py-0.5 rounded-full;
   }
 
   .streak-badge {
-    @apply bg-streak/10 text-streak font-semibold px-4 py-2 rounded-full flex items-center gap-2;
+    @apply bg-streak/10 text-streak text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1;
   }
 
   .hearts-badge {
-    @apply bg-destructive/10 text-destructive font-semibold px-4 py-2 rounded-full flex items-center gap-2;
+    @apply bg-destructive/10 text-destructive text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1;
   }
 
   .lightning-badge {
-    @apply bg-warning/10 text-warning font-semibold px-4 py-2 rounded-full flex items-center gap-2;
+    @apply bg-warning/10 text-warning text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1;
   }
 
   .nav-item {
-    @apply flex flex-col items-center justify-center gap-1 py-2 px-4 rounded-xl transition-all duration-200;
+    @apply flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-lg transition-all duration-200;
   }
 
   .nav-item.active {

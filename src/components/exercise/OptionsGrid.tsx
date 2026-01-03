@@ -30,7 +30,7 @@ export const OptionsGrid: React.FC<OptionsGridProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="px-5 space-y-3"
+      className="px-4 space-y-2"
     >
       {options.map((option, index) => (
         <motion.button
