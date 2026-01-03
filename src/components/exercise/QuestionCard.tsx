@@ -1,5 +1,5 @@
-import React from 'react';
-import { Volume2, User } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Volume2, User, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Exercise } from '@/types';
 
@@ -12,9 +12,29 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   exercise,
   showTranslation = false,
 }) => {
-  const handlePlayAudio = () => {
-    // TODO: Implement audio playback
-    console.log('Playing audio for:', exercise.word.word);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handlePlayAudio = async () => {
+    if (!exercise.word.audioUrl || !audioRef.current) {
+      console.log('No audio URL for:', exercise.word.word);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await audioRef.current.play();
+      setIsPlaying(true);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
   };
 
   return (
@@ -23,6 +43,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       animate={{ opacity: 1, scale: 1 }}
       className="px-4"
     >
+      {/* Hidden audio element */}
+      {exercise.word.audioUrl && (
+        <audio
+          ref={audioRef}
+          src={exercise.word.audioUrl}
+          onEnded={handleAudioEnded}
+          preload="none"
+        />
+      )}
+
       {/* Avatar with message bubble */}
       <div className="flex items-start gap-2 mb-4">
         <div className="w-10 h-10 gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
@@ -47,18 +77,28 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <motion.button
             onClick={handlePlayAudio}
             whileTap={{ scale: 0.95 }}
-            className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto"
+            disabled={isLoading || !exercise.word.audioUrl}
+            className={`w-12 h-12 gradient-primary rounded-full flex items-center justify-center mx-auto ${!exercise.word.audioUrl ? 'opacity-50' : ''}`}
           >
-            <Volume2 size={20} className="text-primary-foreground" />
+            {isLoading ? (
+              <Loader2 size={20} className="text-primary-foreground animate-spin" />
+            ) : (
+              <Volume2 size={20} className={`text-primary-foreground ${isPlaying ? 'animate-pulse' : ''}`} />
+            )}
           </motion.button>
         ) : (
           // Quiz mode - show listen button
           <motion.button
             onClick={handlePlayAudio}
             whileTap={{ scale: 0.95 }}
-            className="gradient-primary text-primary-foreground rounded-full px-4 py-1.5 inline-flex items-center gap-1.5 text-sm"
+            disabled={isLoading || !exercise.word.audioUrl}
+            className={`gradient-primary text-primary-foreground rounded-full px-4 py-1.5 inline-flex items-center gap-1.5 text-sm ${!exercise.word.audioUrl ? 'opacity-50' : ''}`}
           >
-            <Volume2 size={14} />
+            {isLoading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Volume2 size={14} className={isPlaying ? 'animate-pulse' : ''} />
+            )}
             <span className="font-medium">اسمع</span>
           </motion.button>
         )}
