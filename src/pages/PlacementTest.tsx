@@ -1,45 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, X, HelpCircle, BookOpen, MessageSquare, PenTool } from 'lucide-react';
+import { ArrowRight, X, HelpCircle, Check, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getQuestionsByLanguage, PlacementQuestion, QuestionType } from '@/data/placementTestQuestions';
+import { getQuestionsByLanguage, QuestionType } from '@/data/placementTestQuestions';
 
 type Level = 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
 const LEVELS: Level[] = ['A1', 'A2', 'B1', 'B2', 'C1'];
-
-const getQuestionTypeIcon = (type: QuestionType) => {
-  switch (type) {
-    case 'vocabulary':
-      return <BookOpen className="w-4 h-4" />;
-    case 'grammar':
-      return <PenTool className="w-4 h-4" />;
-    case 'comprehension':
-      return <MessageSquare className="w-4 h-4" />;
-    case 'fill-blank':
-      return <HelpCircle className="w-4 h-4" />;
-    default:
-      return <BookOpen className="w-4 h-4" />;
-  }
-};
-
-const getQuestionTypeLabel = (type: QuestionType) => {
-  switch (type) {
-    case 'vocabulary':
-      return 'مفردات';
-    case 'grammar':
-      return 'قواعد';
-    case 'comprehension':
-      return 'فهم';
-    case 'fill-blank':
-      return 'إملأ الفراغ';
-    default:
-      return 'سؤال';
-  }
-};
 
 const PlacementTest: React.FC = () => {
   const navigate = useNavigate();
@@ -55,102 +25,100 @@ const PlacementTest: React.FC = () => {
   const [showResult, setShowResult] = useState(false);
   const [finalLevel, setFinalLevel] = useState<Level>('A1');
   const [testEnded, setTestEnded] = useState(false);
+  const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
 
   // Get questions for selected language
   const allQuestions = useMemo(() => {
     return getQuestionsByLanguage(selectedLanguage);
   }, [selectedLanguage]);
 
-  const totalQuestions = allQuestions.length;
-  const currentQuestion = allQuestions[currentQuestionIndex];
-  const currentLevel = currentQuestion?.level || 'A1';
+  // Get questions for current level only
+  const currentLevelQuestions = useMemo(() => {
+    return allQuestions.filter(q => q.level === LEVELS[currentLevelIndex]);
+  }, [allQuestions, currentLevelIndex]);
 
-  // Calculate progress for each level
-  const getLevelProgress = (level: Level) => {
-    const correct = correctByLevel[level];
-    const wrong = wrongByLevel[level];
-    const total = correct + wrong;
-    if (total === 0) return null;
-    return Math.round((correct / total) * 100);
-  };
+  const questionsAnsweredAtCurrentLevel = correctByLevel[LEVELS[currentLevelIndex]] + wrongByLevel[LEVELS[currentLevelIndex]];
+  const currentQuestion = currentLevelQuestions[questionsAnsweredAtCurrentLevel];
+  const currentLevel = LEVELS[currentLevelIndex];
+
+  // Calculate total questions answered
+  const totalAnswered = Object.values(correctByLevel).reduce((a, b) => a + b, 0) + 
+                        Object.values(wrongByLevel).reduce((a, b) => a + b, 0);
 
   const handleAnswer = (answer: string) => {
     if (selectedAnswer || testEnded) return;
     
     setSelectedAnswer(answer);
     const isCorrect = answer === currentQuestion.correctAnswer;
-    const questionLevel = currentQuestion.level;
 
     // Update stats
+    const newCorrect = correctByLevel[currentLevel] + (isCorrect ? 1 : 0);
+    const newWrong = wrongByLevel[currentLevel] + (isCorrect ? 0 : 1);
+    
     if (isCorrect) {
-      setCorrectByLevel(prev => ({
-        ...prev,
-        [questionLevel]: prev[questionLevel] + 1
-      }));
+      setCorrectByLevel(prev => ({ ...prev, [currentLevel]: newCorrect }));
     } else {
-      setWrongByLevel(prev => ({
-        ...prev,
-        [questionLevel]: prev[questionLevel] + 1
-      }));
+      setWrongByLevel(prev => ({ ...prev, [currentLevel]: newWrong }));
     }
 
-    // Check if should end test early (failed too many at current level)
-    const newWrong = wrongByLevel[questionLevel] + (isCorrect ? 0 : 1);
-    const currentLevelIndex = LEVELS.indexOf(questionLevel);
+    const totalAtLevel = newCorrect + newWrong;
+    const questionsForLevel = currentLevelQuestions.length;
     
-    // If failed 3+ questions at any level, determine final level
-    if (newWrong >= 3 && currentLevelIndex > 0) {
+    // Check if failed this level (less than 60% after answering enough questions)
+    const failedLevel = totalAtLevel >= 3 && (newCorrect / totalAtLevel) < 0.6;
+    
+    // If at A1 and failing, just set level to A1 and end
+    if (failedLevel && currentLevelIndex === 0) {
       setTimeout(() => {
-        // Level is the previous level or A1
-        const determinedLevel = LEVELS[currentLevelIndex - 1] || 'A1';
+        setFinalLevel('A1');
+        setTestEnded(true);
+        setShowResult(true);
+        saveLevel('A1');
+      }, 600);
+      return;
+    }
+    
+    // If failed at any other level, set to previous level
+    if (failedLevel && currentLevelIndex > 0) {
+      setTimeout(() => {
+        const determinedLevel = LEVELS[currentLevelIndex - 1];
         setFinalLevel(determinedLevel);
         setTestEnded(true);
         setShowResult(true);
         saveLevel(determinedLevel);
-      }, 800);
+      }, 600);
       return;
     }
 
-    // Move to next question
-    setTimeout(() => {
-      if (currentQuestionIndex < allQuestions.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-        setSelectedAnswer(null);
+    // Check if passed this level (60%+ after answering all questions for level)
+    const passedLevel = totalAtLevel >= questionsForLevel && (newCorrect / totalAtLevel) >= 0.6;
+    
+    if (passedLevel) {
+      // Move to next level or finish
+      if (currentLevelIndex < LEVELS.length - 1) {
+        setTimeout(() => {
+          setCurrentLevelIndex(prev => prev + 1);
+          setSelectedAnswer(null);
+        }, 600);
       } else {
-        // Test completed - calculate final level
-        calculateFinalLevel();
+        // Passed C1 - highest level
+        setTimeout(() => {
+          setFinalLevel('C1');
+          setShowResult(true);
+          saveLevel('C1');
+        }, 600);
       }
-    }, 800);
+      return;
+    }
+
+    // Continue with next question at same level
+    setTimeout(() => {
+      setSelectedAnswer(null);
+    }, 600);
   };
 
   const handleDontKnow = () => {
     handleAnswer('__dont_know__');
-  };
-
-  const calculateFinalLevel = () => {
-    // Find highest level where user got >= 60% correct
-    let determinedLevel: Level = 'A1';
-    
-    for (const level of LEVELS) {
-      const correct = correctByLevel[level] + (currentQuestion.level === level && selectedAnswer === currentQuestion.correctAnswer ? 1 : 0);
-      const wrong = wrongByLevel[level] + (currentQuestion.level === level && selectedAnswer !== currentQuestion.correctAnswer ? 1 : 0);
-      const total = correct + wrong;
-      
-      if (total > 0) {
-        const percentage = (correct / total) * 100;
-        // Need at least 60% to pass a level
-        if (percentage >= 60) {
-          determinedLevel = level;
-        } else {
-          // Failed this level, stop here
-          break;
-        }
-      }
-    }
-    
-    setFinalLevel(determinedLevel);
-    setShowResult(true);
-    saveLevel(determinedLevel);
   };
 
   const saveLevel = async (level: Level) => {
@@ -173,26 +141,11 @@ const PlacementTest: React.FC = () => {
 
     if (error) {
       console.error('Error saving level:', error);
-      toast.error('حدث خطأ في حفظ المستوى');
-    } else {
-      toast.success(`تم تحديد مستواك: ${level}`);
     }
   };
 
   const skipTest = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase
-        .from('user_language_levels')
-        .upsert({
-          user_id: user.id,
-          language: selectedLanguage,
-          level: 'A1',
-          test_completed_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,language'
-        });
-    }
+    await saveLevel('A1');
     navigate('/');
   };
 
@@ -203,63 +156,93 @@ const PlacementTest: React.FC = () => {
   // Show result screen
   if (showResult) {
     const levelDescriptions: Record<Level, string> = {
-      'A1': 'مبتدئ - يمكنك فهم واستخدام العبارات الأساسية',
-      'A2': 'ما قبل المتوسط - يمكنك التواصل في المواقف البسيطة',
-      'B1': 'متوسط - يمكنك التعامل مع معظم المواقف اليومية',
-      'B2': 'فوق المتوسط - يمكنك التواصل بطلاقة وتلقائية',
-      'C1': 'متقدم - يمكنك استخدام اللغة بمرونة وفعالية',
+      'A1': 'مبتدئ - تعلم الأساسيات',
+      'A2': 'ما قبل المتوسط - التواصل البسيط',
+      'B1': 'متوسط - المواقف اليومية',
+      'B2': 'فوق المتوسط - التواصل بطلاقة',
+      'C1': 'متقدم - إتقان اللغة',
+    };
+
+    const levelColors: Record<Level, string> = {
+      'A1': 'from-emerald-400 to-emerald-600',
+      'A2': 'from-blue-400 to-blue-600',
+      'B1': 'from-violet-400 to-violet-600',
+      'B2': 'from-orange-400 to-orange-600',
+      'C1': 'from-rose-400 to-rose-600',
     };
 
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="text-center max-w-md"
-        >
-          {/* Level Badge */}
-          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <span className="text-5xl font-bold text-primary-foreground">{finalLevel}</span>
+      <div className="min-h-screen bg-background" dir="rtl">
+        {/* iOS-style header */}
+        <div className="safe-area-inset-top bg-background/80 backdrop-blur-xl border-b border-border/50">
+          <div className="flex items-center justify-center h-11 relative">
+            <span className="text-[17px] font-semibold">نتيجة الاختبار</span>
           </div>
-          
-          <h1 className="text-2xl font-bold mb-2">تم تحديد مستواك!</h1>
-          <p className="text-muted-foreground mb-4">{levelDescriptions[finalLevel]}</p>
+        </div>
 
-          {/* Stats */}
-          <div className="bg-card rounded-xl p-4 mb-6 space-y-3">
-            <h3 className="font-semibold mb-3">نتائج الاختبار</h3>
-            {LEVELS.map(level => {
-              const correct = correctByLevel[level];
-              const wrong = wrongByLevel[level];
-              const total = correct + wrong;
-              if (total === 0) return null;
-              
-              const percentage = Math.round((correct / total) * 100);
-              const passed = percentage >= 60;
-              
-              return (
-                <div key={level} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-10 h-6 rounded flex items-center justify-center text-xs font-bold ${
-                      passed ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'
-                    }`}>
-                      {level}
-                    </span>
-                    <span className="text-muted-foreground">{correct}/{total} صحيح</span>
+        <div className="px-4 pt-8 pb-12 max-w-sm mx-auto">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: "spring", duration: 0.6 }}
+            className="text-center"
+          >
+            {/* Level Circle */}
+            <div className={`w-32 h-32 rounded-full bg-gradient-to-br ${levelColors[finalLevel]} flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-primary/30`}>
+              <div className="w-28 h-28 rounded-full bg-background/20 backdrop-blur flex items-center justify-center">
+                <span className="text-5xl font-bold text-white">{finalLevel}</span>
+              </div>
+            </div>
+            
+            <h1 className="text-2xl font-bold mb-1">مستواك {finalLevel}</h1>
+            <p className="text-muted-foreground text-[15px] mb-8">{levelDescriptions[finalLevel]}</p>
+
+            {/* Stats Card - iOS style */}
+            <div className="bg-card rounded-2xl overflow-hidden mb-8">
+              {LEVELS.map((level, idx) => {
+                const correct = correctByLevel[level];
+                const wrong = wrongByLevel[level];
+                const total = correct + wrong;
+                if (total === 0) return null;
+                
+                const percentage = Math.round((correct / total) * 100);
+                const passed = percentage >= 60;
+                
+                return (
+                  <div key={level} className={`flex items-center justify-between px-4 py-3 ${idx !== 0 ? 'border-t border-border/50' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                        passed ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-500'
+                      }`}>
+                        {level}
+                      </div>
+                      <span className="text-[15px]">{correct} من {total}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[15px] font-medium ${passed ? 'text-green-600' : 'text-red-500'}`}>
+                        {percentage}%
+                      </span>
+                      {passed ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <X className="w-4 h-4 text-red-500" />
+                      )}
+                    </div>
                   </div>
-                  <span className={passed ? 'text-green-600' : 'text-red-600'}>
-                    {percentage}%
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          <Button onClick={finishTest} size="lg" className="gap-2 w-full">
-            البدء بالتعلم
-            <ArrowRight className="w-4 h-4 rotate-180" />
-          </Button>
-        </motion.div>
+            {/* iOS-style button */}
+            <Button 
+              onClick={finishTest} 
+              size="lg" 
+              className="w-full h-[50px] rounded-xl text-[17px] font-semibold bg-primary hover:bg-primary/90"
+            >
+              ابدأ التعلم
+            </Button>
+          </motion.div>
+        </div>
       </div>
     );
   }
@@ -268,8 +251,8 @@ const PlacementTest: React.FC = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">جاري تحميل الاختبار...</p>
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground text-[15px]">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -277,110 +260,76 @@ const PlacementTest: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b z-10">
-        <div className="flex items-center justify-between p-4">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-muted rounded-lg transition-colors">
-            <X className="w-6 h-6" />
+      {/* iOS-style Header */}
+      <div className="safe-area-inset-top bg-background/80 backdrop-blur-xl sticky top-0 z-10 border-b border-border/50">
+        <div className="flex items-center justify-between px-4 h-11">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="flex items-center gap-1 text-primary -mr-2 px-2"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            <span className="text-[17px]">رجوع</span>
           </button>
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">المستوى الحالي</p>
-            <p className="text-xl font-bold text-primary">{currentLevel}</p>
-          </div>
-          <div className="text-sm font-medium bg-muted px-3 py-1 rounded-full">
-            {currentQuestionIndex + 1}/{totalQuestions}
-          </div>
+          <span className="text-[17px] font-semibold">{currentLevel}</span>
+          <span className="text-[15px] text-muted-foreground tabular-nums">
+            {totalAnswered + 1}
+          </span>
         </div>
 
-        {/* Level Progress Bar */}
-        <div className="px-4 pb-4">
-          <div className="flex gap-1 h-2 rounded-full overflow-hidden bg-muted">
-            {LEVELS.map((level, idx) => {
-              const questionsAtLevel = allQuestions.filter(q => q.level === level).length;
-              const answeredAtLevel = correctByLevel[level] + wrongByLevel[level];
-              const progress = getLevelProgress(level);
-              const widthPercent = (questionsAtLevel / totalQuestions) * 100;
-              
-              let bgColor = 'bg-muted-foreground/30';
-              if (progress !== null) {
-                bgColor = progress >= 60 ? 'bg-green-500' : 'bg-red-400';
-              } else if (LEVELS.indexOf(currentLevel) === idx) {
-                bgColor = 'bg-primary/50';
-              }
-              
-              return (
-                <div
-                  key={level}
-                  className={`h-full transition-all ${bgColor}`}
-                  style={{ width: `${widthPercent}%` }}
-                />
-              );
-            })}
-          </div>
-          
-          {/* Level Labels */}
-          <div className="flex justify-between mt-2 px-1">
-            {LEVELS.map((level) => {
-              const isActive = level === currentLevel;
-              const progress = getLevelProgress(level);
-              
-              return (
-                <div key={level} className="flex flex-col items-center">
-                  <span className={`text-xs font-bold transition-all ${
-                    isActive 
-                      ? 'text-primary scale-110' 
-                      : progress !== null
-                        ? progress >= 60 ? 'text-green-600' : 'text-red-500'
-                        : 'text-muted-foreground'
-                  }`}>
-                    {level}
-                  </span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="active-level"
-                      className="w-1.5 h-1.5 rounded-full bg-primary mt-1"
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        {/* Level Pills */}
+        <div className="flex justify-center gap-2 px-4 py-3">
+          {LEVELS.map((level, idx) => {
+            const isActive = idx === currentLevelIndex;
+            const isPassed = idx < currentLevelIndex;
+            const correct = correctByLevel[level];
+            const wrong = wrongByLevel[level];
+            const total = correct + wrong;
+            const failed = total >= 3 && (correct / total) < 0.6;
+            
+            return (
+              <div
+                key={level}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground scale-110'
+                    : isPassed
+                    ? 'bg-green-500/20 text-green-600'
+                    : failed
+                    ? 'bg-red-500/20 text-red-500'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {level}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Question */}
-      <div className="p-6 max-w-lg mx-auto">
+      {/* Question Content */}
+      <div className="px-4 pt-6 pb-8 max-w-md mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentQuestionIndex}
-            initial={{ opacity: 0, x: 50 }}
+            key={`${currentLevel}-${questionsAnsweredAtCurrentLevel}`}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: 0.25 }}
           >
-            {/* Question Type Badge */}
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm">
-                {getQuestionTypeIcon(currentQuestion.type)}
-                <span>{getQuestionTypeLabel(currentQuestion.type)}</span>
-              </div>
-            </div>
-
-            {/* Question */}
-            <div className="text-center space-y-4 bg-card p-6 rounded-2xl border">
-              <p className="text-lg font-medium text-foreground leading-relaxed">
+            {/* Question Card - iOS style */}
+            <div className="bg-card rounded-2xl p-5 mb-6 shadow-sm">
+              <p className="text-[17px] font-medium text-foreground leading-relaxed text-center">
                 {currentQuestion.question}
               </p>
               {currentQuestion.questionAr && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-[14px] text-muted-foreground mt-2 text-center">
                   {currentQuestion.questionAr}
                 </p>
               )}
             </div>
 
-            {/* Options */}
-            <div className="space-y-3 mt-6">
+            {/* Options - iOS style */}
+            <div className="space-y-3">
               {currentQuestion.options.map((option, index) => {
                 const isSelected = selectedAnswer === option;
                 const isCorrect = option === currentQuestion.correctAnswer;
@@ -390,23 +339,23 @@ const PlacementTest: React.FC = () => {
                 return (
                   <motion.button
                     key={index}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.08 }}
+                    transition={{ delay: index * 0.05 }}
                     onClick={() => handleAnswer(option)}
                     disabled={!!selectedAnswer}
-                    className={`w-full p-4 rounded-xl text-right transition-all font-medium ${
+                    className={`w-full p-4 rounded-xl text-right transition-all text-[15px] ${
                       showCorrect
-                        ? 'bg-green-500/20 border-2 border-green-500 text-green-700 dark:text-green-400'
+                        ? 'bg-green-500/15 ring-2 ring-green-500'
                         : showWrong
-                        ? 'bg-red-500/20 border-2 border-red-500 text-red-700 dark:text-red-400'
+                        ? 'bg-red-500/15 ring-2 ring-red-500'
                         : selectedAnswer
-                        ? 'bg-card border-2 border-border opacity-50'
-                        : 'bg-card border-2 border-border hover:border-primary/50 hover:bg-primary/5 active:scale-[0.98]'
+                        ? 'bg-card opacity-50'
+                        : 'bg-card active:bg-muted active:scale-[0.98]'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold ${
                         showCorrect
                           ? 'bg-green-500 text-white'
                           : showWrong
@@ -415,41 +364,40 @@ const PlacementTest: React.FC = () => {
                       }`}>
                         {String.fromCharCode(65 + index)}
                       </span>
-                      <span>{option}</span>
+                      <span className={showCorrect ? 'text-green-700 dark:text-green-400' : showWrong ? 'text-red-700 dark:text-red-400' : ''}>
+                        {option}
+                      </span>
                     </div>
                   </motion.button>
                 );
               })}
 
-              {/* Don't Know Option */}
+              {/* Don't Know */}
               <motion.button
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.25 }}
                 onClick={handleDontKnow}
                 disabled={!!selectedAnswer}
-                className={`w-full p-4 rounded-xl text-center transition-all border-2 border-dashed ${
+                className={`w-full py-3 rounded-xl text-center text-[15px] transition-all ${
                   selectedAnswer === '__dont_know__'
-                    ? 'bg-red-500/20 border-red-500 text-red-700 dark:text-red-400'
-                    : 'border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/50 hover:bg-muted/50'
+                    ? 'bg-red-500/15 text-red-600'
+                    : 'text-muted-foreground active:bg-muted'
                 }`}
               >
-                <span className="flex items-center justify-center gap-2">
-                  <HelpCircle className="w-4 h-4" />
-                  لا أعرف الإجابة
-                </span>
+                لا أعرف
               </motion.button>
             </div>
           </motion.div>
         </AnimatePresence>
 
-        {/* Skip Button */}
+        {/* Skip - subtle link */}
         <div className="mt-10 text-center">
           <button
             onClick={skipTest}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+            className="text-[13px] text-muted-foreground/70"
           >
-            تخطي الاختبار والبدء من المستوى A1
+            تخطي والبدء من A1
           </button>
         </div>
       </div>
