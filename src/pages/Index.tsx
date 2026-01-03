@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -12,10 +12,11 @@ import { LibrarySection } from '@/components/home/LibrarySection';
 import { useActiveLanguages } from '@/hooks/useLanguages';
 import { useUnits } from '@/hooks/useUnits';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const { selectedLanguage, setSelectedLanguage } = useLanguage();
 
   const { data: languages, isLoading: languagesLoading } = useActiveLanguages();
   const { data: units, isLoading: unitsLoading } = useUnits(selectedLanguage);
