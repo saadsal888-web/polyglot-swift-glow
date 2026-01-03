@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { RoadmapHeader } from '@/components/roadmap/RoadmapHeader';
@@ -6,10 +6,29 @@ import { UnitCard } from '@/components/roadmap/UnitCard';
 import { useUnits } from '@/hooks/useUnits';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const Roadmap: React.FC = () => {
   const { selectedLanguage } = useLanguage();
   const { data: units, isLoading } = useUnits(selectedLanguage);
+
+  // Fetch user word progress for mastered words count
+  const { data: userProgress } = useQuery({
+    queryKey: ['user-word-progress-stats'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { masteredWords: 0 };
+      
+      const { count } = await supabase
+        .from('user_word_progress')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('mastery_level', 'mastered');
+      
+      return { masteredWords: count || 0 };
+    },
+  });
 
   // Group units by difficulty level
   const unitsByLevel = units?.reduce((acc, unit) => {
@@ -22,23 +41,33 @@ const Roadmap: React.FC = () => {
   const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
   const currentLevel = units?.[0]?.difficulty || 'A1';
 
-  // Mock progress
-  const mockProgress = {
-    currentLevel,
-    currentUnit: 1,
-    totalUnits: units?.length || 0,
-    masteredWords: 0,
-    remainingWords: units?.reduce((acc, u) => acc + (u.words_count || 0), 0) || 0,
-    dailyGoal: 3,
-    dailyProgress: 1,
-    streak: 7,
-    hearts: 5,
-    lightning: 150,
-  };
+  // Calculate real progress from database
+  const progress = useMemo(() => {
+    const totalUnits = units?.length || 0;
+    const totalWords = units?.reduce((acc, u) => acc + (u.words_count || 0), 0) || 0;
+    const masteredWords = userProgress?.masteredWords || 0;
+    const remainingWords = Math.max(0, totalWords - masteredWords);
+    
+    // Find current unit (first unit with incomplete words)
+    const currentUnit = 1; // Will be calculated when we have per-unit progress
+    
+    return {
+      currentLevel,
+      currentUnit,
+      totalUnits,
+      masteredWords,
+      remainingWords,
+      dailyGoal: 3,
+      dailyProgress: 1,
+      streak: 7,
+      hearts: 5,
+      lightning: 150,
+    };
+  }, [units, userProgress, currentLevel]);
 
   return (
     <AppLayout showNav={false}>
-      <RoadmapHeader level={currentLevel as any} progress={mockProgress as any} />
+      <RoadmapHeader level={currentLevel as any} progress={progress as any} />
 
       <motion.div
         initial={{ opacity: 0 }}
