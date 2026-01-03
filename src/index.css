@@ -234,4 +234,17 @@
   .nav-item:not(.active) {
     @apply text-muted-foreground;
   }
+
+  /* Premium content control */
+  .premium-only {
+    display: none;
+  }
+
+  .premium-user .premium-only {
+    display: block;
+  }
+
+  .premium-user .upgrade-prompt {
+    display: none;
+  }
 }
