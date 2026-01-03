@@ -42,27 +42,27 @@ export const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({ level, progress })
 
       <div className="bg-card rounded-xl p-3 card-shadow">
         <div className="flex items-center justify-between">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <div className="text-center">
-              <span className="text-lg font-bold text-primary">
+              <span className="text-sm font-bold text-primary">
                 {progress.remainingWords}
               </span>
               <p className="text-[10px] text-muted-foreground">متبقي</p>
             </div>
             <div className="text-center">
-              <span className="text-lg font-bold text-foreground">
+              <span className="text-sm font-bold text-foreground">
                 {progress.masteredWords}
               </span>
               <p className="text-[10px] text-muted-foreground">متقن</p>
             </div>
             <div className="text-center">
-              <span className="text-lg font-bold text-primary">
+              <span className="text-sm font-bold text-primary">
                 {progress.totalUnits}
               </span>
               <p className="text-[10px] text-muted-foreground">إجمالي الوحدات</p>
             </div>
             <div className="text-center">
-              <span className="text-lg font-bold text-foreground">
+              <span className="text-sm font-bold text-foreground">
                 {progress.currentUnit}
               </span>
               <p className="text-[10px] text-muted-foreground">الوحدة الحالية</p>
@@ -70,9 +70,9 @@ export const RoadmapHeader: React.FC<RoadmapHeaderProps> = ({ level, progress })
           </div>
 
           <div className="border-r border-border pr-3 mr-3">
-            <ProgressRing progress={overallProgress} size={60}>
+            <ProgressRing progress={overallProgress} size={55}>
               <div className="text-center">
-                <span className="text-sm font-bold text-primary">
+                <span className="text-xs font-bold text-primary">
                   %{overallProgress}
                 </span>
               </div>
