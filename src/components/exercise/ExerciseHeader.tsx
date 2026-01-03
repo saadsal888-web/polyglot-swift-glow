@@ -30,7 +30,7 @@ export const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
     >
       <div className="flex items-center justify-between mb-2">
         <motion.button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/roadmap')}
           whileTap={{ scale: 0.9 }}
           className="w-8 h-8 flex items-center justify-center"
         >
