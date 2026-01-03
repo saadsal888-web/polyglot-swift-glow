@@ -20,6 +20,7 @@ import DeleteAccount from "./pages/DeleteAccount";
 import Auth from "./pages/Auth";
 import DifficultWords from "./pages/DifficultWords";
 import Subscription from "./pages/Subscription";
+import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/placement-test" element={<ProtectedRoute><PlacementTest /></ProtectedRoute>} />
                 <Route path="/delete-account" element={<ProtectedRoute><DeleteAccount /></ProtectedRoute>} />
                 <Route path="/difficult-words" element={<ProtectedRoute><DifficultWords /></ProtectedRoute>} />
+                <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, Sparkles, Trash2, CheckCircle } from 'lucide-react';
+import { AlertCircle, Layers, Trash2, CheckCircle, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 interface LibraryItemProps {
   icon: React.ReactNode;
@@ -40,6 +41,7 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
   deletedWords,
 }) => {
   const navigate = useNavigate();
+  const { isPremium } = useSubscription();
 
   return (
     <motion.section
@@ -61,10 +63,16 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
           onClick={() => navigate('/difficult-words')}
         />
         <LibraryItem
-          icon={<Sparkles size={18} className="text-primary" />}
-          label="تمارين منوعة"
+          icon={
+            <div className="flex items-center gap-1">
+              <Layers size={18} className="text-primary" />
+              {!isPremium && <Crown size={12} className="text-amber-500" />}
+            </div>
+          }
+          label="بطاقات فلاش"
           count={0}
           delay={0.4}
+          onClick={() => navigate('/flashcards')}
         />
         <LibraryItem
           icon={<Trash2 size={18} className="text-destructive" />}

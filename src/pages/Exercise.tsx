@@ -6,7 +6,9 @@ import { ExerciseHeader } from '@/components/exercise/ExerciseHeader';
 import { QuestionCard } from '@/components/exercise/QuestionCard';
 import { OptionsGrid } from '@/components/exercise/OptionsGrid';
 import { ActionButtons } from '@/components/exercise/ActionButtons';
+import { OutOfHeartsModal } from '@/components/subscription/OutOfHeartsModal';
 import { useUnitWords, DbWord } from '@/hooks/useWords';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
@@ -53,6 +55,7 @@ const Exercise: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const unitId = searchParams.get('unit') || '';
+  const { isPremium } = useSubscription();
 
   const { data: words, isLoading } = useUnitWords(unitId);
 
@@ -62,6 +65,7 @@ const Exercise: React.FC = () => {
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [hearts, setHearts] = useState(5);
+  const [showOutOfHeartsModal, setShowOutOfHeartsModal] = useState(false);
 
   useEffect(() => {
     if (words && words.length >= 4) {
@@ -77,11 +81,11 @@ const Exercise: React.FC = () => {
     setIsCorrect(correct);
     setIsAnswered(true);
     
-    if (!correct) {
-      setHearts(prev => Math.max(0, prev - 1));
-      if (hearts <= 1) {
-        toast.error('انتهت المحاولات! حاول مرة أخرى');
-        setTimeout(() => navigate('/'), 2000);
+    if (!correct && !isPremium) {
+      const newHearts = Math.max(0, hearts - 1);
+      setHearts(newHearts);
+      if (newHearts === 0) {
+        setShowOutOfHeartsModal(true);
       }
     }
   };
@@ -99,7 +103,14 @@ const Exercise: React.FC = () => {
   };
 
   const handleSkip = () => {
-    setHearts(prev => Math.max(0, prev - 1));
+    if (!isPremium) {
+      const newHearts = Math.max(0, hearts - 1);
+      setHearts(newHearts);
+      if (newHearts === 0) {
+        setShowOutOfHeartsModal(true);
+        return;
+      }
+    }
     handleNext();
   };
 
@@ -145,6 +156,12 @@ const Exercise: React.FC = () => {
         hearts={hearts}
         lightning={150}
         timeRemaining={1}
+        isPremium={isPremium}
+      />
+
+      <OutOfHeartsModal
+        isOpen={showOutOfHeartsModal}
+        onClose={() => setShowOutOfHeartsModal(false)}
       />
 
       <AnimatePresence mode="wait">
