@@ -1,20 +1,23 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Sparkles, Trash2, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface LibraryItemProps {
   icon: React.ReactNode;
   label: string;
   count: number;
   delay: number;
+  onClick?: () => void;
 }
 
-const LibraryItem: React.FC<LibraryItemProps> = ({ icon, label, count, delay }) => (
+const LibraryItem: React.FC<LibraryItemProps> = ({ icon, label, count, delay, onClick }) => (
   <motion.button
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ delay }}
     whileTap={{ scale: 0.95 }}
+    onClick={onClick}
     className="bg-card rounded-xl p-3 card-shadow flex flex-col items-start"
   >
     <div className="flex items-center justify-between w-full mb-1">
@@ -36,6 +39,8 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
   masteredWords,
   deletedWords,
 }) => {
+  const navigate = useNavigate();
+
   return (
     <motion.section
       initial={{ opacity: 0 }}
@@ -53,6 +58,7 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
           label="كلمات صعبة"
           count={difficultWords}
           delay={0.35}
+          onClick={() => navigate('/difficult-words')}
         />
         <LibraryItem
           icon={<Sparkles size={18} className="text-primary" />}
@@ -65,12 +71,14 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
           label="المحذوفات"
           count={deletedWords}
           delay={0.45}
+          onClick={() => navigate('/deleted-words')}
         />
         <LibraryItem
           icon={<CheckCircle size={18} className="text-success" />}
           label="المتقنة"
           count={masteredWords}
           delay={0.5}
+          onClick={() => navigate('/mastered-words')}
         />
       </div>
     </motion.section>

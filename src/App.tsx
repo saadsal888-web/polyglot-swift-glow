@@ -17,6 +17,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import DeleteAccount from "./pages/DeleteAccount";
 import Auth from "./pages/Auth";
+import DifficultWords from "./pages/DifficultWords";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
               <Route path="/placement-test" element={<ProtectedRoute><PlacementTest /></ProtectedRoute>} />
               <Route path="/delete-account" element={<ProtectedRoute><DeleteAccount /></ProtectedRoute>} />
+              <Route path="/difficult-words" element={<ProtectedRoute><DifficultWords /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
