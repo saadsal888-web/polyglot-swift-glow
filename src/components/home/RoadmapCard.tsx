@@ -53,6 +53,7 @@ export const RoadmapCard: React.FC<RoadmapCardProps> = ({
         onClick={() => navigate('/roadmap')}
         whileTap={{ scale: 0.98 }}
         className="btn-primary flex items-center justify-center gap-1.5"
+        type="button"
       >
         <ChevronLeft size={16} />
         <span>استكمال الوحدة {unitNumber}</span>

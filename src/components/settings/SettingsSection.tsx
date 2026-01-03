@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut } from 'lucide-react';
+import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SettingsItemProps {
@@ -83,7 +83,7 @@ export const SettingsSection: React.FC = () => {
             </div>
           }
           label="سياسة الخصوصية"
-          onClick={() => window.open('https://learn-languages4.netlify.app/privacy-policy', '_blank')}
+          onClick={() => navigate('/privacy-policy')}
           delay={0.3}
         />
         <SettingsItem
@@ -93,6 +93,7 @@ export const SettingsSection: React.FC = () => {
             </div>
           }
           label="شروط الاستخدام"
+          onClick={() => navigate('/terms')}
           delay={0.35}
         />
         <SettingsItem
@@ -102,6 +103,7 @@ export const SettingsSection: React.FC = () => {
             </div>
           }
           label="الدعم الفني"
+          onClick={() => window.open('mailto:support@mastery-journey.app', '_blank')}
           delay={0.4}
         />
       </motion.div>
@@ -121,6 +123,26 @@ export const SettingsSection: React.FC = () => {
           }
           label="تسجيل الخروج"
           delay={0.5}
+        />
+      </motion.div>
+
+      {/* Delete Account */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55 }}
+        className="bg-card rounded-xl overflow-hidden card-shadow"
+      >
+        <SettingsItem
+          icon={
+            <div className="w-8 h-8 bg-destructive/10 rounded-lg flex items-center justify-center">
+              <Trash2 size={16} className="text-destructive" />
+            </div>
+          }
+          label="حذف الحساب"
+          onClick={() => navigate('/delete-account')}
+          variant="danger"
+          delay={0.6}
         />
       </motion.div>
     </div>
