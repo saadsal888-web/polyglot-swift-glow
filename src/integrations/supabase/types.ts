@@ -658,6 +658,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_deleted: boolean
           mastery_level: string | null
           next_review_date: string | null
           session_id: string | null
@@ -670,6 +671,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean
           mastery_level?: string | null
           next_review_date?: string | null
           session_id?: string | null
@@ -682,6 +684,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean
           mastery_level?: string | null
           next_review_date?: string | null
           session_id?: string | null
