@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Roadmap from "./pages/Roadmap";
 import Exercise from "./pages/Exercise";
@@ -14,33 +16,37 @@ import PlacementTest from "./pages/PlacementTest";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import DeleteAccount from "./pages/DeleteAccount";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/roadmap" element={<Roadmap />} />
-            <Route path="/exercise" element={<Exercise />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/achievements" element={<Achievements />} />
-            <Route path="/placement-test" element={<PlacementTest />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/delete-account" element={<DeleteAccount />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+              <Route path="/exercise" element={<ProtectedRoute><Exercise /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+              <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+              <Route path="/placement-test" element={<ProtectedRoute><PlacementTest /></ProtectedRoute>} />
+              <Route path="/delete-account" element={<ProtectedRoute><DeleteAccount /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </LanguageProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

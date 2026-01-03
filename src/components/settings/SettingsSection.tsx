@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface SettingsItemProps {
   icon: React.ReactNode;
@@ -38,6 +40,17 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 
 export const SettingsSection: React.FC = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: 'تم تسجيل الخروج',
+      description: 'نراك قريباً! 👋',
+    });
+    navigate('/auth', { replace: true });
+  };
 
   return (
     <div className="px-4 py-4 space-y-3">
@@ -122,6 +135,7 @@ export const SettingsSection: React.FC = () => {
             </div>
           }
           label="تسجيل الخروج"
+          onClick={handleLogout}
           delay={0.5}
         />
       </motion.div>

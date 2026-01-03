@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LanguageSelector } from '@/components/home/LanguageSelector';
 import { DailyGoalCard } from '@/components/home/DailyGoalCard';
-
 import { RoadmapCard } from '@/components/home/RoadmapCard';
 import { TrainingCenterCard } from '@/components/home/TrainingCenterCard';
 import { LibrarySection } from '@/components/home/LibrarySection';
@@ -14,18 +13,50 @@ import { useActiveLanguages } from '@/hooks/useLanguages';
 import { useUnits } from '@/hooks/useUnits';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
+  const { user } = useAuth();
 
   const { data: languages, isLoading: languagesLoading } = useActiveLanguages();
   const { data: units, isLoading: unitsLoading } = useUnits(selectedLanguage);
 
+  // Fetch user profile
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch user progress
+  const { data: userProgress } = useQuery({
+    queryKey: ['user-progress', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('user_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   // Fetch library stats for selected language
   const { data: libraryStats } = useQuery({
-    queryKey: ['library-stats', selectedLanguage],
+    queryKey: ['library-stats', selectedLanguage, user?.id],
     queryFn: async () => {
       // Get words for this language
       const { data: words } = await supabase
@@ -60,19 +91,21 @@ const Index: React.FC = () => {
 
       return { difficultWords, masteredWords, deletedWords };
     },
+    enabled: !!user?.id,
   });
 
   // Calculate stats from units
-  const totalUnits = units?.length || 0;
-  const totalWords = units?.reduce((acc, unit) => acc + (unit.words_count || 0), 0) || 0;
   const currentUnit = units?.[0];
   const currentLevel = currentUnit?.difficulty || 'A1';
 
-  // Mock user stats (will be replaced when auth is added)
+  // Get user name from profile or email
+  const userName = profile?.full_name || user?.email?.split('@')[0] || 'مستخدم';
+
+  // User stats from database
   const userStats = {
-    streak: 7,
-    dailyGoal: 3,
-    dailyProgress: 1,
+    streak: userProgress?.streak_days || 0,
+    dailyGoal: userProgress?.daily_goal || 3,
+    dailyProgress: userProgress?.daily_completed || 0,
   };
 
   return (
@@ -117,7 +150,7 @@ const Index: React.FC = () => {
         >
           <h2 className="text-lg font-bold flex items-center justify-center gap-1.5">
             <span>👋</span>
-            <span>مرحباً</span>
+            <span>مرحباً {userName}</span>
           </h2>
           <p className="text-muted-foreground text-xs">جاهز لمغامرة لغوية جديدة اليوم؟</p>
         </motion.div>
