@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LanguageSelector } from '@/components/home/LanguageSelector';
 import { DailyGoalCard } from '@/components/home/DailyGoalCard';
-import { PromoBanner } from '@/components/home/PromoBanner';
+
 import { RoadmapCard } from '@/components/home/RoadmapCard';
 import { TrainingCenterCard } from '@/components/home/TrainingCenterCard';
 import { LibrarySection } from '@/components/home/LibrarySection';
@@ -129,8 +129,6 @@ const Index: React.FC = () => {
           streak={userStats.streak}
         />
 
-        {/* Promo Banner */}
-        <PromoBanner />
 
         {/* Roadmap Card */}
         {unitsLoading ? (
