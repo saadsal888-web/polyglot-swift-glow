@@ -4,11 +4,9 @@ import { Home, BookOpen, Target, User, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const navItems = [
-  { path: '/settings', icon: User, label: 'الإعدادات' },
   { path: '/library', icon: BookOpen, label: 'المكتبة' },
   { path: '/', icon: Home, label: 'الرئيسية' },
   { path: '/roadmap', icon: Target, label: 'خارطة الطريق' },
-  { path: '/achievements', icon: Award, label: 'الإنجازات' },
 ];
 
 export const BottomNavigation: React.FC = () => {
