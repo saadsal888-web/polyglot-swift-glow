@@ -1,19 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 declare global {
   interface Window {
     __IS_PREMIUM__?: boolean;
+    __SUBSCRIPTION_PRICES__?: SubscriptionPrices | null;
     setPremiumStatus?: (isPremium: boolean) => void;
+    setSubscriptionPrices?: (prices: SubscriptionPrices) => void;
     AndroidApp?: {
-      subscribe: () => void;
+      subscribe: (productId?: string) => void;
     };
   }
+}
+
+export interface SubscriptionPrices {
+  monthly?: string;
+  yearly?: string;
+  monthlyProductId?: string;
+  yearlyProductId?: string;
 }
 
 interface SubscriptionContextType {
   isPremium: boolean;
   isInApp: boolean;
-  subscribe: () => void;
+  subscribe: (productId?: string) => void;
+  prices: SubscriptionPrices | null;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -21,6 +33,61 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isPremium, setIsPremium] = useState(() => window.__IS_PREMIUM__ ?? false);
   const [isInApp, setIsInApp] = useState(() => !!window.AndroidApp);
+  const [prices, setPrices] = useState<SubscriptionPrices | null>(() => window.__SUBSCRIPTION_PRICES__ ?? null);
+  const { user } = useAuth();
+
+  // Sync subscription status with Supabase
+  const syncWithSupabase = useCallback(async (premiumStatus: boolean) => {
+    if (!user?.id) return;
+
+    try {
+      const { data: existing } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('user_subscriptions')
+          .update({
+            is_premium: premiumStatus,
+            email: user.email,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            is_premium: premiumStatus,
+          });
+      }
+    } catch (error) {
+      console.error('Error syncing subscription:', error);
+    }
+  }, [user]);
+
+  // Load subscription from Supabase on mount
+  useEffect(() => {
+    const loadSubscription = async () => {
+      if (!user?.id) return;
+
+      const { data } = await supabase
+        .from('user_subscriptions')
+        .select('is_premium')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (data?.is_premium) {
+        setIsPremium(true);
+      }
+    };
+
+    loadSubscription();
+  }, [user?.id]);
 
   useEffect(() => {
     // Check if we're in the Android app
@@ -29,31 +96,43 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Listen for premium status changes from Android
     const handlePremiumChange = (event: CustomEvent<boolean>) => {
       setIsPremium(event.detail);
+      syncWithSupabase(event.detail);
+    };
+
+    // Listen for prices updates from Android
+    const handlePricesUpdate = (event: CustomEvent<SubscriptionPrices>) => {
+      setPrices(event.detail);
     };
 
     window.addEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
+    window.addEventListener('pricesUpdated', handlePricesUpdate as EventListener);
 
     // Check initial status
     if (typeof window.__IS_PREMIUM__ === 'boolean') {
       setIsPremium(window.__IS_PREMIUM__);
     }
 
+    // Check initial prices
+    if (window.__SUBSCRIPTION_PRICES__) {
+      setPrices(window.__SUBSCRIPTION_PRICES__);
+    }
+
     return () => {
       window.removeEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
+      window.removeEventListener('pricesUpdated', handlePricesUpdate as EventListener);
     };
-  }, []);
+  }, [syncWithSupabase]);
 
-  const subscribe = useCallback(() => {
+  const subscribe = useCallback((productId?: string) => {
     if (window.AndroidApp?.subscribe) {
-      window.AndroidApp.subscribe();
+      window.AndroidApp.subscribe(productId);
     } else {
-      // Not in app - show message handled by UI
       console.log('Subscription only available in app');
     }
   }, []);
 
   return (
-    <SubscriptionContext.Provider value={{ isPremium, isInApp, subscribe }}>
+    <SubscriptionContext.Provider value={{ isPremium, isInApp, subscribe, prices }}>
       {children}
     </SubscriptionContext.Provider>
   );
