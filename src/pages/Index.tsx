@@ -1,5 +1,5 @@
 import React from 'react';
-import { User } from 'lucide-react';
+import { User, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -14,12 +14,14 @@ import { useUnits } from '@/hooks/useUnits';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
   const { selectedLanguage, setSelectedLanguage } = useLanguage();
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
 
   const { data: languages, isLoading: languagesLoading } = useActiveLanguages();
   const { data: units, isLoading: unitsLoading } = useUnits(selectedLanguage);
@@ -151,6 +153,12 @@ const Index: React.FC = () => {
           <h2 className="text-lg font-bold flex items-center justify-center gap-1.5">
             <span>👋</span>
             <span>مرحباً {userName}</span>
+            {isPremium && (
+              <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Crown size={10} />
+                Plus
+              </span>
+            )}
           </h2>
           <p className="text-muted-foreground text-xs">جاهز لمغامرة لغوية جديدة اليوم؟</p>
         </motion.div>

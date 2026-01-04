@@ -29,6 +29,8 @@
     <script>
       // Premium Status Bridge for Android WebView
       window.__IS_PREMIUM__ = false;
+      window.__SUBSCRIPTION_PRICES__ = null;
+      
       window.setPremiumStatus = function(isPremium) {
         window.__IS_PREMIUM__ = isPremium;
         if (isPremium) {
@@ -37,6 +39,12 @@
           document.body.classList.remove("premium-user");
         }
         window.dispatchEvent(new CustomEvent('premiumStatusChanged', { detail: isPremium }));
+      };
+      
+      // Subscription Prices Bridge for Android WebView
+      window.setSubscriptionPrices = function(prices) {
+        window.__SUBSCRIPTION_PRICES__ = prices;
+        window.dispatchEvent(new CustomEvent('pricesUpdated', { detail: prices }));
       };
     </script>
     <script type="module" src="/src/main.tsx"></script>
