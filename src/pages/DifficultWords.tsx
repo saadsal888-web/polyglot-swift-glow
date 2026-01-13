@@ -61,7 +61,7 @@ const DifficultWords: React.FC = () => {
   };
 
   return (
-    <AppLayout showNav={false}>
+    <AppLayout>
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -32,7 +32,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <AppLayout showNav={false}>
+    <AppLayout>
       <div className="min-h-screen bg-secondary/30">
         <SettingsHeader />
         {isLoading ? (

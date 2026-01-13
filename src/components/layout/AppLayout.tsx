@@ -1,18 +1,15 @@
 import React from 'react';
-import { BottomNavigation } from './BottomNavigation';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  showNav?: boolean;
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ children, showNav = true }) => {
+export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <div className="app-container">
-      <main className={`min-h-screen ${showNav ? 'pb-16' : ''} safe-area-top`}>
+      <main className="min-h-screen safe-area-top">
         {children}
       </main>
-      {showNav && <BottomNavigation />}
     </div>
   );
 };
