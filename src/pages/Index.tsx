@@ -1,30 +1,23 @@
 import React from 'react';
-import { User, Crown } from 'lucide-react';
+import { User, Crown, Heart, BookOpen, MessageCircle, Target, Flame, Brain, ChevronLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { LanguageSelector } from '@/components/home/LanguageSelector';
-import { DailyGoalCard } from '@/components/home/DailyGoalCard';
-import { RoadmapCard } from '@/components/home/RoadmapCard';
-import { TrainingCenterCard } from '@/components/home/TrainingCenterCard';
-import { LibrarySection } from '@/components/home/LibrarySection';
-import { useActiveLanguages } from '@/hooks/useLanguages';
-import { useUnits } from '@/hooks/useUnits';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAllWords } from '@/hooks/useWords';
+import { useAllPhrases } from '@/hooks/usePhrases';
 import { supabase } from '@/integrations/supabase/client';
+import { ProgressBar } from '@/components/common/ProgressBar';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedLanguage, setSelectedLanguage } = useLanguage();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
 
-  const { data: languages, isLoading: languagesLoading } = useActiveLanguages();
-  const { data: units, isLoading: unitsLoading } = useUnits(selectedLanguage);
+  const { data: words } = useAllWords();
+  const { data: phrases } = useAllPhrases();
 
   // Fetch user profile
   const { data: profile } = useQuery({
@@ -56,59 +49,11 @@ const Index: React.FC = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch library stats for selected language
-  const { data: libraryStats } = useQuery({
-    queryKey: ['library-stats', selectedLanguage, user?.id],
-    queryFn: async () => {
-      // Get words for this language
-      const { data: words } = await supabase
-        .from('words')
-        .select('id')
-        .eq('language', selectedLanguage);
-
-      const wordIds = words?.map(w => w.id) || [];
-
-      if (wordIds.length === 0) {
-        return { difficultWords: 0, masteredWords: 0, deletedWords: 0 };
-      }
-
-      // Get user progress for these words
-      const { data: progress } = await supabase
-        .from('user_word_progress')
-        .select('word_id, times_correct, times_reviewed, mastery_level, is_deleted')
-        .in('word_id', wordIds);
-
-      // Difficult words: answered incorrectly (times_reviewed > times_correct)
-      const difficultWords = progress?.filter(p => 
-        !p.is_deleted && p.times_reviewed > 0 && p.times_correct < p.times_reviewed
-      ).length || 0;
-
-      // Mastered words
-      const masteredWords = progress?.filter(p => 
-        !p.is_deleted && p.mastery_level === 'mastered'
-      ).length || 0;
-
-      // Deleted words
-      const deletedWords = progress?.filter(p => p.is_deleted).length || 0;
-
-      return { difficultWords, masteredWords, deletedWords };
-    },
-    enabled: !!user?.id,
-  });
-
-  // Calculate stats from units
-  const currentUnit = units?.[0];
-  const currentLevel = currentUnit?.difficulty || 'A1';
-
-  // Get user name from profile or email
   const userName = profile?.full_name || user?.email?.split('@')[0] || 'مستخدم';
-
-  // User stats from database
-  const userStats = {
-    streak: userProgress?.streak_days || 0,
-    dailyGoal: userProgress?.daily_goal || 3,
-    dailyProgress: userProgress?.daily_completed || 0,
-  };
+  const dailyGoal = userProgress?.daily_goal || 5;
+  const dailyProgress = userProgress?.daily_completed || 0;
+  const streak = userProgress?.streak_days || 0;
+  const progressPercentage = Math.min(100, Math.round((dailyProgress / dailyGoal) * 100));
 
   return (
     <AppLayout>
@@ -119,21 +64,30 @@ const Index: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between"
         >
-          {languagesLoading ? (
-            <Skeleton className="w-16 h-8 rounded-full" />
-          ) : (
-            <LanguageSelector
-              languages={languages || []}
-              selectedLanguage={selectedLanguage}
-              onSelect={setSelectedLanguage}
-            />
-          )}
-
-          <div className="text-center">
-            <h1 className="text-base font-bold">رحلة الإتقان</h1>
-            <p className="text-xs text-primary">خُطوتك نحو التميّز</p>
+          {/* Hearts */}
+          <div className="hearts-badge">
+            <Heart size={14} fill="currentColor" />
+            <span>{isPremium ? '∞' : '5'}</span>
           </div>
 
+          {/* Subscribe Button or Premium Badge */}
+          {isPremium ? (
+            <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
+              <Crown size={12} />
+              Plus
+            </span>
+          ) : (
+            <motion.button
+              onClick={() => navigate('/subscription')}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1"
+            >
+              <Crown size={12} />
+              اشترك Pro
+            </motion.button>
+          )}
+
+          {/* User */}
           <motion.button
             onClick={() => navigate('/settings')}
             whileTap={{ scale: 0.9 }}
@@ -148,51 +102,131 @@ const Index: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-center py-1"
+          className="text-center py-2"
         >
           <h2 className="text-lg font-bold flex items-center justify-center gap-1.5">
             <span>👋</span>
             <span>مرحباً {userName}</span>
-            {isPremium && (
-              <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Crown size={10} />
-                Plus
-              </span>
-            )}
           </h2>
-          <p className="text-muted-foreground text-xs">جاهز لمغامرة لغوية جديدة اليوم؟</p>
+          <p className="text-muted-foreground text-xs mt-1">تذكر: التكرار هو سر الإتقان 🧠</p>
+          
+          {/* Daily Progress Bar */}
+          <div className="mt-3 px-4">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="text-muted-foreground">{dailyProgress}/{dailyGoal} عناصر اليوم</span>
+              <span className="text-primary font-medium">{progressPercentage}%</span>
+            </div>
+            <ProgressBar progress={progressPercentage} />
+          </div>
         </motion.div>
 
-        {/* Daily Goal */}
-        <DailyGoalCard
-          progress={userStats.dailyProgress}
-          goal={userStats.dailyGoal}
-          streak={userStats.streak}
-        />
+        {/* Learning Library Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-4 text-white"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl">📖</span>
+            <h3 className="font-bold">مكتبتك التعليمية</h3>
+          </div>
+          <p className="text-white/80 text-sm mb-4">
+            {words?.length || 0} كلمة • {phrases?.length || 0} جملة
+          </p>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/phrases')}
+              className="bg-white/20 backdrop-blur rounded-xl py-3 px-4 flex items-center justify-center gap-2"
+            >
+              <MessageCircle size={18} />
+              <span className="font-medium">الجمل</span>
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/words')}
+              className="bg-white/20 backdrop-blur rounded-xl py-3 px-4 flex items-center justify-center gap-2"
+            >
+              <BookOpen size={18} />
+              <span className="font-medium">الكلمات</span>
+            </motion.button>
+          </div>
+        </motion.div>
 
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Daily Goal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="bg-card rounded-xl p-3 card-shadow"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-lg font-bold">{dailyProgress}/{dailyGoal}</span>
+              <Target size={18} className="text-primary" />
+            </div>
+            <span className="text-xs text-muted-foreground">هدف اليوم 🎯</span>
+          </motion.div>
 
-        {/* Roadmap Card */}
-        {unitsLoading ? (
-          <Skeleton className="h-32 rounded-2xl" />
-        ) : currentUnit ? (
-          <RoadmapCard
-            level={currentLevel as any}
-            unitNumber={1}
-            progress={0}
-            masteredItems={libraryStats?.masteredWords || 0}
-            totalItems={currentUnit.words_count || 0}
-          />
-        ) : null}
+          {/* Streak */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.25 }}
+            className="bg-card rounded-xl p-3 card-shadow"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-lg font-bold">{streak}</span>
+              <Flame size={18} className="text-accent" />
+            </div>
+            <span className="text-xs text-muted-foreground">سلسلة يومية 🔥</span>
+          </motion.div>
+        </div>
+
+        {/* Words Card */}
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/words')}
+          className="w-full bg-card rounded-2xl p-4 card-shadow flex items-center justify-between"
+        >
+          <ChevronLeft size={18} className="text-muted-foreground" />
+          <div className="flex-1 text-right mr-3">
+            <h3 className="font-bold text-sm">الكلمات</h3>
+            <p className="text-muted-foreground text-xs">
+              {words?.length || 0} كلمة متاحة للتعلم
+            </p>
+          </div>
+          <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
+            <BookOpen size={20} className="text-primary-foreground" />
+          </div>
+        </motion.button>
 
         {/* Training Center */}
-        <TrainingCenterCard />
-
-        {/* Library Section */}
-        <LibrarySection
-          difficultWords={libraryStats?.difficultWords || 0}
-          masteredWords={libraryStats?.masteredWords || 0}
-          deletedWords={libraryStats?.deletedWords || 0}
-        />
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/exercise')}
+          className="w-full bg-card rounded-2xl p-4 card-shadow flex items-center justify-between"
+        >
+          <ChevronLeft size={18} className="text-muted-foreground" />
+          <div className="flex-1 text-right mr-3">
+            <h3 className="font-bold text-sm">مركز التدريب المكثف</h3>
+            <p className="text-muted-foreground text-xs">
+              مارس الكلمات واختبر نفسك
+            </p>
+          </div>
+          <div className="w-10 h-10 gradient-accent rounded-xl flex items-center justify-center">
+            <Brain size={20} className="text-accent-foreground" />
+          </div>
+        </motion.button>
       </div>
     </AppLayout>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ExerciseHeader } from '@/components/exercise/ExerciseHeader';
@@ -7,7 +7,7 @@ import { QuestionCard } from '@/components/exercise/QuestionCard';
 import { OptionsGrid } from '@/components/exercise/OptionsGrid';
 import { ActionButtons } from '@/components/exercise/ActionButtons';
 import { OutOfHeartsModal } from '@/components/subscription/OutOfHeartsModal';
-import { useUnitWords, DbWord } from '@/hooks/useWords';
+import { useAllWords, DbWord } from '@/hooks/useWords';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -26,16 +26,19 @@ interface ExerciseData {
 const generateExercises = (words: DbWord[]): ExerciseData[] => {
   if (words.length < 4) return [];
 
-  return words.slice(0, 10).map((word, index) => {
+  // Shuffle and take 10 random words
+  const shuffledWords = [...words].sort(() => Math.random() - 0.5).slice(0, 10);
+
+  return shuffledWords.map((word, index) => {
     const type: ExerciseType = index % 2 === 0 ? 'meaning' : 'translation';
     
     // Get 2 random wrong options (3 total options)
     const otherWords = words.filter(w => w.id !== word.id);
     const shuffled = otherWords.sort(() => Math.random() - 0.5).slice(0, 2);
     
-    const correctAnswer = type === 'meaning' ? word.translation : word.word;
+    const correctAnswer = type === 'meaning' ? word.word_ar : word.word_en;
     const wrongOptions = shuffled.map(w => 
-      type === 'meaning' ? w.translation : w.word
+      type === 'meaning' ? w.word_ar : w.word_en
     );
     
     const options = [...wrongOptions, correctAnswer].sort(() => Math.random() - 0.5);
@@ -43,7 +46,7 @@ const generateExercises = (words: DbWord[]): ExerciseData[] => {
     return {
       id: word.id,
       type,
-      question: type === 'meaning' ? word.word : word.translation,
+      question: type === 'meaning' ? word.word_en : word.word_ar,
       correctAnswer,
       options,
       word,
@@ -53,11 +56,9 @@ const generateExercises = (words: DbWord[]): ExerciseData[] => {
 
 const Exercise: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const unitId = searchParams.get('unit') || '';
   const { isPremium } = useSubscription();
 
-  const { data: words, isLoading } = useUnitWords(unitId);
+  const { data: words, isLoading } = useAllWords();
 
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -182,11 +183,11 @@ const Exercise: React.FC = () => {
               word: {
                 id: currentExercise.word.id,
                 word: currentExercise.type === 'meaning' 
-                  ? currentExercise.word.word 
-                  : currentExercise.word.translation,
+                  ? currentExercise.word.word_en 
+                  : currentExercise.word.word_ar,
                 translation: currentExercise.type === 'meaning'
-                  ? currentExercise.word.translation
-                  : currentExercise.word.word,
+                  ? currentExercise.word.word_ar
+                  : currentExercise.word.word_en,
                 pronunciation: currentExercise.word.pronunciation || undefined,
                 audioUrl: currentExercise.word.audio_url || undefined,
                 difficulty: (currentExercise.word.difficulty as 'easy' | 'medium' | 'hard') || 'easy',

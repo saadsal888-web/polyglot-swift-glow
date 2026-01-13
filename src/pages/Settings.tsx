@@ -25,25 +25,10 @@ const Settings: React.FC = () => {
     enabled: !!user?.id,
   });
 
-  const { data: userLevel } = useQuery({
-    queryKey: ['user-level', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from('user_language_levels')
-        .select('level')
-        .eq('user_id', user.id)
-        .limit(1)
-        .single();
-      return data?.level || 'A1';
-    },
-    enabled: !!user?.id,
-  });
-
   const userProfile = {
     name: profile?.full_name || user?.email?.split('@')[0] || 'مستخدم',
     email: user?.email || '',
-    level: userLevel || profile?.current_level || 'A1',
+    level: profile?.current_level || 'A1',
   };
 
   return (

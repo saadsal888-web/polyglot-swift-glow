@@ -14,165 +14,208 @@ export type Database = {
   }
   public: {
     Tables: {
-      blocked_ips: {
+      assessment_questions: {
         Row: {
-          blocked_until: string | null
+          assessment_id: string
+          correct_answer: string
           created_at: string | null
+          explanation: string | null
+          explanation_ar: string | null
           id: string
-          ip_address: string
-          permanent: boolean | null
-          reason: string | null
+          instruction_ar: string | null
+          instruction_en: string | null
+          options: Json | null
+          points: number | null
+          question_number: number
+          question_text: string
+          question_text_ar: string | null
+          question_type: string
+          section: string | null
+          sort_order: number | null
         }
         Insert: {
-          blocked_until?: string | null
+          assessment_id: string
+          correct_answer: string
           created_at?: string | null
+          explanation?: string | null
+          explanation_ar?: string | null
           id?: string
-          ip_address: string
-          permanent?: boolean | null
-          reason?: string | null
+          instruction_ar?: string | null
+          instruction_en?: string | null
+          options?: Json | null
+          points?: number | null
+          question_number: number
+          question_text: string
+          question_text_ar?: string | null
+          question_type: string
+          section?: string | null
+          sort_order?: number | null
         }
         Update: {
-          blocked_until?: string | null
+          assessment_id?: string
+          correct_answer?: string
           created_at?: string | null
+          explanation?: string | null
+          explanation_ar?: string | null
           id?: string
-          ip_address?: string
-          permanent?: boolean | null
-          reason?: string | null
+          instruction_ar?: string | null
+          instruction_en?: string | null
+          options?: Json | null
+          points?: number | null
+          question_number?: number
+          question_text?: string
+          question_text_ar?: string | null
+          question_type?: string
+          section?: string | null
+          sort_order?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "assessment_questions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "level_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      daily_sessions: {
+      lesson_exercises: {
         Row: {
-          ai_feedback: string | null
+          correct_answer: string
           created_at: string | null
+          exercise_number: number
+          exercise_type: string
+          explanation_ar: string | null
+          explanation_en: string | null
           id: string
-          session_date: string | null
-          user_id: string
-          words_learned_today: number | null
-          words_mastered_today: number | null
+          instruction_ar: string | null
+          instruction_en: string | null
+          lesson_number: number
+          options: Json
+          points: number | null
+          pronunciation: string | null
+          question: string
+          sort_order: number | null
+          unit_id: string
+          updated_at: string | null
+          word_ar: string | null
+          word_en: string | null
         }
         Insert: {
-          ai_feedback?: string | null
+          correct_answer: string
           created_at?: string | null
+          exercise_number: number
+          exercise_type: string
+          explanation_ar?: string | null
+          explanation_en?: string | null
           id?: string
-          session_date?: string | null
-          user_id: string
-          words_learned_today?: number | null
-          words_mastered_today?: number | null
+          instruction_ar?: string | null
+          instruction_en?: string | null
+          lesson_number: number
+          options?: Json
+          points?: number | null
+          pronunciation?: string | null
+          question: string
+          sort_order?: number | null
+          unit_id: string
+          updated_at?: string | null
+          word_ar?: string | null
+          word_en?: string | null
         }
         Update: {
-          ai_feedback?: string | null
+          correct_answer?: string
           created_at?: string | null
+          exercise_number?: number
+          exercise_type?: string
+          explanation_ar?: string | null
+          explanation_en?: string | null
           id?: string
-          session_date?: string | null
-          user_id?: string
-          words_learned_today?: number | null
-          words_mastered_today?: number | null
+          instruction_ar?: string | null
+          instruction_en?: string | null
+          lesson_number?: number
+          options?: Json
+          points?: number | null
+          pronunciation?: string | null
+          question?: string
+          sort_order?: number | null
+          unit_id?: string
+          updated_at?: string | null
+          word_ar?: string | null
+          word_en?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lesson_exercises_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      files: {
+      level_assessments: {
         Row: {
           created_at: string | null
-          file_name: string
-          file_type: string | null
-          file_url: string
+          description: string | null
+          difficulty: string
           id: string
+          is_active: boolean | null
+          passing_score: number | null
+          time_limit_minutes: number | null
+          title: string
+          title_ar: string
+          total_questions: number | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
-          file_name: string
-          file_type?: string | null
-          file_url: string
+          description?: string | null
+          difficulty: string
           id?: string
+          is_active?: boolean | null
+          passing_score?: number | null
+          time_limit_minutes?: number | null
+          title: string
+          title_ar: string
+          total_questions?: number | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
-          file_name?: string
-          file_type?: string | null
-          file_url?: string
+          description?: string | null
+          difficulty?: string
           id?: string
-        }
-        Relationships: []
-      }
-      languages: {
-        Row: {
-          code: string
-          created_at: string | null
-          flag_emoji: string
-          id: string
-          name_ar: string
-          name_native: string
-        }
-        Insert: {
-          code: string
-          created_at?: string | null
-          flag_emoji: string
-          id?: string
-          name_ar: string
-          name_native: string
-        }
-        Update: {
-          code?: string
-          created_at?: string | null
-          flag_emoji?: string
-          id?: string
-          name_ar?: string
-          name_native?: string
+          is_active?: boolean | null
+          passing_score?: number | null
+          time_limit_minutes?: number | null
+          title?: string
+          title_ar?: string
+          total_questions?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
       login_attempts: {
         Row: {
-          attempt_type: string | null
-          block_reason: string | null
-          city: string | null
-          country_code: string | null
-          country_name: string | null
           created_at: string | null
           email: string | null
           id: string
           ip_address: string
-          is_blocked: boolean | null
-          is_hosting: boolean | null
-          is_proxy: boolean | null
-          is_vpn: boolean | null
           success: boolean | null
-          user_agent: string | null
         }
         Insert: {
-          attempt_type?: string | null
-          block_reason?: string | null
-          city?: string | null
-          country_code?: string | null
-          country_name?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           ip_address: string
-          is_blocked?: boolean | null
-          is_hosting?: boolean | null
-          is_proxy?: boolean | null
-          is_vpn?: boolean | null
           success?: boolean | null
-          user_agent?: string | null
         }
         Update: {
-          attempt_type?: string | null
-          block_reason?: string | null
-          city?: string | null
-          country_code?: string | null
-          country_name?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           ip_address?: string
-          is_blocked?: boolean | null
-          is_hosting?: boolean | null
-          is_proxy?: boolean | null
-          is_vpn?: boolean | null
           success?: boolean | null
-          user_agent?: string | null
         }
         Relationships: []
       }
@@ -180,68 +223,41 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string | null
-          difficulty: string | null
+          difficulty: string
           id: string
-          language: string | null
-          phrase: string
+          phrase_ar: string
+          phrase_en: string
           pronunciation: string | null
-          sort_order: number | null
-          translation: string
-          unit_id: string | null
-          word_id: string | null
         }
         Insert: {
           category?: string | null
           created_at?: string | null
-          difficulty?: string | null
+          difficulty?: string
           id?: string
-          language?: string | null
-          phrase: string
+          phrase_ar: string
+          phrase_en: string
           pronunciation?: string | null
-          sort_order?: number | null
-          translation: string
-          unit_id?: string | null
-          word_id?: string | null
         }
         Update: {
           category?: string | null
           created_at?: string | null
-          difficulty?: string | null
+          difficulty?: string
           id?: string
-          language?: string | null
-          phrase?: string
+          phrase_ar?: string
+          phrase_en?: string
           pronunciation?: string | null
-          sort_order?: number | null
-          translation?: string
-          unit_id?: string | null
-          word_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "phrases_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "units"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "phrases_word_id_fkey"
-            columns: ["word_id"]
-            isOneToOne: false
-            referencedRelation: "words"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string | null
           current_level: string | null
+          current_unit: number | null
           full_name: string | null
           id: string
-          last_active_at: string | null
-          total_words_learned: number | null
+          total_xp: number | null
           updated_at: string | null
           username: string | null
         }
@@ -249,10 +265,10 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           current_level?: string | null
+          current_unit?: number | null
           full_name?: string | null
           id: string
-          last_active_at?: string | null
-          total_words_learned?: number | null
+          total_xp?: number | null
           updated_at?: string | null
           username?: string | null
         }
@@ -260,328 +276,174 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           current_level?: string | null
+          current_unit?: number | null
           full_name?: string | null
           id?: string
-          last_active_at?: string | null
-          total_words_learned?: number | null
+          total_xp?: number | null
           updated_at?: string | null
           username?: string | null
         }
         Relationships: []
       }
-      questions: {
-        Row: {
-          correct_answer: string
-          created_at: string | null
-          explanation: string | null
-          file_id: string | null
-          id: string
-          options: Json
-          question: string
-        }
-        Insert: {
-          correct_answer: string
-          created_at?: string | null
-          explanation?: string | null
-          file_id?: string | null
-          id?: string
-          options?: Json
-          question: string
-        }
-        Update: {
-          correct_answer?: string
-          created_at?: string | null
-          explanation?: string | null
-          file_id?: string | null
-          id?: string
-          options?: Json
-          question?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "questions_file_id_fkey"
-            columns: ["file_id"]
-            isOneToOne: false
-            referencedRelation: "files"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quiz_results: {
-        Row: {
-          completed_at: string | null
-          file_id: string | null
-          id: string
-          score: number
-          total_questions: number
-        }
-        Insert: {
-          completed_at?: string | null
-          file_id?: string | null
-          id?: string
-          score?: number
-          total_questions?: number
-        }
-        Update: {
-          completed_at?: string | null
-          file_id?: string | null
-          id?: string
-          score?: number
-          total_questions?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quiz_results_file_id_fkey"
-            columns: ["file_id"]
-            isOneToOne: false
-            referencedRelation: "files"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      study_group_items: {
-        Row: {
-          created_at: string | null
-          group_id: string
-          id: string
-          phrase_id: string | null
-          word_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          group_id: string
-          id?: string
-          phrase_id?: string | null
-          word_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          group_id?: string
-          id?: string
-          phrase_id?: string | null
-          word_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_group_items_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "study_groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_group_items_phrase_id_fkey"
-            columns: ["phrase_id"]
-            isOneToOne: false
-            referencedRelation: "phrases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_group_items_word_id_fkey"
-            columns: ["word_id"]
-            isOneToOne: false
-            referencedRelation: "words"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      study_groups: {
-        Row: {
-          color: string | null
-          created_at: string | null
-          icon: string | null
-          id: string
-          language: string | null
-          name: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string | null
-          icon?: string | null
-          id?: string
-          language?: string | null
-          name: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          color?: string | null
-          created_at?: string | null
-          icon?: string | null
-          id?: string
-          language?: string | null
-          name?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      unit_items: {
-        Row: {
-          created_at: string
-          id: string
-          sort_order: number
-          unit_id: string
-          word_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          sort_order?: number
-          unit_id: string
-          word_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          sort_order?: number
-          unit_id?: string
-          word_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "unit_items_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "units"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unit_items_word_id_fkey"
-            columns: ["word_id"]
-            isOneToOne: false
-            referencedRelation: "words"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       units: {
         Row: {
-          created_at: string
+          created_at: string | null
           description: string | null
           difficulty: string
           icon: string | null
           id: string
-          language: string
+          is_active: boolean | null
           name: string
           name_ar: string
-          sort_order: number
-          updated_at: string
+          total_lessons: number | null
+          unit_number: number
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           difficulty?: string
           icon?: string | null
           id?: string
-          language?: string
+          is_active?: boolean | null
           name: string
           name_ar: string
-          sort_order?: number
-          updated_at?: string
+          total_lessons?: number | null
+          unit_number: number
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           difficulty?: string
           icon?: string | null
           id?: string
-          language?: string
+          is_active?: boolean | null
           name?: string
           name_ar?: string
-          sort_order?: number
-          updated_at?: string
+          total_lessons?: number | null
+          unit_number?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
-      user_activity: {
+      user_assessment_results: {
         Row: {
-          activity_data: Json | null
-          activity_type: string
-          created_at: string | null
+          answers: Json | null
+          assessment_id: string
+          completed_at: string | null
           id: string
+          passed: boolean
+          percentage: number
+          score: number
+          time_taken_seconds: number | null
+          total_questions: number
           user_id: string
         }
         Insert: {
-          activity_data?: Json | null
-          activity_type: string
-          created_at?: string | null
+          answers?: Json | null
+          assessment_id: string
+          completed_at?: string | null
           id?: string
+          passed: boolean
+          percentage: number
+          score: number
+          time_taken_seconds?: number | null
+          total_questions: number
           user_id: string
         }
         Update: {
-          activity_data?: Json | null
-          activity_type?: string
-          created_at?: string | null
+          answers?: Json | null
+          assessment_id?: string
+          completed_at?: string | null
           id?: string
+          passed?: boolean
+          percentage?: number
+          score?: number
+          time_taken_seconds?: number | null
+          total_questions?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_assessment_results_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "level_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      user_language_levels: {
+      user_exercise_progress: {
         Row: {
+          attempts: number | null
+          completed_at: string | null
           created_at: string | null
+          exercise_id: string
           id: string
-          language: string
-          level: string
-          test_completed_at: string | null
-          updated_at: string | null
+          is_completed: boolean | null
+          is_correct: boolean | null
           user_id: string
+          xp_earned: number | null
         }
         Insert: {
+          attempts?: number | null
+          completed_at?: string | null
           created_at?: string | null
+          exercise_id: string
           id?: string
-          language: string
-          level?: string
-          test_completed_at?: string | null
-          updated_at?: string | null
+          is_completed?: boolean | null
+          is_correct?: boolean | null
           user_id: string
+          xp_earned?: number | null
         }
         Update: {
+          attempts?: number | null
+          completed_at?: string | null
           created_at?: string | null
+          exercise_id?: string
           id?: string
-          language?: string
-          level?: string
-          test_completed_at?: string | null
-          updated_at?: string | null
+          is_completed?: boolean | null
+          is_correct?: boolean | null
           user_id?: string
+          xp_earned?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_exercise_progress_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_phrase_progress: {
         Row: {
           created_at: string | null
           id: string
-          mastery_level: string | null
-          next_review_date: string | null
-          phrase_id: string
-          times_correct: number | null
-          times_reviewed: number | null
-          updated_at: string | null
+          last_practiced_at: string | null
+          mastery_level: number | null
+          phrase_id: string | null
+          times_practiced: number | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
-          mastery_level?: string | null
-          next_review_date?: string | null
-          phrase_id: string
-          times_correct?: number | null
-          times_reviewed?: number | null
-          updated_at?: string | null
+          last_practiced_at?: string | null
+          mastery_level?: number | null
+          phrase_id?: string | null
+          times_practiced?: number | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
-          mastery_level?: string | null
-          next_review_date?: string | null
-          phrase_id?: string
-          times_correct?: number | null
-          times_reviewed?: number | null
-          updated_at?: string | null
+          last_practiced_at?: string | null
+          mastery_level?: number | null
+          phrase_id?: string | null
+          times_practiced?: number | null
           user_id?: string
         }
         Relationships: [
@@ -597,11 +459,12 @@ export type Database = {
       user_progress: {
         Row: {
           created_at: string | null
+          current_lesson: number | null
+          current_unit: number | null
           daily_completed: number | null
           daily_goal: number | null
           id: string
           last_activity_date: string | null
-          selected_language: string | null
           streak_days: number | null
           total_xp: number | null
           updated_at: string | null
@@ -609,11 +472,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          current_lesson?: number | null
+          current_unit?: number | null
           daily_completed?: number | null
           daily_goal?: number | null
           id?: string
           last_activity_date?: string | null
-          selected_language?: string | null
           streak_days?: number | null
           total_xp?: number | null
           updated_at?: string | null
@@ -621,11 +485,12 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          current_lesson?: number | null
+          current_unit?: number | null
           daily_completed?: number | null
           daily_goal?: number | null
           id?: string
           last_activity_date?: string | null
-          selected_language?: string | null
           streak_days?: number | null
           total_xp?: number | null
           updated_at?: string | null
@@ -654,114 +519,33 @@ export type Database = {
         }
         Relationships: []
       }
-      user_sessions: {
-        Row: {
-          created_at: string | null
-          device_type: string | null
-          duration_seconds: number | null
-          ended_at: string | null
-          id: string
-          started_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          device_type?: string | null
-          duration_seconds?: number | null
-          ended_at?: string | null
-          id?: string
-          started_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          device_type?: string | null
-          duration_seconds?: number | null
-          ended_at?: string | null
-          id?: string
-          started_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_subscriptions: {
-        Row: {
-          created_at: string | null
-          email: string | null
-          expires_at: string | null
-          id: string
-          is_premium: boolean | null
-          platform: string | null
-          product_id: string | null
-          purchase_token: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          email?: string | null
-          expires_at?: string | null
-          id?: string
-          is_premium?: boolean | null
-          platform?: string | null
-          product_id?: string | null
-          purchase_token?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          email?: string | null
-          expires_at?: string | null
-          id?: string
-          is_premium?: boolean | null
-          platform?: string | null
-          product_id?: string | null
-          purchase_token?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_word_progress: {
         Row: {
           created_at: string | null
           id: string
-          is_deleted: boolean
-          mastery_level: string | null
-          next_review_date: string | null
-          session_id: string | null
-          times_correct: number | null
-          times_reviewed: number | null
-          updated_at: string | null
+          last_practiced_at: string | null
+          mastery_level: number | null
+          times_practiced: number | null
           user_id: string
-          word_id: string
+          word_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
-          is_deleted?: boolean
-          mastery_level?: string | null
-          next_review_date?: string | null
-          session_id?: string | null
-          times_correct?: number | null
-          times_reviewed?: number | null
-          updated_at?: string | null
+          last_practiced_at?: string | null
+          mastery_level?: number | null
+          times_practiced?: number | null
           user_id: string
-          word_id: string
+          word_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
-          is_deleted?: boolean
-          mastery_level?: string | null
-          next_review_date?: string | null
-          session_id?: string | null
-          times_correct?: number | null
-          times_reviewed?: number | null
-          updated_at?: string | null
+          last_practiced_at?: string | null
+          mastery_level?: number | null
+          times_practiced?: number | null
           user_id?: string
-          word_id?: string
+          word_id?: string | null
         }
         Relationships: [
           {
@@ -775,67 +559,37 @@ export type Database = {
       }
       words: {
         Row: {
-          category: string | null
+          audio_url: string | null
           created_at: string | null
-          difficulty: string | null
+          difficulty: string
+          example_sentence: string | null
           id: string
           image_url: string | null
-          language: string | null
-          meaning: string | null
           pronunciation: string | null
-          translation: string
-          word: string
+          word_ar: string
+          word_en: string
         }
         Insert: {
-          category?: string | null
+          audio_url?: string | null
           created_at?: string | null
-          difficulty?: string | null
+          difficulty?: string
+          example_sentence?: string | null
           id?: string
           image_url?: string | null
-          language?: string | null
-          meaning?: string | null
           pronunciation?: string | null
-          translation: string
-          word: string
+          word_ar: string
+          word_en: string
         }
         Update: {
-          category?: string | null
+          audio_url?: string | null
           created_at?: string | null
-          difficulty?: string | null
+          difficulty?: string
+          example_sentence?: string | null
           id?: string
           image_url?: string | null
-          language?: string | null
-          meaning?: string | null
           pronunciation?: string | null
-          translation?: string
-          word?: string
-        }
-        Relationships: []
-      }
-      words_audio: {
-        Row: {
-          audio_url: string
-          created_at: string | null
-          id: string
-          language: string
-          provider: string | null
-          word: string
-        }
-        Insert: {
-          audio_url: string
-          created_at?: string | null
-          id?: string
-          language?: string
-          provider?: string | null
-          word: string
-        }
-        Update: {
-          audio_url?: string
-          created_at?: string | null
-          id?: string
-          language?: string
-          provider?: string | null
-          word?: string
+          word_ar?: string
+          word_en?: string
         }
         Relationships: []
       }

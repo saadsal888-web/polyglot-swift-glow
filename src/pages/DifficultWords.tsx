@@ -5,58 +5,57 @@ import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const DifficultWords: React.FC = () => {
   const navigate = useNavigate();
-  const { selectedLanguage } = useLanguage();
 
   const { data: difficultWords, isLoading } = useQuery({
-    queryKey: ['difficult-words', selectedLanguage],
+    queryKey: ['difficult-words'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Get words where times_reviewed > times_correct (difficult)
+      // Get user word progress with words
       const { data: progress } = await supabase
         .from('user_word_progress')
         .select(`
           word_id,
-          times_correct,
-          times_reviewed,
-          words!inner(id, word, translation, pronunciation, language)
+          times_practiced,
+          mastery_level,
+          words!inner(id, word_en, word_ar, pronunciation)
         `)
-        .eq('user_id', user.id)
-        .eq('is_deleted', false)
-        .eq('words.language', selectedLanguage);
+        .eq('user_id', user.id);
 
       if (!progress) return [];
 
-      // Filter difficult words: reviewed but more wrong than right
+      // Filter difficult words: low mastery level and practiced
       return progress
-        .filter(p => p.times_reviewed > 0 && p.times_correct < p.times_reviewed)
-        .map(p => ({
-          id: p.words.id,
-          word: p.words.word,
-          translation: p.words.translation,
-          pronunciation: p.words.pronunciation,
-          timesCorrect: p.times_correct,
-          timesReviewed: p.times_reviewed,
-        }));
+        .filter(p => p.mastery_level !== null && p.mastery_level < 3 && p.times_practiced && p.times_practiced > 0)
+        .map(p => {
+          const words = p.words as { id: string; word_en: string; word_ar: string; pronunciation: string | null };
+          return {
+            id: words.id,
+            word: words.word_en,
+            translation: words.word_ar,
+            pronunciation: words.pronunciation,
+            masteryLevel: p.mastery_level,
+            timesPracticed: p.times_practiced,
+          };
+        });
     },
   });
 
   const playAudio = async (word: string) => {
-    const { data: audio } = await supabase
-      .from('words_audio')
+    // Try to get audio URL from words table
+    const { data } = await supabase
+      .from('words')
       .select('audio_url')
-      .eq('word', word)
-      .eq('language', selectedLanguage)
+      .eq('word_en', word)
       .maybeSingle();
 
-    if (audio?.audio_url) {
-      const audioEl = new Audio(audio.audio_url);
+    if (data?.audio_url) {
+      const audioEl = new Audio(data.audio_url);
       audioEl.play();
     }
   };
@@ -123,10 +122,10 @@ const DifficultWords: React.FC = () => {
                   </div>
                   
                   <div className="text-left">
-                    <span className="text-xs text-destructive">
-                      {word.timesCorrect}/{word.timesReviewed}
+                    <span className="text-xs text-warning">
+                      مستوى {word.masteryLevel}/5
                     </span>
-                    <p className="text-[10px] text-muted-foreground">صحيح/مراجعة</p>
+                    <p className="text-[10px] text-muted-foreground">تدربت {word.timesPracticed} مرات</p>
                   </div>
                 </div>
               </motion.div>
