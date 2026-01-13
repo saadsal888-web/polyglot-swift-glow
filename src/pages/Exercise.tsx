@@ -117,7 +117,7 @@ const Exercise: React.FC = () => {
 
   if (isLoading) {
     return (
-      <AppLayout showNav={false}>
+      <AppLayout>
         <div className="p-4 space-y-4">
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-40 w-full rounded-xl" />
@@ -133,7 +133,7 @@ const Exercise: React.FC = () => {
 
   if (!currentExercise) {
     return (
-      <AppLayout showNav={false}>
+      <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh] p-4">
           <div className="text-center space-y-3">
             <p className="text-muted-foreground text-sm">لا توجد تمارين متاحة</p>
@@ -150,7 +150,7 @@ const Exercise: React.FC = () => {
   }
 
   return (
-    <AppLayout showNav={false}>
+    <AppLayout>
       <ExerciseHeader
         currentQuestion={currentIndex + 1}
         totalQuestions={exercises.length}

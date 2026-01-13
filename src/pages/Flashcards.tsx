@@ -53,7 +53,7 @@ const Flashcards: React.FC = () => {
 
   if (isLoading) {
     return (
-      <AppLayout showNav={false}>
+      <AppLayout>
         <div className="p-4 space-y-4">
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-64 w-full rounded-2xl" />
@@ -63,7 +63,7 @@ const Flashcards: React.FC = () => {
   }
 
   return (
-    <AppLayout showNav={false}>
+    <AppLayout>
       <PremiumGate>
         <div className="p-4">
           {/* Header */}

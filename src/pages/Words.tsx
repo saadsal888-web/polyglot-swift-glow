@@ -87,7 +87,7 @@ const Words: React.FC = () => {
   ) || [];
 
   return (
-    <AppLayout showNav={false}>
+    <AppLayout>
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
