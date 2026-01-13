@@ -32,31 +32,14 @@ const DeleteAccount: React.FC = () => {
         return;
       }
 
-      // Delete user data from all related tables
       const userId = user.id;
 
-      // Delete in order to avoid foreign key constraints
+      // Delete user data from existing tables
       await supabase.from('user_word_progress').delete().eq('user_id', userId);
       await supabase.from('user_phrase_progress').delete().eq('user_id', userId);
-      await supabase.from('user_activity').delete().eq('user_id', userId);
-      await supabase.from('user_sessions').delete().eq('user_id', userId);
-      await supabase.from('daily_sessions').delete().eq('user_id', userId);
-      await supabase.from('user_language_levels').delete().eq('user_id', userId);
+      await supabase.from('user_exercise_progress').delete().eq('user_id', userId);
+      await supabase.from('user_assessment_results').delete().eq('user_id', userId);
       await supabase.from('user_progress').delete().eq('user_id', userId);
-      
-      // Delete study groups and their items
-      const { data: groups } = await supabase
-        .from('study_groups')
-        .select('id')
-        .eq('user_id', userId);
-      
-      if (groups && groups.length > 0) {
-        const groupIds = groups.map(g => g.id);
-        await supabase.from('study_group_items').delete().in('group_id', groupIds);
-        await supabase.from('study_groups').delete().eq('user_id', userId);
-      }
-
-      // Delete profile
       await supabase.from('profiles').delete().eq('id', userId);
 
       // Sign out
@@ -115,10 +98,6 @@ const DeleteAccount: React.FC = () => {
             <li className="flex gap-2">
               <span className="text-destructive">•</span>
               <span>حذف سجل الجلسات والنشاطات</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-destructive">•</span>
-              <span>حذف مجموعات الدراسة الخاصة بك</span>
             </li>
             <li className="flex gap-2">
               <span className="text-destructive">•</span>

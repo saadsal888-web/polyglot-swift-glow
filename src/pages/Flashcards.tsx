@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Volume2, RotateCcw, Crown } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ArrowRight, ArrowLeft, Volume2, RotateCcw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useUnitWords } from '@/hooks/useWords';
+import { useAllWords } from '@/hooks/useWords';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,11 +11,15 @@ import { Button } from '@/components/ui/button';
 
 const Flashcards: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const unitId = searchParams.get('unit') || '';
   const { isPremium } = useSubscription();
 
-  const { data: words, isLoading } = useUnitWords(unitId);
+  const { data: allWords, isLoading } = useAllWords();
+
+  // Shuffle words once on load
+  const words = useMemo(() => {
+    if (!allWords) return [];
+    return [...allWords].sort(() => Math.random() - 0.5).slice(0, 20);
+  }, [allWords]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -95,7 +99,7 @@ const Flashcards: React.FC = () => {
                   className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-6 flex flex-col items-center justify-center text-white backface-hidden"
                   style={{ backfaceVisibility: 'hidden' }}
                 >
-                  <h2 className="text-3xl font-bold mb-2">{currentWord.word}</h2>
+                  <h2 className="text-3xl font-bold mb-2">{currentWord.word_en}</h2>
                   {currentWord.pronunciation && (
                     <p className="text-white/70 text-sm mb-4">{currentWord.pronunciation}</p>
                   )}
@@ -118,9 +122,9 @@ const Flashcards: React.FC = () => {
                   className="absolute inset-0 bg-card rounded-2xl p-6 flex flex-col items-center justify-center card-shadow backface-hidden"
                   style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                 >
-                  <h2 className="text-3xl font-bold text-foreground mb-2">{currentWord.translation}</h2>
-                  {currentWord.meaning && (
-                    <p className="text-muted-foreground text-sm text-center">{currentWord.meaning}</p>
+                  <h2 className="text-3xl font-bold text-foreground mb-2">{currentWord.word_ar}</h2>
+                  {currentWord.example_sentence && (
+                    <p className="text-muted-foreground text-sm text-center">{currentWord.example_sentence}</p>
                   )}
                   <p className="text-muted-foreground/60 text-xs mt-4">اضغط للقلب</p>
                 </div>

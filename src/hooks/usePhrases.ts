@@ -3,64 +3,58 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type DbPhrase = {
   id: string;
-  phrase: string;
-  translation: string;
+  phrase_en: string;
+  phrase_ar: string;
   pronunciation: string | null;
-  language: string | null;
-  difficulty: string | null;
+  difficulty: string;
   category: string | null;
-  word_id: string | null;
-  unit_id: string | null;
-  sort_order: number | null;
 };
 
-export const usePhrases = (language: string) => {
+export const useAllPhrases = () => {
   return useQuery({
-    queryKey: ['phrases', language],
+    queryKey: ['all-phrases'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('phrases')
         .select('*')
-        .eq('language', language)
-        .order('sort_order');
+        .order('created_at');
       
       if (error) throw error;
       return data as DbPhrase[];
     },
-    enabled: !!language,
   });
 };
 
-export const useWordPhrases = (wordId: string) => {
+export const usePhrasesByDifficulty = (difficulty: string) => {
   return useQuery({
-    queryKey: ['word-phrases', wordId],
+    queryKey: ['phrases-by-difficulty', difficulty],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('phrases')
         .select('*')
-        .eq('word_id', wordId)
-        .order('sort_order');
+        .eq('difficulty', difficulty)
+        .order('created_at');
       
       if (error) throw error;
       return data as DbPhrase[];
     },
-    enabled: !!wordId,
+    enabled: !!difficulty,
   });
 };
 
-export const useUnitPhrases = (unitId: string) => {
+export const usePhrasesByCategory = (category: string) => {
   return useQuery({
-    queryKey: ['unit-phrases', unitId],
+    queryKey: ['phrases-by-category', category],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('phrases')
         .select('*')
-        .eq('unit_id', unitId)
-        .order('sort_order');
+        .eq('category', category)
+        .order('created_at');
       
       if (error) throw error;
       return data as DbPhrase[];
     },
-    enabled: !!unitId,
+    enabled: !!category,
   });
 };

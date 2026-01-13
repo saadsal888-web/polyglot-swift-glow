@@ -36,7 +36,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({ children, fallback }) 
         اشترك في Premium للوصول لهذا المحتوى
       </p>
       {isInApp ? (
-        <Button onClick={subscribe} className="gradient-primary">
+        <Button onClick={() => subscribe()} className="gradient-primary">
           <Crown size={16} className="ml-2" />
           اشترك الآن
         </Button>
