@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type DbPhrase = {
   id: string;
@@ -56,6 +57,95 @@ export const usePhrasesByCategory = (category: string) => {
       return data as DbPhrase[];
     },
     enabled: !!category,
+  });
+};
+
+// Get count of phrases by difficulty
+export const usePhraseCountByDifficulty = () => {
+  return useQuery({
+    queryKey: ['phrase-count-by-difficulty'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('phrases')
+        .select('difficulty');
+      
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data?.forEach(phrase => {
+        counts[phrase.difficulty] = (counts[phrase.difficulty] || 0) + 1;
+      });
+      
+      return counts;
+    },
+  });
+};
+
+// Get count of learned phrases by difficulty
+export const useLearnedPhrasesCountByDifficulty = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: ['learned-phrases-count-by-difficulty', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_phrase_progress')
+        .select(`
+          phrase_id,
+          phrases:phrase_id (difficulty)
+        `)
+        .eq('user_id', userId!)
+        .eq('is_deleted', false)
+        .gte('mastery_level', 1);
+      
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data?.forEach(progress => {
+        const difficulty = (progress.phrases as any)?.difficulty;
+        if (difficulty) {
+          counts[difficulty] = (counts[difficulty] || 0) + 1;
+        }
+      });
+      
+      return counts;
+    },
+    enabled: !!userId,
+  });
+};
+
+// Get new phrases for learning (not yet learned by user)
+export const useNewPhrasesForLearning = (difficulty: string, limit: number = 5) => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['new-phrases-for-learning', difficulty, user?.id, limit],
+    queryFn: async () => {
+      // Get already learned phrase IDs
+      const { data: learnedData } = await supabase
+        .from('user_phrase_progress')
+        .select('phrase_id')
+        .eq('user_id', user!.id)
+        .gte('mastery_level', 1);
+      
+      const learnedIds = learnedData?.map(p => p.phrase_id).filter(Boolean) || [];
+      
+      // Get new phrases excluding learned ones
+      let query = supabase
+        .from('phrases')
+        .select('*')
+        .eq('difficulty', difficulty)
+        .order('created_at')
+        .limit(limit);
+      
+      if (learnedIds.length > 0) {
+        query = query.not('id', 'in', `(${learnedIds.join(',')})`);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data as DbPhrase[];
+    },
+    enabled: !!user?.id && !!difficulty,
   });
 };
 
@@ -164,6 +254,8 @@ export const useAddPhraseToTraining = () => {
       queryClient.invalidateQueries({ queryKey: ['training-phrases-count'] });
       queryClient.invalidateQueries({ queryKey: ['training-phrases'] });
       queryClient.invalidateQueries({ queryKey: ['deleted-phrases-count'] });
+      queryClient.invalidateQueries({ queryKey: ['learned-phrases-count-by-difficulty'] });
+      queryClient.invalidateQueries({ queryKey: ['new-phrases-for-learning'] });
     }
   });
 };
