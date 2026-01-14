@@ -1,76 +1,109 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Search, MessageCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight, MessageCircle, Dumbbell, Trash2, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useAllPhrases, DbPhrase } from '@/hooks/usePhrases';
+import { useAllPhrases, useAddPhraseToTraining, useDeletePhrase, useTrainingPhrasesCount, useDeletedPhrasesCount, DbPhrase } from '@/hooks/usePhrases';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
-const PhraseCard: React.FC<{ phrase: DbPhrase; index: number }> = ({ phrase, index }) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+interface PhraseCardProps {
+  phrase: DbPhrase;
+  index: number;
+  onTrain: () => void;
+  onDelete: () => void;
+  isInTraining?: boolean;
+  isDeleted?: boolean;
+}
 
+const PhraseCard: React.FC<PhraseCardProps> = ({ phrase, index, onTrain, onDelete, isInTraining, isDeleted }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
-      onClick={() => setIsFlipped(!isFlipped)}
-      className="bg-card rounded-xl p-4 card-shadow cursor-pointer active:scale-[0.98] transition-transform"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: index * 0.02 }}
+      className="bg-card rounded-xl p-3 card-shadow flex flex-col justify-between h-28"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <h3 className="font-bold text-base mb-1">{phrase.phrase_en}</h3>
-          {phrase.pronunciation && (
-            <p className="text-xs text-muted-foreground mb-1">{phrase.pronunciation}</p>
-          )}
-          <AnimatePresence>
-            {isFlipped && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <p className="text-primary font-semibold mt-2">{phrase.phrase_ar}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <span className={`text-xs px-2 py-0.5 rounded-full ${
-            phrase.difficulty === 'A1' ? 'bg-success/10 text-success' :
-            phrase.difficulty === 'A2' ? 'bg-primary/10 text-primary' :
-            phrase.difficulty === 'B1' ? 'bg-warning/10 text-warning' :
-            'bg-destructive/10 text-destructive'
-          }`}>
-            {phrase.difficulty}
-          </span>
-          {phrase.category && (
-            <span className="text-xs text-muted-foreground">{phrase.category}</span>
-          )}
-        </div>
+      <div className="flex-1 min-h-0">
+        <p className="font-bold text-sm leading-tight line-clamp-1">{phrase.phrase_en}</p>
+        <p className="text-primary text-xs font-semibold mt-1 line-clamp-1">{phrase.phrase_ar}</p>
+        {phrase.pronunciation && (
+          <p className="text-muted-foreground text-[10px] mt-0.5 line-clamp-1">{phrase.pronunciation}</p>
+        )}
       </div>
-      <p className="text-xs text-muted-foreground mt-2">
-        {isFlipped ? 'اضغط للإخفاء' : 'اضغط لعرض الترجمة'}
-      </p>
+      <div className="flex gap-1.5 mt-2">
+        <button
+          onClick={(e) => { e.stopPropagation(); onTrain(); }}
+          disabled={isInTraining}
+          className={`flex-1 flex items-center justify-center gap-1 text-[10px] py-1.5 rounded-lg font-medium transition-colors ${
+            isInTraining 
+              ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+              : 'bg-success/10 text-success active:bg-success/20'
+          }`}
+        >
+          <Dumbbell size={12} />
+          تدرب
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          disabled={isDeleted}
+          className={`flex-1 flex items-center justify-center gap-1 text-[10px] py-1.5 rounded-lg font-medium transition-colors ${
+            isDeleted
+              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+              : 'bg-destructive/10 text-destructive active:bg-destructive/20'
+          }`}
+        >
+          <Trash2 size={12} />
+          حذف
+        </button>
+      </div>
     </motion.div>
   );
 };
 
 const Phrases: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: phrases, isLoading } = useAllPhrases();
+  const { data: trainingCount } = useTrainingPhrasesCount(user?.id);
+  const { data: deletedCount } = useDeletedPhrasesCount(user?.id);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const addToTraining = useAddPhraseToTraining();
+  const deletePhrase = useDeletePhrase();
 
   const filteredPhrases = phrases?.filter(phrase =>
     phrase.phrase_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
     phrase.phrase_ar.includes(searchQuery)
   ) || [];
 
+  const handleTrain = (phraseId: string) => {
+    if (!user) {
+      toast.error('يجب تسجيل الدخول أولاً');
+      return;
+    }
+    addToTraining.mutate({ userId: user.id, phraseId }, {
+      onSuccess: () => toast.success('تمت الإضافة للتدريب'),
+      onError: () => toast.error('حدث خطأ')
+    });
+  };
+
+  const handleDelete = (phraseId: string) => {
+    if (!user) {
+      toast.error('يجب تسجيل الدخول أولاً');
+      return;
+    }
+    deletePhrase.mutate({ userId: user.id, phraseId }, {
+      onSuccess: () => toast.success('تم النقل للمحذوفات'),
+      onError: () => toast.error('حدث خطأ')
+    });
+  };
+
   return (
     <AppLayout>
-      <div className="p-4">
+      <div className="p-4 max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div />
@@ -83,55 +116,61 @@ const Phrases: React.FC = () => {
           </button>
         </div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-accent to-accent/80 rounded-2xl p-4 text-white mb-4"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/70 text-xs">إجمالي الجمل</p>
-              <p className="text-3xl font-bold">{phrases?.length || 0}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-white/70 text-xs">الحالة</p>
-              <p className="text-lg font-bold">{phrases?.length ? 'متاحة' : 'قريباً'}</p>
-            </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-card rounded-xl p-3 text-center card-shadow">
+            <p className="text-2xl font-bold text-foreground">{phrases?.length || 0}</p>
+            <p className="text-[10px] text-muted-foreground">إجمالي</p>
           </div>
-        </motion.div>
+          <button 
+            onClick={() => navigate('/train-phrases')}
+            className="bg-success/10 rounded-xl p-3 text-center active:scale-95 transition-transform"
+          >
+            <p className="text-2xl font-bold text-success">{trainingCount || 0}</p>
+            <p className="text-[10px] text-success">للتدريب</p>
+          </button>
+          <button 
+            onClick={() => navigate('/deleted-phrases')}
+            className="bg-destructive/10 rounded-xl p-3 text-center active:scale-95 transition-transform"
+          >
+            <p className="text-2xl font-bold text-destructive">{deletedCount || 0}</p>
+            <p className="text-[10px] text-destructive">محذوفة</p>
+          </button>
+        </div>
 
         {/* Search */}
         <div className="relative mb-4">
-          <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="ابحث عن جملة..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10"
+            className="text-right"
           />
         </div>
 
-        {/* Phrases List */}
+        {/* Phrases Grid */}
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map(i => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Skeleton key={i} className="h-28 rounded-xl" />
+            ))}
+          </div>
+        ) : filteredPhrases.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pb-4">
+            {filteredPhrases.map((phrase, index) => (
+              <PhraseCard 
+                key={phrase.id} 
+                phrase={phrase} 
+                index={index}
+                onTrain={() => handleTrain(phrase.id)}
+                onDelete={() => handleDelete(phrase.id)}
+              />
             ))}
           </div>
         ) : (
-          <div className="space-y-3 pb-4">
-            {filteredPhrases.length > 0 ? (
-              filteredPhrases.map((phrase, index) => (
-                <PhraseCard key={phrase.id} phrase={phrase} index={index} />
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <MessageCircle size={48} className="mx-auto text-muted-foreground/30 mb-4" />
-                <p className="text-muted-foreground">لا توجد جمل متاحة حالياً</p>
-                <p className="text-xs text-muted-foreground mt-1">سيتم إضافة الجمل قريباً</p>
-              </div>
-            )}
+          <div className="text-center py-12">
+            <MessageCircle size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-muted-foreground">لا توجد جمل متاحة حالياً</p>
           </div>
         )}
       </div>
