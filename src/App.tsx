@@ -51,7 +51,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
               <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-              <Route path="/placement-test" element={<ProtectedRoute><PlacementTest /></ProtectedRoute>} />
+              <Route path="/placement-test" element={<ProtectedRoute requireLevel={false}><PlacementTest /></ProtectedRoute>} />
               <Route path="/delete-account" element={<ProtectedRoute><DeleteAccount /></ProtectedRoute>} />
               <Route path="/difficult-words" element={<ProtectedRoute><DifficultWords /></ProtectedRoute>} />
               <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />

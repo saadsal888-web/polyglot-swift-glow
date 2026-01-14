@@ -7,10 +7,13 @@ import { QuestionCard } from '@/components/exercise/QuestionCard';
 import { OptionsGrid } from '@/components/exercise/OptionsGrid';
 import { ActionButtons } from '@/components/exercise/ActionButtons';
 import { OutOfHeartsModal } from '@/components/subscription/OutOfHeartsModal';
-import { useAllWords, DbWord } from '@/hooks/useWords';
+import { useLearnedWords, DbWord } from '@/hooks/useWords';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type ExerciseType = 'meaning' | 'translation';
 
@@ -56,9 +59,14 @@ const generateExercises = (words: DbWord[]): ExerciseData[] => {
 
 const Exercise: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { isPremium } = useSubscription();
 
-  const { data: words, isLoading } = useAllWords();
+  // استخدام الكلمات المتعلمة فقط بدلاً من كل الكلمات
+  const { data: learnedWordsData, isLoading } = useLearnedWords(user?.id);
+  
+  // تحويل البيانات - الـ hook يُرجع DbWord مباشرة مع إضافة mastery_level و times_practiced
+  const words: DbWord[] = learnedWordsData || [];
 
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -72,7 +80,7 @@ const Exercise: React.FC = () => {
     if (words && words.length >= 4) {
       setExercises(generateExercises(words));
     }
-  }, [words]);
+  }, [learnedWordsData]);
 
   const currentExercise = exercises[currentIndex];
 
@@ -131,18 +139,28 @@ const Exercise: React.FC = () => {
     );
   }
 
-  if (!currentExercise) {
+  // إذا لم تكن هناك كلمات متعلمة كافية
+  if (!currentExercise || words.length < 4) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh] p-4">
-          <div className="text-center space-y-3">
-            <p className="text-muted-foreground text-sm">لا توجد تمارين متاحة</p>
-            <button
-              onClick={() => navigate('/')}
-              className="btn-primary text-sm"
+          <div className="text-center space-y-4">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+              <BookOpen size={40} className="text-primary" />
+            </div>
+            <h2 className="text-xl font-bold">تحتاج لتعلم المزيد من الكلمات</h2>
+            <p className="text-muted-foreground text-sm">
+              تعلم على الأقل 4 كلمات لبدء التدريب
+            </p>
+            <p className="text-xs text-muted-foreground">
+              لديك حالياً {words.length} كلمة متعلمة
+            </p>
+            <Button
+              onClick={() => navigate('/words')}
+              className="mt-4"
             >
-              العودة للرئيسية
-            </button>
+              تعلم كلمات جديدة
+            </Button>
           </div>
         </div>
       </AppLayout>
