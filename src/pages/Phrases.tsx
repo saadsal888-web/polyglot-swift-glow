@@ -1,234 +1,211 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, MessageCircle, Search, Plus, Trash2, ChevronLeft } from 'lucide-react';
+import { ArrowRight, MessageCircle, ChevronLeft, Lock, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useAllPhrases, useAddPhraseToTraining, useDeletePhrase, useTrainingPhrasesCount, useDeletedPhrasesCount, DbPhrase } from '@/hooks/usePhrases';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
+import { usePhraseCountByDifficulty, useLearnedPhrasesCountByDifficulty } from '@/hooks/usePhrases';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
-interface ApplePhraseCardProps {
-  phrase: DbPhrase;
-  index: number;
-  onTrain: () => void;
-  onDelete: () => void;
-  isInTraining?: boolean;
-  isDeleted?: boolean;
+interface DifficultySection {
+  level: string;
+  label: string;
+  color: string;
+  bgColor: string;
+  icon: string;
 }
 
-const ApplePhraseCard: React.FC<ApplePhraseCardProps> = ({ 
-  phrase, 
-  index, 
-  onTrain, 
-  onDelete, 
-  isInTraining, 
-  isDeleted 
-}) => {
+const difficultySections: DifficultySection[] = [
+  { level: 'A1', label: 'مبتدئ', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', icon: '🟢' },
+  { level: 'A2', label: 'أساسي', color: 'text-blue-500', bgColor: 'bg-blue-500/10', icon: '🔵' },
+  { level: 'B1', label: 'متوسط', color: 'text-purple-500', bgColor: 'bg-purple-500/10', icon: '🟣' },
+  { level: 'B2', label: 'متقدم', color: 'text-orange-500', bgColor: 'bg-orange-500/10', icon: '🟠' },
+];
+
+const levelOrder = ['A1', 'A2', 'B1', 'B2'];
+
+const SectionCard: React.FC<{
+  section: DifficultySection;
+  totalCount: number;
+  learnedCount: number;
+  index: number;
+  onClick: () => void;
+  isUserLevel: boolean;
+  isLocked: boolean;
+}> = ({ section, totalCount, learnedCount, index, onClick, isUserLevel, isLocked }) => {
+  const progress = totalCount > 0 ? (learnedCount / totalCount) * 100 : 0;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
+    <motion.button
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.3 }}
-      className="apple-card apple-shadow-sm p-4"
+      transition={{ delay: index * 0.1 }}
+      onClick={isLocked ? undefined : onClick}
+      disabled={isLocked}
+      className={cn(
+        "w-full bg-card rounded-2xl p-5 card-shadow text-right transition-all",
+        !isLocked && "active:scale-[0.98]",
+        isLocked && "opacity-60 cursor-not-allowed",
+        isUserLevel && "ring-2 ring-primary ring-offset-2"
+      )}
     >
-      <div className="flex items-start gap-3">
-        <ChevronLeft size={18} className="text-muted-foreground/40 mt-1 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-base leading-relaxed text-foreground">
-            {phrase.phrase_en}
-          </p>
-          <p className="text-primary text-sm font-medium mt-1.5">
-            {phrase.phrase_ar}
-          </p>
-          {phrase.pronunciation && (
-            <p className="text-muted-foreground text-xs mt-1">
-              {phrase.pronunciation}
+      <div className="flex items-center justify-between">
+        {isLocked ? (
+          <Lock size={20} className="text-muted-foreground" />
+        ) : (
+          <ChevronLeft size={20} className="text-muted-foreground" />
+        )}
+        <div className="flex items-center gap-3 flex-1">
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center text-2xl",
+            section.bgColor,
+            isLocked && "grayscale"
+          )}>
+            {section.icon}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className={cn("text-lg font-bold", section.color, isLocked && "text-muted-foreground")}>
+                {section.level}
+              </span>
+              <span className={cn("font-semibold", isLocked && "text-muted-foreground")}>
+                {section.label}
+              </span>
+              {isUserLevel && (
+                <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full flex items-center gap-1">
+                  <Crown size={10} />
+                  مستواك
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {isLocked ? (
+                'أكمل المستوى السابق للفتح'
+              ) : (
+                `${totalCount} جملة • ${learnedCount} متعلمة`
+              )}
             </p>
-          )}
+          </div>
         </div>
       </div>
-      
-      {/* Apple Style Action Buttons */}
-      <div className="flex gap-2 mt-4 pt-3 border-t border-border/30">
-        <button
-          onClick={(e) => { e.stopPropagation(); onTrain(); }}
-          disabled={isInTraining}
-          className={`flex-1 apple-button ${
-            isInTraining 
-              ? 'bg-muted text-muted-foreground cursor-not-allowed' 
-              : 'bg-primary/10 text-primary active:bg-primary/20'
-          }`}
-        >
-          <Plus size={16} />
-          تدرب
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          disabled={isDeleted}
-          className={`flex-1 apple-button ${
-            isDeleted
-              ? 'bg-muted text-muted-foreground cursor-not-allowed'
-              : 'bg-secondary text-muted-foreground active:bg-secondary/80'
-          }`}
-        >
-          <Trash2 size={16} />
-          حذف
-        </button>
-      </div>
-    </motion.div>
+
+      {!isLocked && (
+        <div className="mt-4 h-2 bg-secondary rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
+            className={cn(
+              "h-full rounded-full",
+              section.level === 'A1' ? 'bg-emerald-500' :
+              section.level === 'A2' ? 'bg-blue-500' :
+              section.level === 'B1' ? 'bg-purple-500' :
+              'bg-orange-500'
+            )}
+          />
+        </div>
+      )}
+    </motion.button>
   );
 };
 
 const Phrases: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: phrases, isLoading } = useAllPhrases();
-  const { data: trainingCount } = useTrainingPhrasesCount(user?.id);
-  const { data: deletedCount } = useDeletedPhrasesCount(user?.id);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
-  
-  const addToTraining = useAddPhraseToTraining();
-  const deletePhrase = useDeletePhrase();
+  const { data: profile } = useUserProfile();
+  const { data: phraseCounts, isLoading: isLoadingCounts } = usePhraseCountByDifficulty();
+  const { data: learnedCounts, isLoading: isLoadingLearned } = useLearnedPhrasesCountByDifficulty(user?.id);
 
-  const filteredPhrases = phrases?.filter(phrase =>
-    phrase.phrase_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    phrase.phrase_ar.includes(searchQuery)
-  ) || [];
+  const isLoading = isLoadingCounts || isLoadingLearned;
+  const userLevel = profile?.current_level || 'A1';
+  const userLevelIndex = levelOrder.indexOf(userLevel);
 
-  const handleTrain = (phraseId: string) => {
-    if (!user) {
-      toast.error('يجب تسجيل الدخول أولاً');
-      return;
-    }
-    addToTraining.mutate({ userId: user.id, phraseId }, {
-      onSuccess: () => toast.success('تمت الإضافة للتدريب'),
-      onError: () => toast.error('حدث خطأ')
-    });
-  };
+  const totalPhrases = phraseCounts ? Object.values(phraseCounts).reduce((a, b) => a + b, 0) : 0;
+  const totalLearned = learnedCounts ? Object.values(learnedCounts).reduce((a, b) => a + b, 0) : 0;
 
-  const handleDelete = (phraseId: string) => {
-    if (!user) {
-      toast.error('يجب تسجيل الدخول أولاً');
-      return;
-    }
-    deletePhrase.mutate({ userId: user.id, phraseId }, {
-      onSuccess: () => toast.success('تم النقل للمحذوفات'),
-      onError: () => toast.error('حدث خطأ')
-    });
+  const isLevelAccessible = (level: string) => {
+    const levelIndex = levelOrder.indexOf(level);
+    return levelIndex <= userLevelIndex;
   };
 
   return (
     <AppLayout>
-      <div className="min-h-screen">
-        {/* Apple Large Title Header */}
-        <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/30">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button 
-              onClick={() => navigate('/')} 
-              className="w-10 h-10 rounded-full flex items-center justify-center active:bg-secondary transition-colors"
-            >
-              <ArrowRight size={22} className="text-primary" />
-            </button>
-            <div className="flex items-center gap-2">
-              <MessageCircle size={22} className="text-primary" />
-              <h1 className="large-title">الجمل</h1>
-            </div>
-            <button 
-              onClick={() => setShowSearch(!showSearch)}
-              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center active:bg-secondary/80 transition-colors"
-            >
-              <Search size={18} className="text-muted-foreground" />
-            </button>
+      <div className="p-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div />
+          <div className="flex items-center gap-2">
+            <MessageCircle size={20} className="text-primary" />
+            <h1 className="text-lg font-bold">الجمل</h1>
           </div>
-        </header>
-
-        <div className="p-4 space-y-4">
-          {/* Glassmorphism Stats Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-primary to-primary/80 rounded-3xl p-5 text-primary-foreground apple-shadow"
-          >
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-3xl font-bold">{phrases?.length || 0}</p>
-                <p className="text-primary-foreground/70 text-sm mt-0.5">إجمالي</p>
-              </div>
-              <button 
-                onClick={() => navigate('/train-phrases')}
-                className="active:scale-95 transition-transform"
-              >
-                <p className="text-3xl font-bold">{trainingCount || 0}</p>
-                <p className="text-primary-foreground/70 text-sm mt-0.5">للتدريب</p>
-              </button>
-              <button 
-                onClick={() => navigate('/deleted-phrases')}
-                className="active:scale-95 transition-transform"
-              >
-                <p className="text-3xl font-bold">{deletedCount || 0}</p>
-                <p className="text-primary-foreground/70 text-sm mt-0.5">محذوفة</p>
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Apple Search Bar */}
-          {showSearch && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="relative"
-            >
-              <Search 
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" 
-                size={18} 
-              />
-              <Input
-                placeholder="ابحث عن جملة..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10 bg-secondary/50 border-0 rounded-xl h-11 focus:ring-2 focus:ring-primary/20 text-right"
-                autoFocus
-              />
-            </motion.div>
-          )}
-
-          {/* Phrases List */}
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map(i => (
-                <Skeleton key={i} className="h-32 rounded-2xl" />
-              ))}
-            </div>
-          ) : filteredPhrases.length > 0 ? (
-            <div className="space-y-3 pb-4">
-              {filteredPhrases.map((phrase, index) => (
-                <ApplePhraseCard 
-                  key={phrase.id} 
-                  phrase={phrase} 
-                  index={index}
-                  onTrain={() => handleTrain(phrase.id)}
-                  onDelete={() => handleDelete(phrase.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-                <MessageCircle size={36} className="text-muted-foreground/40" />
-              </div>
-              <p className="text-muted-foreground text-lg font-medium">لا توجد جمل متاحة حالياً</p>
-              <p className="text-muted-foreground/60 text-sm mt-1">جرب البحث بكلمات مختلفة</p>
-            </motion.div>
-          )}
+          <button onClick={() => navigate('/')} className="p-2">
+            <ArrowRight size={20} />
+          </button>
         </div>
+
+        {/* Stats Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-white mb-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/70 text-sm">الجمل المتعلمة</p>
+              <p className="text-4xl font-bold">{totalLearned}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-white/70 text-sm">مستواك الحالي</p>
+              <p className="text-2xl font-bold">{userLevel}</p>
+            </div>
+          </div>
+          
+          {/* Overall Progress */}
+          <div className="mt-4">
+            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${totalPhrases > 0 ? (totalLearned / totalPhrases) * 100 : 0}%` }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="h-full bg-white rounded-full"
+              />
+            </div>
+            <p className="text-white/70 text-xs mt-2 text-center">
+              {totalPhrases > 0 ? Math.round((totalLearned / totalPhrases) * 100) : 0}% مكتمل
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Sections */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-28 rounded-2xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {difficultySections.map((section, index) => {
+              const isAccessible = isLevelAccessible(section.level);
+              const isUserCurrentLevel = section.level === userLevel;
+              
+              return (
+                <SectionCard
+                  key={section.level}
+                  section={section}
+                  totalCount={phraseCounts?.[section.level] || 0}
+                  learnedCount={learnedCounts?.[section.level] || 0}
+                  index={index}
+                  onClick={() => navigate(`/learn-phrases/${section.level}`)}
+                  isUserLevel={isUserCurrentLevel}
+                  isLocked={!isAccessible}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </AppLayout>
   );

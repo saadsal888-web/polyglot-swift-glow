@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Words from "./pages/Words";
 import LearnWords from "./pages/LearnWords";
 import Phrases from "./pages/Phrases";
+import LearnPhrases from "./pages/LearnPhrases";
 import DeletedPhrases from "./pages/DeletedPhrases";
 import TrainPhrases from "./pages/TrainPhrases";
 import Exercise from "./pages/Exercise";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/words" element={<ProtectedRoute><Words /></ProtectedRoute>} />
               <Route path="/learn/:difficulty" element={<ProtectedRoute><LearnWords /></ProtectedRoute>} />
               <Route path="/phrases" element={<ProtectedRoute><Phrases /></ProtectedRoute>} />
+              <Route path="/learn-phrases/:difficulty" element={<ProtectedRoute><LearnPhrases /></ProtectedRoute>} />
               <Route path="/deleted-phrases" element={<ProtectedRoute><DeletedPhrases /></ProtectedRoute>} />
               <Route path="/train-phrases" element={<ProtectedRoute><TrainPhrases /></ProtectedRoute>} />
               <Route path="/exercise" element={<ProtectedRoute><Exercise /></ProtectedRoute>} />
