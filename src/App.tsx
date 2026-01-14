@@ -8,6 +8,7 @@ import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Words from "./pages/Words";
+import LearnWords from "./pages/LearnWords";
 import Phrases from "./pages/Phrases";
 import Exercise from "./pages/Exercise";
 import Settings from "./pages/Settings";
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/words" element={<ProtectedRoute><Words /></ProtectedRoute>} />
+              <Route path="/learn/:difficulty" element={<ProtectedRoute><LearnWords /></ProtectedRoute>} />
               <Route path="/phrases" element={<ProtectedRoute><Phrases /></ProtectedRoute>} />
               <Route path="/exercise" element={<ProtectedRoute><Exercise /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

@@ -1,90 +1,90 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Search, Volume2, BookOpen } from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { ArrowRight, BookOpen, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useAllWords, DbWord } from '@/hooks/useWords';
+import { useWordCountByDifficulty, useLearnedWordsCount } from '@/hooks/useWords';
+import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
 
-const WordCard: React.FC<{ word: DbWord; index: number }> = ({ word, index }) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+interface DifficultySection {
+  level: string;
+  label: string;
+  color: string;
+  bgColor: string;
+  icon: string;
+}
 
-  const playAudio = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (word.audio_url) {
-      const audio = new Audio(word.audio_url);
-      audio.play();
-    }
-  };
+const difficultySections: DifficultySection[] = [
+  { level: 'A1', label: 'مبتدئ', color: 'text-success', bgColor: 'bg-success/10', icon: '🟢' },
+  { level: 'A2', label: 'أساسي', color: 'text-primary', bgColor: 'bg-primary/10', icon: '🔵' },
+  { level: 'B1', label: 'متوسط', color: 'text-warning', bgColor: 'bg-warning/10', icon: '🟡' },
+  { level: 'B2', label: 'متقدم', color: 'text-destructive', bgColor: 'bg-destructive/10', icon: '🔴' },
+];
+
+const SectionCard: React.FC<{
+  section: DifficultySection;
+  totalCount: number;
+  learnedCount: number;
+  index: number;
+  onClick: () => void;
+}> = ({ section, totalCount, learnedCount, index, onClick }) => {
+  const progress = totalCount > 0 ? (learnedCount / totalCount) * 100 : 0;
 
   return (
-    <motion.div
+    <motion.button
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
-      onClick={() => setIsFlipped(!isFlipped)}
-      className="bg-card rounded-xl p-4 card-shadow cursor-pointer active:scale-[0.98] transition-transform"
+      transition={{ delay: index * 0.1 }}
+      onClick={onClick}
+      className="w-full bg-card rounded-2xl p-5 card-shadow text-right active:scale-[0.98] transition-transform"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-bold text-base">{word.word_en}</h3>
-            {word.audio_url && (
-              <button
-                onClick={playAudio}
-                className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center"
-              >
-                <Volume2 size={12} className="text-primary" />
-              </button>
-            )}
+      <div className="flex items-center justify-between">
+        <ChevronLeft size={20} className="text-muted-foreground" />
+        <div className="flex items-center gap-3 flex-1">
+          <div className={`w-12 h-12 rounded-xl ${section.bgColor} flex items-center justify-center text-2xl`}>
+            {section.icon}
           </div>
-          {word.pronunciation && (
-            <p className="text-xs text-muted-foreground mb-1">{word.pronunciation}</p>
-          )}
-          <AnimatePresence>
-            {isFlipped && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <p className="text-primary font-semibold mt-2">{word.word_ar}</p>
-                {word.example_sentence && (
-                  <p className="text-xs text-muted-foreground mt-1 italic">
-                    {word.example_sentence}
-                  </p>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className={`text-lg font-bold ${section.color}`}>{section.level}</span>
+              <span className="font-semibold">{section.label}</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {totalCount} كلمة • {learnedCount} متعلمة
+            </p>
+          </div>
         </div>
-        <span className={`text-xs px-2 py-0.5 rounded-full ${
-          word.difficulty === 'A1' ? 'bg-success/10 text-success' :
-          word.difficulty === 'A2' ? 'bg-primary/10 text-primary' :
-          word.difficulty === 'B1' ? 'bg-warning/10 text-warning' :
-          'bg-destructive/10 text-destructive'
-        }`}>
-          {word.difficulty}
-        </span>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">
-        {isFlipped ? 'اضغط للإخفاء' : 'اضغط لعرض الترجمة'}
-      </p>
-    </motion.div>
+
+      {/* Progress Bar */}
+      <div className="mt-4 h-2 bg-secondary rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
+          className={`h-full rounded-full ${
+            section.level === 'A1' ? 'bg-success' :
+            section.level === 'A2' ? 'bg-primary' :
+            section.level === 'B1' ? 'bg-warning' :
+            'bg-destructive'
+          }`}
+        />
+      </div>
+    </motion.button>
   );
 };
 
 const Words: React.FC = () => {
   const navigate = useNavigate();
-  const { data: words, isLoading } = useAllWords();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
+  const { data: wordCounts, isLoading: isLoadingCounts } = useWordCountByDifficulty();
+  const { data: learnedCounts, isLoading: isLoadingLearned } = useLearnedWordsCount(user?.id);
 
-  const filteredWords = words?.filter(word =>
-    word.word_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    word.word_ar.includes(searchQuery)
-  ) || [];
+  const isLoading = isLoadingCounts || isLoadingLearned;
+
+  const totalWords = wordCounts ? Object.values(wordCounts).reduce((a, b) => a + b, 0) : 0;
+  const totalLearned = learnedCounts ? Object.values(learnedCounts).reduce((a, b) => a + b, 0) : 0;
 
   return (
     <AppLayout>
@@ -96,58 +96,63 @@ const Words: React.FC = () => {
             <BookOpen size={20} className="text-primary" />
             <h1 className="text-lg font-bold">الكلمات</h1>
           </div>
-          <button onClick={() => navigate(-1)} className="p-2">
+          <button onClick={() => navigate('/')} className="p-2">
             <ArrowRight size={20} />
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-4 text-white mb-4"
+          className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-white mb-6"
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/70 text-xs">إجمالي الكلمات</p>
-              <p className="text-3xl font-bold">{words?.length || 0}</p>
+              <p className="text-white/70 text-sm">الكلمات المتعلمة</p>
+              <p className="text-4xl font-bold">{totalLearned}</p>
             </div>
             <div className="text-right">
-              <p className="text-white/70 text-xs">المستوى</p>
-              <p className="text-lg font-bold">A1 - B2</p>
+              <p className="text-white/70 text-sm">إجمالي الكلمات</p>
+              <p className="text-2xl font-bold">{totalWords}</p>
             </div>
+          </div>
+          
+          {/* Overall Progress */}
+          <div className="mt-4">
+            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${totalWords > 0 ? (totalLearned / totalWords) * 100 : 0}%` }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="h-full bg-white rounded-full"
+              />
+            </div>
+            <p className="text-white/70 text-xs mt-2 text-center">
+              {totalWords > 0 ? Math.round((totalLearned / totalWords) * 100) : 0}% مكتمل
+            </p>
           </div>
         </motion.div>
 
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="ابحث عن كلمة..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10"
-          />
-        </div>
-
-        {/* Words List */}
+        {/* Sections */}
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map(i => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-28 rounded-2xl" />
             ))}
           </div>
         ) : (
-          <div className="space-y-3 pb-4">
-            {filteredWords.length > 0 ? (
-              filteredWords.map((word, index) => (
-                <WordCard key={word.id} word={word} index={index} />
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">لا توجد نتائج</p>
-              </div>
-            )}
+          <div className="space-y-4">
+            {difficultySections.map((section, index) => (
+              <SectionCard
+                key={section.level}
+                section={section}
+                totalCount={wordCounts?.[section.level] || 0}
+                learnedCount={learnedCounts?.[section.level] || 0}
+                index={index}
+                onClick={() => navigate(`/learn/${section.level}`)}
+              />
+            ))}
           </div>
         )}
       </div>
