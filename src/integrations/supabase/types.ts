@@ -422,6 +422,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           last_practiced_at: string | null
           mastery_level: number | null
           phrase_id: string | null
@@ -431,6 +432,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
           phrase_id?: string | null
@@ -440,6 +442,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
           phrase_id?: string | null
@@ -523,6 +526,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_deleted: boolean | null
           last_practiced_at: string | null
           mastery_level: number | null
           times_practiced: number | null
@@ -532,6 +536,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
           times_practiced?: number | null
@@ -541,6 +546,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
           times_practiced?: number | null
