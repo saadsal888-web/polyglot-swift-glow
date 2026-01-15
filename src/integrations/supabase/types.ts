@@ -348,6 +348,7 @@ export type Database = {
       }
       phrases: {
         Row: {
+          audio_url: string | null
           category: string | null
           created_at: string | null
           difficulty: string
@@ -357,6 +358,7 @@ export type Database = {
           pronunciation: string | null
         }
         Insert: {
+          audio_url?: string | null
           category?: string | null
           created_at?: string | null
           difficulty?: string
@@ -366,6 +368,7 @@ export type Database = {
           pronunciation?: string | null
         }
         Update: {
+          audio_url?: string | null
           category?: string | null
           created_at?: string | null
           difficulty?: string

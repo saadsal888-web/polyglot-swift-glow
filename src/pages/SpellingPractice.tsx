@@ -60,7 +60,11 @@ const SpellingPractice: React.FC = () => {
         }
       );
 
-      if (!response.ok) throw new Error("TTS failed");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("TTS error details:", errorData);
+        throw new Error(errorData.details || errorData.error || `TTS failed: ${response.status}`);
+      }
 
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);

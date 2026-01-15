@@ -12,7 +12,12 @@ serve(async (req) => {
 
   try {
     const { text, voiceId } = await req.json();
-    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY_1") || Deno.env.get("ELEVENLABS_API_KEY");
+    const keyFromConnector1 = Deno.env.get("ELEVENLABS_API_KEY_1");
+    const keyFromConnector = Deno.env.get("ELEVENLABS_API_KEY");
+    const ELEVENLABS_API_KEY = keyFromConnector1 || keyFromConnector;
+    
+    // Safe logging (no key values, just which env var is used)
+    console.log("TTS request received. Using key from:", keyFromConnector1 ? "ELEVENLABS_API_KEY_1" : (keyFromConnector ? "ELEVENLABS_API_KEY" : "NONE"));
 
     if (!ELEVENLABS_API_KEY) {
       throw new Error("ELEVENLABS_API_KEY is not configured");
