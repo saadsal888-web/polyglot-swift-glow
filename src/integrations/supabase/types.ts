@@ -728,6 +728,7 @@ export type Database = {
       words: {
         Row: {
           audio_url: string | null
+          category: string | null
           created_at: string | null
           difficulty: string
           example_sentence: string | null
@@ -739,6 +740,7 @@ export type Database = {
         }
         Insert: {
           audio_url?: string | null
+          category?: string | null
           created_at?: string | null
           difficulty?: string
           example_sentence?: string | null
@@ -750,6 +752,7 @@ export type Database = {
         }
         Update: {
           audio_url?: string | null
+          category?: string | null
           created_at?: string | null
           difficulty?: string
           example_sentence?: string | null
