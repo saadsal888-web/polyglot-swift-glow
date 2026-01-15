@@ -27,6 +27,7 @@ import MasteredWords from "./pages/MasteredWords";
 
 import Flashcards from "./pages/Flashcards";
 import SpellingPractice from "./pages/SpellingPractice";
+import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/subscription" element={<Subscription />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<Terms />} />
               
