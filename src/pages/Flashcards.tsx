@@ -4,14 +4,11 @@ import { motion } from 'framer-motion';
 import { ArrowRight, ArrowLeft, Volume2, RotateCcw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAllWords } from '@/hooks/useWords';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
 const Flashcards: React.FC = () => {
   const navigate = useNavigate();
-  const { isPremium } = useSubscription();
 
   const { data: allWords, isLoading } = useAllWords();
 
@@ -64,8 +61,7 @@ const Flashcards: React.FC = () => {
 
   return (
     <AppLayout>
-      <PremiumGate>
-        <div className="p-4">
+      <div className="p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div />
@@ -170,10 +166,9 @@ const Flashcards: React.FC = () => {
               >
                 <ArrowRight size={20} />
               </Button>
-            </div>
-          )}
         </div>
-      </PremiumGate>
+      )}
+    </div>
     </AppLayout>
   );
 };
