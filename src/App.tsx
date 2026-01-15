@@ -26,6 +26,7 @@ import DifficultWords from "./pages/DifficultWords";
 import MasteredWords from "./pages/MasteredWords";
 
 import Flashcards from "./pages/Flashcards";
+import SpellingPractice from "./pages/SpellingPractice";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/difficult-words" element={<ProtectedRoute><DifficultWords /></ProtectedRoute>} />
               <Route path="/mastered-words" element={<ProtectedRoute><MasteredWords /></ProtectedRoute>} />
               <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
+              <Route path="/spelling-practice" element={<ProtectedRoute><SpellingPractice /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

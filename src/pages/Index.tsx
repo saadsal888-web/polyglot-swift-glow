@@ -227,6 +227,27 @@ const Index: React.FC = () => {
             <Brain size={20} className="text-accent-foreground" />
           </div>
         </motion.button>
+
+        {/* Spelling Practice */}
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/spelling-practice')}
+          className="w-full bg-card rounded-2xl p-4 card-shadow flex items-center justify-between"
+        >
+          <ChevronLeft size={18} className="text-muted-foreground" />
+          <div className="flex-1 text-right mr-3">
+            <h3 className="font-bold text-sm">تدريب الكتابة ✍️</h3>
+            <p className="text-muted-foreground text-xs">
+              تخمين الكلمات حرفاً بحرف
+            </p>
+          </div>
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+            <span className="text-white text-lg">✍️</span>
+          </div>
+        </motion.button>
       </div>
     </AppLayout>
   );
