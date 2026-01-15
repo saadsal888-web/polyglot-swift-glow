@@ -79,7 +79,7 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
           label="المحذوفات"
           count={deletedWords}
           delay={0.45}
-          onClick={() => navigate('/deleted-words')}
+          onClick={() => navigate('/deleted-phrases')}
         />
         <LibraryItem
           icon={<CheckCircle size={18} className="text-success" />}

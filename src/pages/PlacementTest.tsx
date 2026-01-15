@@ -152,17 +152,10 @@ const PlacementTest: React.FC = () => {
       {/* Header */}
       <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b z-10">
         <div className="max-w-lg mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 hover:bg-muted rounded-full transition-colors"
-            >
-              <ChevronLeft size={24} className="rotate-180" />
-            </button>
+          <div className="flex items-center justify-center mb-3">
             <span className="text-sm text-muted-foreground">
               {currentQuestionIndex + 1} / {totalQuestions}
             </span>
-            <div className="w-10" />
           </div>
           <Progress value={progress} className="h-2" />
         </div>

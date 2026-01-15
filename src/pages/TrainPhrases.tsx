@@ -116,7 +116,7 @@ const TrainPhrases: React.FC = () => {
             <Dumbbell size={20} className="text-primary" />
             <h1 className="text-lg font-bold">تدريب الجمل</h1>
           </div>
-          <button onClick={() => navigate(-1)} className="p-2">
+          <button onClick={() => navigate('/phrases')} className="p-2">
             <ArrowRight size={20} />
           </button>
         </div>
