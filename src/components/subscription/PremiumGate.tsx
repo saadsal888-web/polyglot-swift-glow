@@ -11,7 +11,7 @@ interface PremiumGateProps {
 }
 
 export const PremiumGate: React.FC<PremiumGateProps> = ({ children, fallback }) => {
-  const { isPremium, isInApp, subscribe } = useSubscription();
+  const { isPremium, isInApp, subscribe, restorePurchases } = useSubscription();
   const navigate = useNavigate();
 
   if (isPremium) {
