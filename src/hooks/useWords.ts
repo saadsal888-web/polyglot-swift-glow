@@ -10,6 +10,7 @@ export type DbWord = {
   difficulty: string | null;
   image_url: string | null;
   audio_url: string | null;
+  category: string | null;
 };
 
 export const useAllWords = () => {

@@ -35,12 +35,37 @@ const generateExercises = (words: DbWord[]): ExerciseData[] => {
   return shuffledWords.map((word, index) => {
     const type: ExerciseType = index % 2 === 0 ? 'meaning' : 'translation';
     
-    // Get 2 random wrong options (3 total options)
-    const otherWords = words.filter(w => w.id !== word.id);
-    const shuffled = otherWords.sort(() => Math.random() - 0.5).slice(0, 2);
+    // 1. البحث عن كلمات من نفس الفئة أولاً
+    let wrongCandidates = words.filter(w => 
+      w.id !== word.id && 
+      w.category === word.category && 
+      word.category !== null
+    );
+    
+    // 2. إذا لم تكف كلمات الفئة، نضيف من نفس المستوى
+    if (wrongCandidates.length < 2) {
+      const sameDifficulty = words.filter(w => 
+        w.id !== word.id && 
+        w.difficulty === word.difficulty &&
+        !wrongCandidates.some(c => c.id === w.id)
+      );
+      wrongCandidates = [...wrongCandidates, ...sameDifficulty];
+    }
+    
+    // 3. إذا لا زالت غير كافية، نأخذ من أي كلمات
+    if (wrongCandidates.length < 2) {
+      const remaining = words.filter(w => 
+        w.id !== word.id && 
+        !wrongCandidates.some(c => c.id === w.id)
+      );
+      wrongCandidates = [...wrongCandidates, ...remaining];
+    }
+    
+    // 4. اختيار 2 خيارات خاطئة عشوائياً
+    const shuffledWrong = wrongCandidates.sort(() => Math.random() - 0.5).slice(0, 2);
     
     const correctAnswer = type === 'meaning' ? word.word_ar : word.word_en;
-    const wrongOptions = shuffled.map(w => 
+    const wrongOptions = shuffledWrong.map(w => 
       type === 'meaning' ? w.word_ar : w.word_en
     );
     
