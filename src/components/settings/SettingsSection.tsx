@@ -1,9 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut, Trash2, Crown } from 'lucide-react';
+import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface SettingsItemProps {
@@ -42,7 +41,6 @@ const SettingsItem: React.FC<SettingsItemProps> = ({
 export const SettingsSection: React.FC = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
-  const { isPremium } = useSubscription();
   const { toast } = useToast();
 
   const handleLogout = async () => {
@@ -56,24 +54,6 @@ export const SettingsSection: React.FC = () => {
 
   return (
     <div className="px-4 py-4 space-y-3">
-      {/* Subscription */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="bg-card rounded-xl overflow-hidden card-shadow"
-      >
-        <SettingsItem
-          icon={
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isPremium ? 'bg-gradient-to-br from-amber-500 to-amber-600' : 'bg-primary/10'}`}>
-              <Crown size={16} className={isPremium ? 'text-white' : 'text-primary'} />
-            </div>
-          }
-          label={isPremium ? 'أنت مشترك Premium ⭐' : 'الاشتراك المميز'}
-          onClick={() => navigate('/subscription')}
-          delay={0.1}
-        />
-      </motion.div>
 
       {/* Language & Level */}
       <motion.div

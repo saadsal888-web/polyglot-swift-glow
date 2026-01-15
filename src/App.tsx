@@ -24,7 +24,7 @@ import DeleteAccount from "./pages/DeleteAccount";
 import Auth from "./pages/Auth";
 import DifficultWords from "./pages/DifficultWords";
 import MasteredWords from "./pages/MasteredWords";
-import Subscription from "./pages/Subscription";
+
 import Flashcards from "./pages/Flashcards";
 import NotFound from "./pages/NotFound";
 
@@ -42,7 +42,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<Terms />} />
-              <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+              
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/words" element={<ProtectedRoute><Words /></ProtectedRoute>} />
               <Route path="/learn/:difficulty" element={<ProtectedRoute><LearnWords /></ProtectedRoute>} />

@@ -30,50 +30,14 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isPremium, setIsPremium] = useState(() => window.__IS_PREMIUM__ ?? false);
-  const [isInApp, setIsInApp] = useState(() => !!window.AndroidApp);
-  const [prices, setPrices] = useState<SubscriptionPrices | null>(() => window.__SUBSCRIPTION_PRICES__ ?? null);
-  const { user } = useAuth();
+  // التطبيق مجاني بالكامل - جميع الميزات متاحة للجميع
+  const [isPremium] = useState(true);
+  const [isInApp] = useState(false);
+  const [prices] = useState<SubscriptionPrices | null>(null);
 
-  useEffect(() => {
-    // Check if we're in the Android app
-    setIsInApp(!!window.AndroidApp);
-
-    // Listen for premium status changes from Android
-    const handlePremiumChange = (event: CustomEvent<boolean>) => {
-      setIsPremium(event.detail);
-    };
-
-    // Listen for prices updates from Android
-    const handlePricesUpdate = (event: CustomEvent<SubscriptionPrices>) => {
-      setPrices(event.detail);
-    };
-
-    window.addEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
-    window.addEventListener('pricesUpdated', handlePricesUpdate as EventListener);
-
-    // Check initial status
-    if (typeof window.__IS_PREMIUM__ === 'boolean') {
-      setIsPremium(window.__IS_PREMIUM__);
-    }
-
-    // Check initial prices
-    if (window.__SUBSCRIPTION_PRICES__) {
-      setPrices(window.__SUBSCRIPTION_PRICES__);
-    }
-
-    return () => {
-      window.removeEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
-      window.removeEventListener('pricesUpdated', handlePricesUpdate as EventListener);
-    };
-  }, [user]);
-
-  const subscribe = useCallback((productId?: string) => {
-    if (window.AndroidApp?.subscribe) {
-      window.AndroidApp.subscribe(productId);
-    } else {
-      console.log('Subscription only available in app');
-    }
+  const subscribe = useCallback(() => {
+    // التطبيق مجاني - لا حاجة للاشتراك
+    console.log('App is free - no subscription needed');
   }, []);
 
   return (
