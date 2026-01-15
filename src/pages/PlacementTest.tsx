@@ -185,10 +185,10 @@ const PlacementTest: React.FC = () => {
 
             {/* Question */}
             <div className="text-center mb-8">
-              <h2 className="text-xl font-bold mb-2 leading-relaxed">
+              <h2 className="text-xl font-bold mb-2 leading-relaxed" dir="ltr">
                 {currentQuestion?.question}
               </h2>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-sm" dir="rtl">
                 {currentQuestion?.questionAr}
               </p>
             </div>
