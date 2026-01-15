@@ -63,7 +63,7 @@ const DeletedPhrases: React.FC = () => {
             <Trash2 size={20} className="text-destructive" />
             <h1 className="text-lg font-bold">الجمل المحذوفة</h1>
           </div>
-          <button onClick={() => navigate(-1)} className="p-2">
+          <button onClick={() => navigate('/phrases')} className="p-2">
             <ArrowRight size={20} />
           </button>
         </div>

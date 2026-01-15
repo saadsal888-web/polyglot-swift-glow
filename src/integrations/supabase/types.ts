@@ -79,6 +79,133 @@ export type Database = {
           },
         ]
       }
+      conversation_lines: {
+        Row: {
+          audio_url: string | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          line_ar: string
+          line_en: string
+          line_order: number
+          speaker: string
+          speaker_gender: string
+        }
+        Insert: {
+          audio_url?: string | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          line_ar: string
+          line_en: string
+          line_order: number
+          speaker: string
+          speaker_gender?: string
+        }
+        Update: {
+          audio_url?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          line_ar?: string
+          line_en?: string
+          line_order?: number
+          speaker?: string
+          speaker_gender?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_lines_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_vocabulary: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          definition_en: string | null
+          example_sentence: string | null
+          id: string
+          word_ar: string
+          word_en: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          definition_en?: string | null
+          example_sentence?: string | null
+          id?: string
+          word_ar: string
+          word_en: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          definition_en?: string | null
+          example_sentence?: string | null
+          id?: string
+          word_ar?: string
+          word_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_vocabulary_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          category: string
+          created_at: string | null
+          description_ar: string | null
+          description_en: string | null
+          difficulty: string
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          speakers_gender: string
+          title_ar: string
+          title_en: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          difficulty?: string
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          speakers_gender?: string
+          title_ar: string
+          title_en: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          difficulty?: string
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          speakers_gender?: string
+          title_ar?: string
+          title_en?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       lesson_exercises: {
         Row: {
           correct_answer: string
@@ -370,6 +497,41 @@ export type Database = {
             columns: ["assessment_id"]
             isOneToOne: false
             referencedRelation: "level_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_conversation_progress: {
+        Row: {
+          completed: boolean | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          practiced_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          practiced_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          practiced_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_conversation_progress_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]

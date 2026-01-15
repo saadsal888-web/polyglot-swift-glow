@@ -70,7 +70,7 @@ const Flashcards: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div />
             <h1 className="text-lg font-bold">بطاقات الفلاش</h1>
-            <button onClick={() => navigate(-1)} className="p-2">
+            <button onClick={() => navigate('/')} className="p-2">
               <ArrowRight size={20} />
             </button>
           </div>
