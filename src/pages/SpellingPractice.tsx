@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ChevronRight, Volume2, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -14,10 +14,12 @@ const SpellingPractice: React.FC = () => {
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealedCount, setRevealedCount] = useState(0);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   const currentWord = learnedWords?.[currentIndex];
   const letters = currentWord?.word_en?.split('') || [];
   const totalWords = learnedWords?.length || 0;
+  const isComplete = revealedCount === letters.length && letters.length > 0;
 
   const speakLetter = useCallback((letter: string) => {
     if ('speechSynthesis' in window) {
@@ -30,7 +32,7 @@ const SpellingPractice: React.FC = () => {
     }
   }, []);
 
-  const speakWord = useCallback(() => {
+  const speakWordFallback = useCallback(() => {
     if ('speechSynthesis' in window && currentWord) {
       speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(currentWord.word_en);
@@ -39,6 +41,55 @@ const SpellingPractice: React.FC = () => {
       speechSynthesis.speak(utterance);
     }
   }, [currentWord]);
+
+  const speakWordWithElevenLabs = useCallback(async (word: string) => {
+    if (isPlayingAudio) return;
+    
+    setIsPlayingAudio(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: word }),
+        }
+      );
+
+      if (!response.ok) throw new Error("TTS failed");
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        setIsPlayingAudio(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        setIsPlayingAudio(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      await audio.play();
+    } catch (error) {
+      console.error("ElevenLabs TTS error:", error);
+      speakWordFallback();
+      setIsPlayingAudio(false);
+    }
+  }, [isPlayingAudio, speakWordFallback]);
+
+  // Auto-play word when all letters are revealed
+  useEffect(() => {
+    if (isComplete && currentWord) {
+      speakWordWithElevenLabs(currentWord.word_en);
+    }
+  }, [isComplete, currentWord?.word_en]);
 
   const handleTap = useCallback(() => {
     if (revealedCount < letters.length) {
@@ -58,8 +109,6 @@ const SpellingPractice: React.FC = () => {
   const handleRestart = useCallback(() => {
     setRevealedCount(0);
   }, []);
-
-  const isComplete = revealedCount === letters.length;
 
   if (isLoading) {
     return (
@@ -130,11 +179,14 @@ const SpellingPractice: React.FC = () => {
           whileTap={{ scale: 0.95 }}
           onClick={(e) => {
             e.stopPropagation();
-            speakWord();
+            if (currentWord) {
+              speakWordWithElevenLabs(currentWord.word_en);
+            }
           }}
-          className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-8"
+          disabled={isPlayingAudio}
+          className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-8 transition-opacity ${isPlayingAudio ? 'opacity-50' : ''}`}
         >
-          <Volume2 size={32} className="text-primary" />
+          <Volume2 size={32} className={`text-primary ${isPlayingAudio ? 'animate-pulse' : ''}`} />
         </motion.button>
 
         {/* Letters Display */}
