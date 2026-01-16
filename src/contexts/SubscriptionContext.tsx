@@ -1,4 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { 
+  checkPremiumStatus, 
+  getOfferings, 
+  purchasePackage, 
+  restorePurchases as revenueCatRestore,
+  addCustomerInfoUpdateListener 
+} from '@/services/revenuecat';
+import { PurchasesPackage } from '@revenuecat/purchases-capacitor';
 
 declare global {
   interface Window {
@@ -24,9 +33,10 @@ interface SubscriptionContextType {
   isPremium: boolean;
   isInApp: boolean;
   isLoading: boolean;
-  subscribe: (productId?: string) => void;
-  restorePurchases: () => void;
+  subscribe: (packageToPurchase?: PurchasesPackage) => Promise<void>;
+  restorePurchases: () => Promise<void>;
   prices: SubscriptionPrices | null;
+  packages: PurchasesPackage[];
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -48,6 +58,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   
   const [isLoading, setIsLoading] = useState(true);
   const [isInApp, setIsInApp] = useState(false);
+  const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [prices, setPrices] = useState<SubscriptionPrices | null>(() => {
     if (typeof window !== 'undefined' && window.__SUBSCRIPTION_PRICES__) {
       return window.__SUBSCRIPTION_PRICES__;
@@ -56,72 +67,129 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   });
 
   useEffect(() => {
-    // Detect if running inside Android WebView
-    const checkInApp = () => {
-      const hasAndroidApp = typeof window !== 'undefined' && window.AndroidApp !== undefined;
-      setIsInApp(hasAndroidApp);
-      return hasAndroidApp;
-    };
+    const isNative = Capacitor.isNativePlatform();
+    const hasAndroidApp = typeof window !== 'undefined' && window.AndroidApp !== undefined;
+    setIsInApp(isNative || hasAndroidApp);
 
-    const inApp = checkInApp();
+    const initSubscription = async () => {
+      if (isNative) {
+        // Use RevenueCat Capacitor plugin
+        try {
+          const premiumStatus = await checkPremiumStatus();
+          setIsPremium(premiumStatus);
+          localStorage.setItem('isPremium', String(premiumStatus));
 
-    // Set up bridge functions for Android app to call
-    window.setPremiumStatus = (status: boolean) => {
-      console.log('[Subscription] Premium status updated:', status);
-      setIsPremium(status);
-      localStorage.setItem('isPremium', String(status));
-    };
+          const availablePackages = await getOfferings();
+          setPackages(availablePackages);
 
-    window.setSubscriptionPrices = (newPrices: SubscriptionPrices) => {
-      console.log('[Subscription] Prices updated:', newPrices);
-      setPrices(newPrices);
-    };
+          // Convert packages to prices format
+          if (availablePackages.length > 0) {
+            const pricesFromPackages: SubscriptionPrices = {};
+            availablePackages.forEach(pkg => {
+              if (pkg.packageType === 'MONTHLY') {
+                pricesFromPackages.monthly = pkg.product.priceString;
+                pricesFromPackages.monthlyProductId = pkg.product.identifier;
+              } else if (pkg.packageType === 'ANNUAL') {
+                pricesFromPackages.yearly = pkg.product.priceString;
+                pricesFromPackages.yearlyProductId = pkg.product.identifier;
+              }
+            });
+            setPrices(pricesFromPackages);
+          }
 
-    // Listen for custom events from Android
-    const handlePremiumChange = (e: CustomEvent<{ isPremium: boolean }>) => {
-      console.log('[Subscription] Premium change event:', e.detail);
-      setIsPremium(e.detail.isPremium);
-      localStorage.setItem('isPremium', String(e.detail.isPremium));
-    };
+          // Listen for subscription changes
+          addCustomerInfoUpdateListener((newPremiumStatus) => {
+            setIsPremium(newPremiumStatus);
+            localStorage.setItem('isPremium', String(newPremiumStatus));
+          });
+        } catch (error) {
+          console.error('[Subscription] Error initializing:', error);
+        }
+      } else if (hasAndroidApp) {
+        // Fallback: Use WebView bridge for Android
+        window.setPremiumStatus = (status: boolean) => {
+          console.log('[Subscription] Premium status updated via bridge:', status);
+          setIsPremium(status);
+          localStorage.setItem('isPremium', String(status));
+        };
 
-    const handlePricesUpdate = (e: CustomEvent<SubscriptionPrices>) => {
-      console.log('[Subscription] Prices update event:', e.detail);
-      setPrices(e.detail);
-    };
+        window.setSubscriptionPrices = (newPrices: SubscriptionPrices) => {
+          console.log('[Subscription] Prices updated via bridge:', newPrices);
+          setPrices(newPrices);
+        };
 
-    window.addEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
-    window.addEventListener('pricesUpdated', handlePricesUpdate as EventListener);
+        // Listen for custom events from Android
+        const handlePremiumChange = (e: CustomEvent<{ isPremium: boolean }>) => {
+          setIsPremium(e.detail.isPremium);
+          localStorage.setItem('isPremium', String(e.detail.isPremium));
+        };
 
-    // If not in app, set loading to false after a short delay
-    const timer = setTimeout(() => {
+        const handlePricesUpdate = (e: CustomEvent<SubscriptionPrices>) => {
+          setPrices(e.detail);
+        };
+
+        window.addEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
+        window.addEventListener('pricesUpdated', handlePricesUpdate as EventListener);
+
+        return () => {
+          window.removeEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
+          window.removeEventListener('pricesUpdated', handlePricesUpdate as EventListener);
+        };
+      }
+
       setIsLoading(false);
-    }, inApp ? 2000 : 500);
-
-    return () => {
-      window.removeEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
-      window.removeEventListener('pricesUpdated', handlePricesUpdate as EventListener);
-      clearTimeout(timer);
     };
+
+    const timer = setTimeout(() => {
+      initSubscription();
+    }, isNative ? 500 : 300);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  const subscribe = useCallback((productId?: string) => {
-    console.log('[Subscription] Subscribe called with productId:', productId);
+  const subscribe = useCallback(async (packageToPurchase?: PurchasesPackage) => {
+    console.log('[Subscription] Subscribe called');
     
-    if (window.AndroidApp?.subscribe) {
-      // Call native Android purchase flow
-      window.AndroidApp.subscribe(productId || 'annual');
+    if (Capacitor.isNativePlatform()) {
+      // Use RevenueCat Capacitor plugin
+      if (packageToPurchase) {
+        const success = await purchasePackage(packageToPurchase);
+        if (success) {
+          setIsPremium(true);
+          localStorage.setItem('isPremium', 'true');
+        }
+      } else if (packages.length > 0) {
+        // Default to first available package (usually annual)
+        const defaultPackage = packages.find(p => p.packageType === 'ANNUAL') || packages[0];
+        const success = await purchasePackage(defaultPackage);
+        if (success) {
+          setIsPremium(true);
+          localStorage.setItem('isPremium', 'true');
+        }
+      }
+    } else if (window.AndroidApp?.subscribe) {
+      // Fallback: Use WebView bridge
+      window.AndroidApp.subscribe('annual');
     } else {
-      console.warn('[Subscription] AndroidApp.subscribe not available');
+      console.warn('[Subscription] No subscription method available');
     }
-  }, []);
+  }, [packages]);
 
-  const restorePurchases = useCallback(() => {
+  const restorePurchases = useCallback(async () => {
     console.log('[Subscription] Restore purchases called');
     
-    if (window.AndroidApp?.restorePurchases) {
+    if (Capacitor.isNativePlatform()) {
+      // Use RevenueCat Capacitor plugin
+      const success = await revenueCatRestore();
+      if (success) {
+        setIsPremium(true);
+        localStorage.setItem('isPremium', 'true');
+      }
+    } else if (window.AndroidApp?.restorePurchases) {
+      // Fallback: Use WebView bridge
       window.AndroidApp.restorePurchases();
     } else {
-      console.warn('[Subscription] AndroidApp.restorePurchases not available');
+      console.warn('[Subscription] No restore method available');
     }
   }, []);
 
@@ -132,7 +200,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       isLoading,
       subscribe, 
       restorePurchases,
-      prices 
+      prices,
+      packages
     }}>
       {children}
     </SubscriptionContext.Provider>
