@@ -6,7 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { presentPaywall, restorePurchases as revenueCatRestore } from '@/services/revenuecat';
+import { presentPaywall, restorePurchases as revenueCatRestore, isDespiaPlatform } from '@/services/revenuecat';
 
 const features = [
   {
@@ -45,7 +45,10 @@ const Subscription: React.FC = () => {
   }, [isPremium, isLoading, navigate]);
 
   const handleSubscribe = async () => {
-    if (isNative) {
+    if (isDespiaPlatform()) {
+      // Despia handles everything internally
+      await presentPaywall();
+    } else if (isNative) {
       const success = await presentPaywall();
       if (success) {
         window.location.reload();
