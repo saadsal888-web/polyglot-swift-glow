@@ -30,7 +30,7 @@ const features = [
 
 const Subscription: React.FC = () => {
   const navigate = useNavigate();
-  const { isPremium, isInApp, isLoading, subscribe, restorePurchases, prices } = useSubscription();
+  const { isPremium, isInApp, isLoading, subscribe, restorePurchases, prices, packages } = useSubscription();
 
   // Redirect to home if already premium
   useEffect(() => {
@@ -39,9 +39,15 @@ const Subscription: React.FC = () => {
     }
   }, [isPremium, isLoading, navigate]);
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     if (isInApp) {
-      subscribe(prices?.yearlyProductId || 'annual');
+      // Find the annual package from packages array
+      const annualPackage = packages.find(p => p.packageType === 'ANNUAL') || packages[0];
+      if (annualPackage) {
+        await subscribe(annualPackage);
+      } else {
+        await subscribe();
+      }
     } else {
       // For web, show a message or redirect
       console.log('Subscription only available in app');
@@ -54,8 +60,8 @@ const Subscription: React.FC = () => {
     }
   };
 
-  // Get dynamic price or show placeholder
-  const yearlyPrice = prices?.yearly || '٤٩.٩٩ ر.س/سنة';
+  // Get dynamic price from RevenueCat or default to 79 SAR
+  const yearlyPrice = prices?.yearly || '٧٩ ر.س/سنة';
 
   if (isLoading) {
     return (
