@@ -64,7 +64,7 @@ const Index: React.FC = () => {
         window.location.reload();
       }
     } else {
-      alert('شاشة الدفع تظهر على التطبيق فقط');
+      navigate('/subscription');
     }
   };
 

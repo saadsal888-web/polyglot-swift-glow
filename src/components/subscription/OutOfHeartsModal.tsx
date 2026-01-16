@@ -2,8 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Crown, Home, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
+import { presentPaywall } from '@/services/revenuecat';
 
 interface OutOfHeartsModalProps {
   isOpen: boolean;
@@ -12,7 +14,7 @@ interface OutOfHeartsModalProps {
 
 export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-  const { isInApp, subscribe, prices, packages } = useSubscription();
+  const { prices } = useSubscription();
 
   if (!isOpen) return null;
 
@@ -20,11 +22,13 @@ export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onCl
   const yearlyPrice = prices?.yearly || '٧٩ ر.س/سنة';
 
   const handleSubscribe = async () => {
-    if (packages.length > 0) {
-      const annualPackage = packages.find(p => p.packageType === 'ANNUAL') || packages[0];
-      await subscribe(annualPackage);
+    if (Capacitor.isNativePlatform()) {
+      const success = await presentPaywall();
+      if (success) {
+        window.location.reload();
+      }
     } else {
-      await subscribe();
+      navigate('/subscription');
     }
   };
 
@@ -62,23 +66,13 @@ export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onCl
         </div>
 
         <div className="space-y-3">
-          {isInApp ? (
-            <Button
-              onClick={handleSubscribe}
-              className="w-full h-12 text-base font-bold gradient-primary"
-            >
-              <Crown size={18} className="ml-2" />
-              اشترك للقلوب اللامحدودة
-            </Button>
-          ) : (
-            <Button
-              onClick={() => navigate('/subscription')}
-              className="w-full h-12 text-base font-bold gradient-primary"
-            >
-              <Crown size={18} className="ml-2" />
-              عرض الباقات
-            </Button>
-          )}
+          <Button
+            onClick={handleSubscribe}
+            className="w-full h-12 text-base font-bold gradient-primary"
+          >
+            <Crown size={18} className="ml-2" />
+            اشترك للقلوب اللامحدودة
+          </Button>
 
           <Button
             onClick={handleGoHome}
