@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Crown, Check, Globe, WifiOff, Ban, Heart, Sparkles, RotateCcw } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { presentPaywall, restorePurchases as revenueCatRestore } from '@/services/revenuecat';
@@ -49,6 +50,8 @@ const Subscription: React.FC = () => {
       if (success) {
         window.location.reload();
       }
+    } else {
+      toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
     }
   };
 
@@ -169,17 +172,10 @@ const Subscription: React.FC = () => {
             <Button
               onClick={handleSubscribe}
               className="w-full bg-white text-amber-600 hover:bg-white/90 font-bold py-4 text-sm rounded-lg"
-              disabled={!isNative}
             >
               <Crown className="w-4 h-4 ml-2" />
               ابدأ الاشتراك السنوي
             </Button>
-            
-            {!isNative && (
-              <p className="text-center text-amber-100 text-[10px] mt-2">
-                الاشتراك متاح فقط من خلال التطبيق الأصلي
-              </p>
-            )}
           </div>
         </div>
       </motion.div>

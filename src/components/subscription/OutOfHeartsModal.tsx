@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Heart, Crown, Home, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import { toast } from 'sonner';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
 import { presentPaywall } from '@/services/revenuecat';
@@ -28,7 +29,7 @@ export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onCl
         window.location.reload();
       }
     } else {
-      navigate('/subscription');
+      toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
     }
   };
 
