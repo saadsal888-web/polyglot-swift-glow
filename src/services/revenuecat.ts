@@ -1,7 +1,6 @@
 import { Purchases, LOG_LEVEL, CustomerInfo, PurchasesPackage } from '@revenuecat/purchases-capacitor';
 import { RevenueCatUI, PAYWALL_RESULT } from '@revenuecat/purchases-capacitor-ui';
 import { Capacitor } from '@capacitor/core';
-import despia from 'despia-native';
 
 // RevenueCat API Key for Android
 const REVENUECAT_API_KEY = 'goog_bMFmFxxiCJjnoSGibgsriBPqFkQ';
@@ -15,18 +14,27 @@ export interface RevenueCatState {
   customerInfo: CustomerInfo | null;
 }
 
+// Declare despia as a global function (injected by Despia container)
+declare global {
+  interface Window {
+    despia?: (command: string) => void;
+  }
+}
+
 /**
  * Check if running inside Despia container
  */
 export const isDespiaPlatform = (): boolean => {
-  return typeof navigator !== 'undefined' && navigator.userAgent.includes('despia');
+  return typeof window !== 'undefined' && typeof window.despia === 'function';
 };
 
 /**
  * Launch RevenueCat Paywall using Despia SDK
  */
 export const launchDespiaPaywall = (): void => {
-  despia('revenuecat://launchPaywall?offering=default');
+  if (window.despia) {
+    window.despia('revenuecat://launchPaywall?offering=default');
+  }
 };
 
 /**
