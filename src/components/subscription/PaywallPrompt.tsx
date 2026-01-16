@@ -2,8 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Crown, Lock, BookOpen, MessageCircle, Heart, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { presentPaywall } from '@/services/revenuecat';
 
 interface PaywallPromptProps {
   reason: 'words_limit' | 'phrases_limit' | 'hearts_depleted';
@@ -36,7 +38,7 @@ const reasonContent = {
 
 export const PaywallPrompt: React.FC<PaywallPromptProps> = ({ reason, onSkip }) => {
   const navigate = useNavigate();
-  const { isInApp, subscribe, prices, packages } = useSubscription();
+  const { prices } = useSubscription();
 
   const content = reasonContent[reason];
   const IconComponent = content.icon;
@@ -45,9 +47,11 @@ export const PaywallPrompt: React.FC<PaywallPromptProps> = ({ reason, onSkip }) 
   const yearlyPrice = prices?.yearly || '٧٩ ر.س/سنة';
 
   const handleSubscribe = async () => {
-    if (isInApp && packages.length > 0) {
-      const annualPackage = packages.find(p => p.packageType === 'ANNUAL') || packages[0];
-      await subscribe(annualPackage);
+    if (Capacitor.isNativePlatform()) {
+      const success = await presentPaywall();
+      if (success) {
+        window.location.reload();
+      }
     } else {
       navigate('/subscription');
     }
