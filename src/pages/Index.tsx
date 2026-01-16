@@ -2,7 +2,7 @@ import React from 'react';
 import { User, Crown, Heart, BookOpen, MessageCircle, Target, Flame, Brain, ChevronLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -16,6 +16,7 @@ import { presentPaywall, isDespiaPlatform } from '@/services/revenuecat';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
 
@@ -58,14 +59,23 @@ const Index: React.FC = () => {
   const streak = userProgress?.streak_days || 0;
   const progressPercentage = Math.min(100, Math.round((dailyProgress / dailyGoal) * 100));
 
+  const refreshUserData = async () => {
+    // Invalidate profile and progress queries to refetch from Supabase
+    await queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+    await queryClient.invalidateQueries({ queryKey: ['user-progress', user?.id] });
+  };
+
   const handleSubscribeClick = async () => {
     if (isDespiaPlatform()) {
       // Despia handles everything internally
       await presentPaywall();
+      // Refresh after a short delay to allow webhook to process
+      setTimeout(refreshUserData, 2000);
     } else if (Capacitor.isNativePlatform()) {
       const success = await presentPaywall();
       if (success) {
-        window.location.reload();
+        toast.success('تم تفعيل اشتراكك بنجاح! 🎉');
+        await refreshUserData();
       }
     } else {
       toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');

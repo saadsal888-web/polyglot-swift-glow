@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import { Crown, Check, Globe, WifiOff, Ban, Heart, Sparkles, RotateCcw } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { presentPaywall, restorePurchases as revenueCatRestore, isDespiaPlatform } from '@/services/revenuecat';
 
 const features = [
@@ -33,9 +35,16 @@ const features = [
 
 const Subscription: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { isPremium, isLoading, prices } = useSubscription();
 
   const isNative = Capacitor.isNativePlatform();
+
+  const refreshUserData = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+    await queryClient.invalidateQueries({ queryKey: ['user-progress', user?.id] });
+  };
 
   // Redirect to home if already premium
   useEffect(() => {
@@ -46,12 +55,14 @@ const Subscription: React.FC = () => {
 
   const handleSubscribe = async () => {
     if (isDespiaPlatform()) {
-      // Despia handles everything internally
       await presentPaywall();
+      setTimeout(refreshUserData, 2000);
     } else if (isNative) {
       const success = await presentPaywall();
       if (success) {
-        window.location.reload();
+        toast.success('تم تفعيل اشتراكك بنجاح! 🎉');
+        await refreshUserData();
+        navigate('/', { replace: true });
       }
     } else {
       toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
@@ -60,8 +71,12 @@ const Subscription: React.FC = () => {
 
   const handleRestore = async () => {
     if (isNative) {
-      await revenueCatRestore();
-      window.location.reload();
+      const success = await revenueCatRestore();
+      if (success) {
+        toast.success('تم استعادة مشترياتك بنجاح! 🎉');
+        await refreshUserData();
+        navigate('/', { replace: true });
+      }
     }
   };
 
