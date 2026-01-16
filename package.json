@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-"build": "vite build && npx cap add android",    "build:dev": "vite build --mode development",
-    "lint": "eslint .",
+"build": "npm install @capacitor/cli && vite build && npx cap add android",    "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
