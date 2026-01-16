@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Crown, Check, Globe, WifiOff, Ban, Heart, Sparkles, RotateCcw } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { presentPaywall, restorePurchases as revenueCatRestore } from '@/services/revenuecat';
 
 const features = [
   {
@@ -30,7 +32,9 @@ const features = [
 
 const Subscription: React.FC = () => {
   const navigate = useNavigate();
-  const { isPremium, isInApp, isLoading, subscribe, restorePurchases, prices, packages } = useSubscription();
+  const { isPremium, isLoading, prices } = useSubscription();
+
+  const isNative = Capacitor.isNativePlatform();
 
   // Redirect to home if already premium
   useEffect(() => {
@@ -40,23 +44,18 @@ const Subscription: React.FC = () => {
   }, [isPremium, isLoading, navigate]);
 
   const handleSubscribe = async () => {
-    if (isInApp) {
-      // Find the annual package from packages array
-      const annualPackage = packages.find(p => p.packageType === 'ANNUAL') || packages[0];
-      if (annualPackage) {
-        await subscribe(annualPackage);
-      } else {
-        await subscribe();
+    if (isNative) {
+      const success = await presentPaywall();
+      if (success) {
+        window.location.reload();
       }
-    } else {
-      // For web, show a message or redirect
-      console.log('Subscription only available in app');
     }
   };
 
-  const handleRestore = () => {
-    if (isInApp) {
-      restorePurchases();
+  const handleRestore = async () => {
+    if (isNative) {
+      await revenueCatRestore();
+      window.location.reload();
     }
   };
 
@@ -170,15 +169,15 @@ const Subscription: React.FC = () => {
             <Button
               onClick={handleSubscribe}
               className="w-full bg-white text-amber-600 hover:bg-white/90 font-bold py-4 text-sm rounded-lg"
-              disabled={!isInApp}
+              disabled={!isNative}
             >
               <Crown className="w-4 h-4 ml-2" />
               ابدأ الاشتراك السنوي
             </Button>
             
-            {!isInApp && (
+            {!isNative && (
               <p className="text-center text-amber-100 text-[10px] mt-2">
-                الاشتراك متاح فقط من خلال التطبيق
+                الاشتراك متاح فقط من خلال التطبيق الأصلي
               </p>
             )}
           </div>
@@ -193,7 +192,7 @@ const Subscription: React.FC = () => {
         className="px-6 pb-4 space-y-2"
       >
         {/* Restore Purchases */}
-        {isInApp && (
+        {isNative && (
           <Button
             variant="ghost"
             onClick={handleRestore}
