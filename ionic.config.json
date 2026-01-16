@@ -1,0 +1,7 @@
+{
+  "name": "Lixoo",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
