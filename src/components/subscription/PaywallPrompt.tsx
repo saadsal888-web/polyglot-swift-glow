@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Crown, Lock, BookOpen, MessageCircle, Heart, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { presentPaywall } from '@/services/revenuecat';
@@ -37,7 +37,6 @@ const reasonContent = {
 };
 
 export const PaywallPrompt: React.FC<PaywallPromptProps> = ({ reason, onSkip }) => {
-  const navigate = useNavigate();
   const { prices } = useSubscription();
 
   const content = reasonContent[reason];
@@ -53,7 +52,7 @@ export const PaywallPrompt: React.FC<PaywallPromptProps> = ({ reason, onSkip }) 
         window.location.reload();
       }
     } else {
-      navigate('/subscription');
+      toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
     }
   };
 

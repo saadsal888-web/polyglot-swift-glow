@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Capacitor } from '@capacitor/core';
+import { toast } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -64,7 +65,7 @@ const Index: React.FC = () => {
         window.location.reload();
       }
     } else {
-      navigate('/subscription');
+      toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
     }
   };
 
