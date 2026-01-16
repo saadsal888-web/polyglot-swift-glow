@@ -190,23 +190,23 @@ const LearnWords: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="p-4 min-h-screen flex flex-col">
+      <div className="p-3 min-h-screen flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="text-sm text-muted-foreground">
             {currentIndex + 1} / {totalWords}
           </div>
           <div className="flex items-center gap-2">
-            <BookOpen size={18} className="text-primary" />
-            <span className="font-semibold">تعلم {difficulty}</span>
+            <BookOpen size={16} className="text-primary" />
+            <span className="font-semibold text-sm">تعلم {difficulty}</span>
           </div>
-          <button onClick={() => navigate('/words')} className="p-2">
-            <ArrowRight size={20} />
+          <button onClick={() => navigate('/words')} className="p-1.5">
+            <ArrowRight size={18} />
           </button>
         </div>
 
         {/* Progress */}
-        <ProgressBar progress={progress} className="mb-6" />
+        <ProgressBar progress={progress} className="mb-4" />
 
         {/* Word Card */}
         <div className="flex-1 flex flex-col items-center justify-center">
@@ -220,29 +220,29 @@ const LearnWords: React.FC = () => {
               exit={{ opacity: 0, x: -50 }}
               className="w-full max-w-sm"
             >
-              <div className="bg-card rounded-3xl p-8 card-shadow text-center">
+              <div className="bg-card rounded-2xl p-5 card-shadow text-center">
                 {/* Audio Button */}
                 {currentWord?.audio_url && (
                   <button
                     onClick={playAudio}
-                    className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6 active:scale-95 transition-transform"
+                    className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 active:scale-95 transition-transform"
                   >
-                    <Volume2 size={28} className="text-primary" />
+                    <Volume2 size={22} className="text-primary" />
                   </button>
                 )}
 
                 {/* English Word */}
-                <h1 className="text-3xl font-bold mb-2">{currentWord?.word_en}</h1>
+                <h1 className="text-2xl font-bold mb-1">{currentWord?.word_en}</h1>
 
                 {/* Pronunciation */}
                 {currentWord?.pronunciation && (
-                  <p className="text-muted-foreground mb-4">{currentWord.pronunciation}</p>
+                  <p className="text-muted-foreground text-sm mb-3">{currentWord.pronunciation}</p>
                 )}
 
                 {/* Translation (tap to reveal) */}
                 <button
                   onClick={() => setShowTranslation(!showTranslation)}
-                  className="w-full py-4 rounded-xl bg-secondary/50 mb-4"
+                  className="w-full py-3 rounded-xl bg-secondary/50 mb-3"
                 >
                   <AnimatePresence mode="wait">
                     {showTranslation ? (
@@ -251,7 +251,7 @@ const LearnWords: React.FC = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="text-xl font-semibold text-primary"
+                        className="text-lg font-semibold text-primary"
                       >
                         {currentWord?.word_ar}
                       </motion.p>
@@ -285,20 +285,20 @@ const LearnWords: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 mt-6 pb-4">
+        <div className="flex gap-3 mt-4 pb-3">
           <Button
             onClick={handleSkip}
             variant="outline"
-            className="flex-1 h-14 text-lg gap-2"
+            className="flex-1 h-11 text-base gap-1.5"
           >
-            <SkipForward size={20} />
+            <SkipForward size={18} />
             تخطي
           </Button>
           <Button
             onClick={handleLearn}
-            className="flex-1 h-14 text-lg gap-2 bg-success hover:bg-success/90"
+            className="flex-1 h-11 text-base gap-1.5 bg-success hover:bg-success/90"
           >
-            <Check size={20} />
+            <Check size={18} />
             تعلم
           </Button>
         </div>
