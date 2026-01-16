@@ -387,6 +387,8 @@ export type Database = {
           current_unit: number | null
           full_name: string | null
           id: string
+          is_premium: boolean | null
+          revenuecat_entitlement: string | null
           total_xp: number | null
           updated_at: string | null
           username: string | null
@@ -398,6 +400,8 @@ export type Database = {
           current_unit?: number | null
           full_name?: string | null
           id: string
+          is_premium?: boolean | null
+          revenuecat_entitlement?: string | null
           total_xp?: number | null
           updated_at?: string | null
           username?: string | null
@@ -409,6 +413,8 @@ export type Database = {
           current_unit?: number | null
           full_name?: string | null
           id?: string
+          is_premium?: boolean | null
+          revenuecat_entitlement?: string | null
           total_xp?: number | null
           updated_at?: string | null
           username?: string | null
