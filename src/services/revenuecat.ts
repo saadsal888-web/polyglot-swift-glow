@@ -1,8 +1,9 @@
 import { Purchases, LOG_LEVEL, CustomerInfo, PurchasesPackage } from '@revenuecat/purchases-capacitor';
+import { RevenueCatUI, PAYWALL_RESULT } from '@revenuecat/purchases-capacitor-ui';
 import { Capacitor } from '@capacitor/core';
 
-// Replace with your actual RevenueCat API Key
-const REVENUECAT_API_KEY = 'YOUR_REVENUECAT_API_KEY';
+// RevenueCat API Key for Android
+const REVENUECAT_API_KEY = 'goog_bMFmFxxiCJjnoSGibgsriBPqFkQ';
 
 // Premium entitlement identifier
 const PREMIUM_ENTITLEMENT_ID = 'premium';
@@ -144,4 +145,32 @@ export const addCustomerInfoUpdateListener = (
     const isPremium = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID] !== undefined;
     callback(isPremium);
   });
+};
+
+/**
+ * Present the RevenueCat paywall UI
+ * Only works on native platforms (Android)
+ */
+export const presentPaywall = async (): Promise<boolean> => {
+  if (!Capacitor.isNativePlatform()) {
+    console.log('[RevenueCat] Not a native platform, cannot show paywall');
+    return false;
+  }
+
+  try {
+    const result = await RevenueCatUI.presentPaywall();
+    
+    // Check if user purchased
+    if (result.result === PAYWALL_RESULT.PURCHASED || 
+        result.result === PAYWALL_RESULT.RESTORED) {
+      console.log('[RevenueCat] Paywall: User purchased/restored');
+      return true;
+    }
+    
+    console.log('[RevenueCat] Paywall closed without purchase:', result.result);
+    return false;
+  } catch (error) {
+    console.error('[RevenueCat] Paywall error:', error);
+    return false;
+  }
 };

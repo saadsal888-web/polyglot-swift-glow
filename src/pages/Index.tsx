@@ -3,6 +3,7 @@ import { User, Crown, Heart, BookOpen, MessageCircle, Target, Flame, Brain, Chev
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Capacitor } from '@capacitor/core';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -10,6 +11,7 @@ import { useAllWords } from '@/hooks/useWords';
 import { useAllPhrases } from '@/hooks/usePhrases';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressBar } from '@/components/common/ProgressBar';
+import { presentPaywall } from '@/services/revenuecat';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
@@ -55,6 +57,17 @@ const Index: React.FC = () => {
   const streak = userProgress?.streak_days || 0;
   const progressPercentage = Math.min(100, Math.round((dailyProgress / dailyGoal) * 100));
 
+  const handleSubscribeClick = async () => {
+    if (Capacitor.isNativePlatform()) {
+      const success = await presentPaywall();
+      if (success) {
+        window.location.reload();
+      }
+    } else {
+      alert('شاشة الدفع تظهر على التطبيق فقط');
+    }
+  };
+
   return (
     <AppLayout>
       <div className="px-4 py-4 space-y-4">
@@ -78,7 +91,7 @@ const Index: React.FC = () => {
             </span>
           ) : (
             <motion.button
-              onClick={() => navigate('/subscription')}
+              onClick={handleSubscribeClick}
               whileTap={{ scale: 0.95 }}
               className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1"
             >
