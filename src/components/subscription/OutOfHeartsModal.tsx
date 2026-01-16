@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Crown, Home } from 'lucide-react';
+import { Heart, Crown, Home, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,20 @@ interface OutOfHeartsModalProps {
 
 export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
-  const { isInApp, subscribe } = useSubscription();
+  const { isInApp, subscribe, prices, packages } = useSubscription();
 
   if (!isOpen) return null;
 
-  const handleSubscribe = () => {
-    subscribe();
+  // السعر من RevenueCat أو الافتراضي
+  const yearlyPrice = prices?.yearly || '٧٩ ر.س/سنة';
+
+  const handleSubscribe = async () => {
+    if (packages.length > 0) {
+      const annualPackage = packages.find(p => p.packageType === 'ANNUAL') || packages[0];
+      await subscribe(annualPackage);
+    } else {
+      await subscribe();
+    }
   };
 
   const handleGoHome = () => {
@@ -43,9 +51,15 @@ export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onCl
         </div>
 
         <h2 className="text-xl font-bold mb-2">انتهت القلوب! 💔</h2>
-        <p className="text-muted-foreground text-sm mb-6">
-          اشترك في Premium للحصول على قلوب لا نهائية وتعلم بدون حدود
+        <p className="text-muted-foreground text-sm mb-4">
+          اشترك في Premium للحصول على قلوب لا نهائية
         </p>
+
+        {/* Price Badge */}
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl px-4 py-2 mb-6 inline-flex items-center gap-2">
+          <Sparkles size={16} className="text-white" />
+          <span className="text-white font-bold">{yearlyPrice}</span>
+        </div>
 
         <div className="space-y-3">
           {isInApp ? (

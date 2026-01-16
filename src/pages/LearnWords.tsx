@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Volume2, Check, SkipForward, BookOpen, Trophy } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useNewWordsForLearning, DbWord } from '@/hooks/useWords';
+import { useNewWordsForLearning } from '@/hooks/useWords';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useFreeLimits } from '@/hooks/useFreeLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ProgressBar } from '@/components/common/ProgressBar';
+import { PaywallPrompt } from '@/components/subscription/PaywallPrompt';
 import { toast } from 'sonner';
 
 const difficultyLabels: Record<string, string> = {
@@ -22,6 +25,8 @@ const LearnWords: React.FC = () => {
   const navigate = useNavigate();
   const { difficulty } = useParams<{ difficulty: string }>();
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
+  const { hasReachedWordsLimit, wordsRemaining } = useFreeLimits(user?.id);
   const { data: words, isLoading } = useNewWordsForLearning(difficulty || 'A1');
   
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -103,6 +108,18 @@ const LearnWords: React.FC = () => {
           <Skeleton className="h-64 w-full rounded-2xl" />
           <Skeleton className="h-12 w-full rounded-xl" />
         </div>
+      </AppLayout>
+    );
+  }
+
+  // Check free limit for non-premium users
+  if (!isPremium && hasReachedWordsLimit) {
+    return (
+      <AppLayout>
+        <PaywallPrompt 
+          reason="words_limit" 
+          onSkip={() => navigate('/words')} 
+        />
       </AppLayout>
     );
   }
