@@ -12,7 +12,7 @@ import { useAllWords } from '@/hooks/useWords';
 import { useAllPhrases } from '@/hooks/usePhrases';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressBar } from '@/components/common/ProgressBar';
-import { presentPaywall } from '@/services/revenuecat';
+import { presentPaywall, isDespiaPlatform } from '@/services/revenuecat';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
@@ -59,7 +59,10 @@ const Index: React.FC = () => {
   const progressPercentage = Math.min(100, Math.round((dailyProgress / dailyGoal) * 100));
 
   const handleSubscribeClick = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (isDespiaPlatform()) {
+      // Despia handles everything internally
+      await presentPaywall();
+    } else if (Capacitor.isNativePlatform()) {
       const success = await presentPaywall();
       if (success) {
         window.location.reload();

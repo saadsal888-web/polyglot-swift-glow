@@ -6,7 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
-import { presentPaywall } from '@/services/revenuecat';
+import { presentPaywall, isDespiaPlatform } from '@/services/revenuecat';
 
 interface OutOfHeartsModalProps {
   isOpen: boolean;
@@ -23,7 +23,10 @@ export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onCl
   const yearlyPrice = prices?.yearly || '٧٩ ر.س/سنة';
 
   const handleSubscribe = async () => {
-    if (Capacitor.isNativePlatform()) {
+    if (isDespiaPlatform()) {
+      // Despia handles everything internally
+      await presentPaywall();
+    } else if (Capacitor.isNativePlatform()) {
       const success = await presentPaywall();
       if (success) {
         window.location.reload();
