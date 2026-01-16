@@ -3,3 +3,7 @@ project_id = "wiyetipqsuzhretlmfio"
 [functions.elevenlabs-tts]
 enabled = true
 verify_jwt = false
+
+[functions.revenuecat-webhook]
+enabled = true
+verify_jwt = false
