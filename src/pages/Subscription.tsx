@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Smartphone, ArrowRight } from 'lucide-react';
+import { Lock, Smartphone, ArrowRight, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -8,34 +8,45 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 /**
  * Subscription page - No payment processing on website
  * Shows "download app" message for browser users
+ * Triggers native paywall when AndroidApp is available
  */
 const Subscription: React.FC = () => {
   const navigate = useNavigate();
-  const { isInWebView, isPremium } = usePremiumGate();
+  const { hasAndroidApp, isPremium } = usePremiumGate();
 
   // If already premium, redirect to home
-  if (isPremium) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (isPremium) {
+      navigate('/');
+    }
+  }, [isPremium, navigate]);
 
-  // If in WebView, the native app should handle subscriptions
-  if (isInWebView) {
+  // Trigger native paywall when AndroidApp is available
+  useEffect(() => {
+    if (hasAndroidApp && window.AndroidApp?.requestPaywall) {
+      window.AndroidApp.requestPaywall();
+    }
+  }, [hasAndroidApp]);
+
+  // AndroidApp available: Show loading state while native paywall is triggered
+  if (hasAndroidApp) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
         <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', duration: 0.6 }}
+          className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-6"
+        >
+          <Crown size={48} className="text-white animate-pulse" />
+        </motion.div>
+        <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center"
+          className="text-muted-foreground text-center"
         >
-          <p className="text-muted-foreground mb-4">
-            الاشتراك يتم من خلال التطبيق
-          </p>
-          <Button onClick={() => navigate('/')} variant="outline">
-            <ArrowRight size={18} className="ml-2" />
-            العودة للرئيسية
-          </Button>
-        </motion.div>
+          جاري فتح الاشتراك...
+        </motion.p>
       </div>
     );
   }
