@@ -7,11 +7,13 @@ import { useNewWordsForLearning } from '@/hooks/useWords';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useFreeLimits } from '@/hooks/useFreeLimits';
+import { useGuestLearning } from '@/hooks/useGuestLearning';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ProgressBar } from '@/components/common/ProgressBar';
 import { PaywallPrompt } from '@/components/subscription/PaywallPrompt';
+import { AuthRequiredModal } from '@/components/auth/AuthRequiredModal';
 import { toast } from 'sonner';
 
 const difficultyLabels: Record<string, string> = {
@@ -26,7 +28,13 @@ const LearnWords: React.FC = () => {
   const { difficulty } = useParams<{ difficulty: string }>();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
-  const { hasReachedWordsLimit, wordsRemaining } = useFreeLimits(user?.id);
+  const { hasReachedWordsLimit } = useFreeLimits(user?.id);
+  const { 
+    guestWordsLearned, 
+    hasReachedGuestLimit, 
+    incrementGuestWords,
+    GUEST_LIMIT 
+  } = useGuestLearning();
   const { data: words, isLoading } = useNewWordsForLearning(difficulty || 'A1');
   
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -34,6 +42,7 @@ const LearnWords: React.FC = () => {
   const [skippedCount, setSkippedCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const currentWord = words?.[currentIndex];
@@ -52,10 +61,25 @@ const LearnWords: React.FC = () => {
   };
 
   const handleLearn = async () => {
-    if (!user || !currentWord) return;
+    if (!currentWord) return;
 
+    // Guest user logic
+    if (!user) {
+      incrementGuestWords();
+      setLearnedCount(prev => prev + 1);
+      
+      // Check if guest has reached limit AFTER incrementing
+      if (guestWordsLearned + 1 >= GUEST_LIMIT) {
+        setShowAuthModal(true);
+        return;
+      }
+      
+      goToNext();
+      return;
+    }
+
+    // Logged-in user logic
     try {
-      // Save word to user_word_progress with mastery_level = 1
       const { error } = await supabase
         .from('user_word_progress')
         .upsert({
@@ -112,8 +136,8 @@ const LearnWords: React.FC = () => {
     );
   }
 
-  // Check free limit for non-premium users
-  if (!isPremium && hasReachedWordsLimit) {
+  // Check free limit for logged-in non-premium users
+  if (user && !isPremium && hasReachedWordsLimit) {
     return (
       <AppLayout>
         <PaywallPrompt 
@@ -302,6 +326,12 @@ const LearnWords: React.FC = () => {
             تعلم
           </Button>
         </div>
+
+        {/* Auth Required Modal for guests */}
+        <AuthRequiredModal 
+          isOpen={showAuthModal} 
+          wordsLearned={GUEST_LIMIT}
+        />
       </div>
     </AppLayout>
   );
