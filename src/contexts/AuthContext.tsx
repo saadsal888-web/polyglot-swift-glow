@@ -2,6 +2,18 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+declare global {
+  interface Window {
+    AndroidApp?: {
+      subscribe: (productId?: string) => void;
+      restorePurchases: () => void;
+      requestPaywall: () => void;
+      logIn: (appUserID: string) => void;
+      logOut: () => void;
+    };
+  }
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -33,6 +45,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Notify Android app on sign in
+        if (session?.user && window.AndroidApp?.logIn) {
+          console.log('[Auth] Calling AndroidApp.logIn:', session.user.id);
+          window.AndroidApp.logIn(session.user.id);
+        }
+
+        // Handle sign out event
+        if (event === 'SIGNED_OUT') {
+          console.log('[Auth] User signed out, clearing premium and calling AndroidApp.logOut');
+          try {
+            localStorage.removeItem('isPremium');
+          } catch (e) {
+            console.warn('[Auth] Could not clear isPremium:', e);
+          }
+          if (window.AndroidApp?.logOut) {
+            window.AndroidApp.logOut();
+          }
+        }
       }
     );
 
@@ -41,6 +72,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Notify Android app on session restore
+      if (session?.user && window.AndroidApp?.logIn) {
+        console.log('[Auth] Session restored, calling AndroidApp.logIn:', session.user.id);
+        window.AndroidApp.logIn(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -79,6 +116,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Clear premium status before signing out
+    try {
+      localStorage.removeItem('isPremium');
+    } catch (e) {
+      console.warn('[Auth] Could not clear isPremium:', e);
+    }
+
+    // Notify Android app
+    if (window.AndroidApp?.logOut) {
+      console.log('[Auth] Calling AndroidApp.logOut');
+      window.AndroidApp.logOut();
+    }
+
     await supabase.auth.signOut();
   };
 
