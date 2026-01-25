@@ -16,33 +16,32 @@ const DifficultWords: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Get user word progress with words
+      // Get user word progress with words - filter by is_difficult
       const { data: progress } = await supabase
         .from('user_word_progress')
         .select(`
           word_id,
           times_practiced,
           mastery_level,
+          is_difficult,
           words!inner(id, word_en, word_ar, pronunciation)
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('is_difficult', true);
 
       if (!progress) return [];
 
-      // Filter difficult words: low mastery level and practiced
-      return progress
-        .filter(p => p.mastery_level !== null && p.mastery_level < 3 && p.times_practiced && p.times_practiced > 0)
-        .map(p => {
-          const words = p.words as { id: string; word_en: string; word_ar: string; pronunciation: string | null };
-          return {
-            id: words.id,
-            word: words.word_en,
-            translation: words.word_ar,
-            pronunciation: words.pronunciation,
-            masteryLevel: p.mastery_level,
-            timesPracticed: p.times_practiced,
-          };
-        });
+      return progress.map(p => {
+        const words = p.words as { id: string; word_en: string; word_ar: string; pronunciation: string | null };
+        return {
+          id: words.id,
+          word: words.word_en,
+          translation: words.word_ar,
+          pronunciation: words.pronunciation,
+          masteryLevel: p.mastery_level,
+          timesPracticed: p.times_practiced,
+        };
+      });
     },
   });
 
