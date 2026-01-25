@@ -58,8 +58,8 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
     }
   };
 
-  // Speak word repeatedly with pauses between
-  const speakWordRepeatedly = async (wordToSpeak: string, count: number) => {
+  // Speak word infinitely with pauses between
+  const speakWordInfinitely = async (wordToSpeak: string) => {
     isStoppedRef.current = false;
     
     try {
@@ -71,10 +71,8 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
         .maybeSingle();
 
       if (data?.audio_url) {
-        for (let i = 0; i < count; i++) {
-          // Check if stopped
-          if (isStoppedRef.current) break;
-          
+        // Infinite loop until stopped
+        while (!isStoppedRef.current) {
           const audio = new Audio(data.audio_url);
           currentAudioRef.current = audio;
           
@@ -85,8 +83,8 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
           });
           
           // Pause between repetitions
-          if (i < count - 1 && !isStoppedRef.current) {
-            await new Promise(resolve => setTimeout(resolve, 400));
+          if (!isStoppedRef.current) {
+            await new Promise(resolve => setTimeout(resolve, 800));
           }
         }
       }
@@ -140,36 +138,21 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
     return () => clearInterval(interval);
   }, [shouldShow]);
 
-  // Show listen button near the end
-  useEffect(() => {
-    if (!shouldShow) return;
-    
-    const timer = setTimeout(() => {
-      setShowListenButton(true);
-    }, duration - 1500);
-    
-    return () => clearTimeout(timer);
-  }, [shouldShow, duration]);
-
   useEffect(() => {
     if (isVisible && word) {
       setShouldShow(true);
       setCardPositionIndex(0);
-      setShowListenButton(false);
+      setShowListenButton(true); // Always show listen button
       
-      speakWordRepeatedly(word, repeatCount);
-      
-      const timer = setTimeout(() => {
-        setShouldShow(false);
-        onComplete();
-      }, duration);
+      speakWordInfinitely(word);
 
       return () => {
-        clearTimeout(timer);
-        stopAudio(); // Stop audio on cleanup
+        stopAudio();
       };
+    } else {
+      setShouldShow(false);
     }
-  }, [isVisible, duration, onComplete, word, repeatCount]);
+  }, [isVisible, word]);
 
   const handleSkip = () => {
     stopAudio();
@@ -301,18 +284,10 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
             transition={{ delay: 0.3 }}
             onClick={handleStop}
             whileTap={{ scale: 0.98 }}
-            className="absolute bottom-8 left-6 right-6 bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-2xl text-lg shadow-lg transition-colors"
+            className="absolute bottom-12 left-6 right-6 bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-2xl text-lg shadow-lg transition-colors"
           >
             إيقاف
           </motion.button>
-
-          {/* Progress bar at very bottom */}
-          <motion.div
-            className="absolute bottom-0 left-0 h-1 bg-primary"
-            initial={{ width: '0%' }}
-            animate={{ width: '100%' }}
-            transition={{ duration: duration / 1000, ease: 'linear' }}
-          />
         </motion.div>
       )}
     </AnimatePresence>

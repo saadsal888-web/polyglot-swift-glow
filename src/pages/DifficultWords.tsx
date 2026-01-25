@@ -1,21 +1,23 @@
-import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Volume2, AlertCircle, Play, PartyPopper } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowRight, Volume2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WordRepetitionOverlay } from '@/components/exercise/WordRepetitionOverlay';
-import { Button } from '@/components/ui/button';
 
 const DifficultWords: React.FC = () => {
   const navigate = useNavigate();
   
-  // Practice mode states
-  const [isPracticing, setIsPracticing] = useState(false);
-  const [currentPracticeIndex, setCurrentPracticeIndex] = useState(0);
-  const [showRepetition, setShowRepetition] = useState(false);
+  // Selected word for practice
+  const [selectedWord, setSelectedWord] = useState<{
+    id: string;
+    word: string;
+    translation: string;
+    pronunciation: string | null;
+  } | null>(null);
 
   const { data: difficultWords, isLoading } = useQuery({
     queryKey: ['difficult-words'],
@@ -23,7 +25,6 @@ const DifficultWords: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Get user word progress with words - filter by is_difficult
       const { data: progress } = await supabase
         .from('user_word_progress')
         .select(`
@@ -52,36 +53,23 @@ const DifficultWords: React.FC = () => {
     },
   });
 
-  // Start practice session
-  const startPractice = () => {
-    if (difficultWords && difficultWords.length > 0) {
-      setCurrentPracticeIndex(0);
-      setIsPracticing(true);
-      setShowRepetition(true);
-    }
+  // Start practice on a specific word
+  const startWordPractice = (word: NonNullable<typeof difficultWords>[number]) => {
+    setSelectedWord({
+      id: word.id,
+      word: word.word,
+      translation: word.translation,
+      pronunciation: word.pronunciation,
+    });
   };
 
-  // Handle when word repetition completes - loops infinitely
-  const handleRepetitionComplete = useCallback(() => {
-    setShowRepetition(false);
-    
-    setTimeout(() => {
-      // Loop back to first word when reaching the end
-      const nextIndex = (currentPracticeIndex + 1) % (difficultWords?.length || 1);
-      setCurrentPracticeIndex(nextIndex);
-      setShowRepetition(true);
-    }, 300);
-  }, [currentPracticeIndex, difficultWords?.length]);
-
-  // End practice and return to list
+  // End practice and clear selection
   const endPractice = () => {
-    setIsPracticing(false);
-    setCurrentPracticeIndex(0);
-    setShowRepetition(false);
+    setSelectedWord(null);
   };
 
-  const playAudio = async (word: string) => {
-    // Try to get audio URL from words table
+  const playAudio = async (e: React.MouseEvent, word: string) => {
+    e.stopPropagation(); // Prevent triggering word practice
     const { data } = await supabase
       .from('words')
       .select('audio_url')
@@ -94,38 +82,19 @@ const DifficultWords: React.FC = () => {
     }
   };
 
-  const currentWord = difficultWords?.[currentPracticeIndex];
-
   return (
     <AppLayout>
       {/* Word Repetition Overlay */}
       <WordRepetitionOverlay
-        word={currentWord?.word || ''}
-        pronunciation={currentWord?.pronunciation || ''}
-        meaning={currentWord?.translation || ''}
-        isVisible={showRepetition && isPracticing}
-        onComplete={handleRepetitionComplete}
+        word={selectedWord?.word || ''}
+        pronunciation={selectedWord?.pronunciation || ''}
+        meaning={selectedWord?.translation || ''}
+        isVisible={!!selectedWord}
+        onComplete={() => {}}
         onStop={endPractice}
-        currentIndex={currentPracticeIndex}
-        totalWords={difficultWords?.length || 0}
-        duration={6000}
-        repeatCount={3}
+        currentIndex={0}
+        totalWords={1}
       />
-
-
-      {/* Progress indicator during practice */}
-      <AnimatePresence>
-        {isPracticing && showRepetition && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-black/70 text-white px-4 py-2 rounded-full text-sm font-bold backdrop-blur-sm"
-          >
-            {currentPracticeIndex + 1} / {difficultWords?.length}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -153,20 +122,6 @@ const DifficultWords: React.FC = () => {
       </motion.header>
 
       <div className="px-4 pb-6">
-        {/* Start Practice Button */}
-        {difficultWords && difficultWords.length > 0 && (
-          <motion.button
-            onClick={startPractice}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full mb-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg flex items-center justify-center gap-2"
-          >
-            <Play size={20} />
-            ابدأ التدريب
-          </motion.button>
-        )}
-
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
@@ -181,12 +136,13 @@ const DifficultWords: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="bg-card rounded-xl p-4 card-shadow"
+                onClick={() => startWordPractice(word)}
+                className="bg-card rounded-xl p-4 card-shadow cursor-pointer active:scale-[0.98] transition-transform"
               >
                 <div className="flex items-center justify-between">
                   <motion.button
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => playAudio(word.word)}
+                    onClick={(e) => playAudio(e, word.word)}
                     className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center"
                   >
                     <Volume2 size={18} className="text-primary" />
