@@ -184,12 +184,12 @@ const WordsPractice: React.FC = () => {
             </span>
           </div>
 
-          {/* Hard Badge */}
+          {/* Add to Difficult Words */}
           <motion.button 
             whileTap={{ scale: 0.95 }}
-            className="bg-wc-orange text-white font-semibold px-4 py-2 rounded-xl text-sm shadow-lg shadow-orange-500/25"
+            className="bg-wc-orange/20 text-wc-orange font-semibold w-10 h-10 rounded-xl text-lg flex items-center justify-center"
           >
-            صعبة ⭐
+            +
           </motion.button>
         </div>
       </div>
