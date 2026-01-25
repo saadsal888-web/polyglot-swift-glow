@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut, Trash2 } from 'lucide-react';
+import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut, Trash2, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { restorePurchases as revenueCatRestore } from '@/services/revenuecat';
 
 interface SettingsItemProps {
   icon: React.ReactNode;
@@ -50,6 +52,42 @@ export const SettingsSection: React.FC = () => {
       description: 'نراك قريباً! 👋',
     });
     navigate('/auth', { replace: true });
+  };
+
+  const handleRestorePurchases = async () => {
+    // أولوية 1: AndroidApp WebView bridge
+    if (window.AndroidApp?.restorePurchases) {
+      toast({
+        title: 'جاري استعادة المشتريات...',
+        description: 'يرجى الانتظار',
+      });
+      window.AndroidApp.restorePurchases();
+      return;
+    }
+    
+    // أولوية 2: Capacitor Native
+    if (Capacitor.isNativePlatform()) {
+      const success = await revenueCatRestore();
+      if (success) {
+        toast({
+          title: 'تم استعادة اشتراكك! 🎉',
+          description: 'يمكنك الآن الوصول لجميع المميزات',
+        });
+      } else {
+        toast({
+          title: 'لم يتم العثور على اشتراك',
+          description: 'تأكد من استخدام نفس حساب المتجر',
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+    
+    // Web fallback
+    toast({
+      title: 'غير متاح',
+      description: 'استعادة المشتريات متاحة على التطبيق فقط',
+    });
   };
 
   return (
@@ -122,13 +160,23 @@ export const SettingsSection: React.FC = () => {
         />
       </motion.div>
 
-      {/* Logout */}
+      {/* Restore & Logout */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.45 }}
         className="bg-card rounded-xl overflow-hidden card-shadow"
       >
+        <SettingsItem
+          icon={
+            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+              <RefreshCw size={16} className="text-amber-600" />
+            </div>
+          }
+          label="استعادة الاشتراك"
+          onClick={handleRestorePurchases}
+          delay={0.47}
+        />
         <SettingsItem
           icon={
             <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">

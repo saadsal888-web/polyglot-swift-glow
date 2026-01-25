@@ -119,12 +119,30 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setPrices(newPrices);
         };
 
-        // جسر نتيجة الشراء من Android
-        window.onPurchaseResult = (success: boolean, message?: string) => {
+        // جسر نتيجة الشراء من Android مع مزامنة Supabase
+        window.onPurchaseResult = async (success: boolean, message?: string) => {
           console.log('[Subscription] Purchase result from Android:', success, message);
           if (success) {
             setIsPremium(true);
             localStorage.setItem('isPremium', 'true');
+            
+            // مزامنة مع Supabase - ربط بإيميل المستخدم
+            try {
+              const { supabase } = await import('@/integrations/supabase/client');
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user?.id) {
+                await supabase
+                  .from('profiles')
+                  .update({ 
+                    is_premium: true,
+                    revenuecat_entitlement: 'plus'
+                  })
+                  .eq('id', user.id);
+                console.log('[Subscription] Supabase profile updated for user:', user.email);
+              }
+            } catch (error) {
+              console.error('[Subscription] Error syncing with Supabase:', error);
+            }
           }
           // إرسال event للمكونات الأخرى
           window.dispatchEvent(new CustomEvent('purchaseResult', { 
