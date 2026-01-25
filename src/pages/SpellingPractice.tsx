@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, Volume2, RotateCcw } from 'lucide-react';
+import { Volume2, RotateCcw, ChevronLeft, AudioWaveform } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLearnedWords } from '@/hooks/useWords';
@@ -116,24 +116,26 @@ const SpellingPractice: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-4" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-4" dir="rtl">
         <div className="flex items-center justify-between mb-6">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-10 w-20 rounded-xl" />
+          <Skeleton className="h-10 w-32 rounded-xl" />
         </div>
-        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-3xl" />
       </div>
     );
   }
 
   if (!learnedWords || learnedWords.length === 0) {
     return (
-      <div className="min-h-screen bg-background p-4 flex flex-col items-center justify-center" dir="rtl">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-4 flex flex-col items-center justify-center" dir="rtl">
         <div className="text-center space-y-4">
-          <p className="text-xl font-bold">لا توجد كلمات للتدريب</p>
+          <p className="text-xl font-bold text-foreground">لا توجد كلمات للتدريب</p>
           <p className="text-muted-foreground">ابدأ بتعلم بعض الكلمات أولاً</p>
-          <Button onClick={() => navigate('/words')}>
+          <Button 
+            onClick={() => navigate('/words')}
+            className="bg-wc-purple hover:bg-wc-purple/90 text-white rounded-2xl px-6 py-3"
+          >
             تصفح الكلمات
           </Button>
         </div>
@@ -142,45 +144,57 @@ const SpellingPractice: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 px-4 py-3 border-b border-border">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50" dir="rtl">
+      {/* iOS-style Header */}
+      <div className="sticky top-0 z-10 px-4 py-3">
         <div className="flex items-center justify-between">
-          <button 
+          {/* Exit Button */}
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/')}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+            className="bg-wc-red text-white font-semibold px-4 py-2 rounded-xl text-sm shadow-lg shadow-red-500/25"
           >
-            <ChevronRight size={24} className="text-foreground" />
-          </button>
+            خروج
+          </motion.button>
           
-          <h1 className="text-lg font-bold">تدريب الكتابة ✍️</h1>
-          
-          <span className="text-sm text-muted-foreground font-medium">
-            {currentIndex + 1}/{totalWords}
-          </span>
+          {/* Progress Counter */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm">
+            <span className="text-sm font-bold text-foreground">
+              {currentIndex + 1}/{totalWords}
+            </span>
+          </div>
+
+          {/* Hard Badge - Optional */}
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
+            className="bg-wc-orange text-white font-semibold px-4 py-2 rounded-xl text-sm shadow-lg shadow-orange-500/25"
+          >
+            صعبة ⭐
+          </motion.button>
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="px-4 py-2">
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-primary rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${((currentIndex + 1) / totalWords) * 100}%` }}
-            transition={{ duration: 0.3 }}
-          />
-        </div>
-      </div>
-
-      {/* Main Content */}
+      {/* Main Content Area - Tappable */}
       <div 
-        className="flex-1 px-4 py-8 flex flex-col items-center"
+        className="flex-1 px-6 py-8 flex flex-col items-center min-h-[60vh]"
         onClick={handleTap}
       >
-        {/* Sound Button */}
+        {/* Pronunciation Badge */}
+        {currentWord?.pronunciation && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-sm mb-6"
+          >
+            <span className="text-lg font-medium text-muted-foreground" dir="ltr">
+              {currentWord.pronunciation}
+            </span>
+          </motion.div>
+        )}
+
+        {/* Audio Wave Button */}
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => {
             e.stopPropagation();
             if (currentWord) {
@@ -188,51 +202,54 @@ const SpellingPractice: React.FC = () => {
             }
           }}
           disabled={isPlayingAudio}
-          className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-8 transition-opacity ${isPlayingAudio ? 'opacity-50' : ''}`}
+          className={`w-20 h-20 rounded-full bg-gradient-to-br from-wc-purple to-wc-indigo flex items-center justify-center mb-10 shadow-xl shadow-purple-500/30 transition-all ${isPlayingAudio ? 'opacity-70 scale-95' : ''}`}
         >
-          <Volume2 size={32} className={`text-primary ${isPlayingAudio ? 'animate-pulse' : ''}`} />
+          <AudioWaveform size={36} className={`text-white ${isPlayingAudio ? 'animate-pulse' : ''}`} />
         </motion.button>
 
-        {/* Letters Display */}
+        {/* Letters Display - iOS Style */}
         <AnimatePresence mode="wait">
           <motion.div 
             key={currentIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="flex justify-center gap-3 flex-wrap mb-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="flex justify-center gap-2 flex-wrap mb-8"
             dir="ltr"
           >
             {letters.map((letter, index) => (
               <motion.div 
                 key={index}
-                initial={{ scale: 0.8 }}
+                initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ 
-                  scale: index < revealedCount ? 1 : 0.9,
+                  scale: 1,
+                  opacity: 1,
                 }}
+                transition={{ delay: index * 0.05 }}
                 className="flex flex-col items-center"
               >
                 <motion.span 
-                  className={`text-4xl font-bold transition-all duration-300 ${
+                  className={`text-5xl font-bold transition-all duration-300 ${
                     index < revealedCount 
-                      ? 'text-foreground' 
-                      : 'text-transparent'
+                      ? 'text-wc-purple' 
+                      : 'text-gray-300'
                   }`}
                   animate={{
-                    scale: index === revealedCount - 1 ? [1, 1.2, 1] : 1,
+                    scale: index === revealedCount - 1 ? [1, 1.3, 1] : 1,
+                    color: index < revealedCount ? 'hsl(239 84% 67%)' : 'hsl(220 9% 80%)',
                   }}
                   transition={{ duration: 0.3 }}
                 >
-                  {letter}
+                  {index < revealedCount ? letter : '•'}
                 </motion.span>
                 <motion.div 
-                  className={`w-8 h-1 rounded-full mt-1 transition-colors duration-300 ${
+                  className={`h-1.5 rounded-full mt-2 transition-all duration-300 ${
                     index < revealedCount 
-                      ? 'bg-primary' 
-                      : 'bg-muted-foreground/30'
+                      ? 'w-8 bg-wc-purple' 
+                      : 'w-3 bg-wc-pink/50'
                   }`}
                   animate={{
-                    backgroundColor: index < revealedCount ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.3)',
+                    width: index < revealedCount ? 32 : 12,
                   }}
                 />
               </motion.div>
@@ -242,64 +259,81 @@ const SpellingPractice: React.FC = () => {
 
         {/* Arabic Translation */}
         <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-2xl font-bold text-foreground mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-bold text-foreground mb-6"
         >
           {currentWord?.word_ar}
         </motion.p>
 
-        {/* Pronunciation */}
-        {currentWord?.pronunciation && (
-          <p className="text-muted-foreground text-sm mb-8" dir="ltr">
-            {currentWord.pronunciation}
-          </p>
-        )}
-
-        {/* Instructions */}
+        {/* Tap Instruction */}
         {!isComplete && (
-          <motion.p 
+          <motion.div 
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            className="text-muted-foreground text-sm"
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-2 text-muted-foreground"
           >
-            اضغط على الشاشة لكشف الأحرف 👆
-          </motion.p>
+            <span className="text-sm">اضغط لكشف الحرف التالي</span>
+            <motion.span 
+              animate={{ y: [0, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="text-2xl"
+            >
+              👆
+            </motion.span>
+          </motion.div>
         )}
 
         {/* Completion Message */}
         {isComplete && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center space-y-2"
           >
-            <p className="text-lg font-bold text-primary">أحسنت! 🎉</p>
+            <motion.p 
+              className="text-2xl font-bold text-wc-purple"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            >
+              أحسنت! 🎉
+            </motion.p>
             <p className="text-muted-foreground text-sm">لقد كشفت جميع الأحرف</p>
           </motion.div>
         )}
       </div>
 
-      {/* Bottom Actions */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border p-4">
+      {/* Bottom Actions - iOS Style */}
+      <div className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-border/30 p-4 pb-6">
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={handleRestart}
-            className="flex-1"
-            disabled={revealedCount === 0}
-          >
-            <RotateCcw size={18} className="ml-2" />
-            إعادة
-          </Button>
-          <Button
+          {/* Next Button - Purple */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             onClick={handleNext}
-            className="flex-1"
             disabled={currentIndex >= totalWords - 1}
+            className="flex-1 bg-gradient-to-r from-wc-purple to-wc-indigo text-white font-bold py-4 rounded-2xl shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none"
           >
-            التالي
-            <ChevronRight size={18} className="mr-2 rotate-180" />
-          </Button>
+            <span>التالي</span>
+            <ChevronLeft size={20} />
+          </motion.button>
+
+          {/* Restart Button - Pink */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleRestart}
+            disabled={revealedCount === 0}
+            className="flex-1 bg-gradient-to-r from-wc-pink to-pink-400 text-white font-bold py-4 rounded-2xl shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none"
+          >
+            <RotateCcw size={20} />
+            <span>إعادة</span>
+          </motion.button>
+        </div>
+
+        {/* Level Badge */}
+        <div className="flex justify-center mt-4">
+          <span className="bg-wc-purple/10 text-wc-purple font-bold px-4 py-1 rounded-full text-sm">
+            {currentWord?.difficulty?.toUpperCase() || 'A1'}
+          </span>
         </div>
       </div>
     </div>
