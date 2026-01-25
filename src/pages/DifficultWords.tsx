@@ -111,6 +111,9 @@ const DifficultWords: React.FC = () => {
         meaning={currentWord?.translation || ''}
         isVisible={showRepetition && isPracticing}
         onComplete={handleRepetitionComplete}
+        onStop={endPractice}
+        currentIndex={currentPracticeIndex}
+        totalWords={difficultWords?.length || 0}
         duration={6000}
         repeatCount={3}
       />
