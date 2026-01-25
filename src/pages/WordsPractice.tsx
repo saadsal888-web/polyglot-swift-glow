@@ -20,12 +20,13 @@ const WordsPractice: React.FC = () => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Check premium access
+  // Check premium access - A1 is free for everyone
   useEffect(() => {
-    if (!isPremium) {
+    // Only show paywall for levels other than A1
+    if (!isPremium && difficulty !== 'A1') {
       setShowPaywall(true);
     }
-  }, [isPremium]);
+  }, [isPremium, difficulty]);
 
   const currentWord = words?.[currentIndex];
   const letters = currentWord?.word_en?.split('') || [];
