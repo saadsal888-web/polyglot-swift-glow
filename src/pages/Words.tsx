@@ -1,42 +1,69 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, ChevronLeft, Lock, Crown } from 'lucide-react';
+import { ArrowRight, BookOpen, Lock, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useWordCountByDifficulty, useLearnedWordsCount } from '@/hooks/useWords';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUserProfile } from '@/hooks/useUserProfile';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { PaywallPrompt } from '@/components/subscription/PaywallPrompt';
 import { cn } from '@/lib/utils';
 
-interface DifficultySection {
+interface LevelOption {
   level: string;
   label: string;
   color: string;
   bgColor: string;
+  borderColor: string;
   icon: string;
+  available: boolean;
 }
 
-const difficultySections: DifficultySection[] = [
-  { level: 'A1', label: 'مبتدئ', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', icon: '🟢' },
-  { level: 'A2', label: 'أساسي', color: 'text-blue-500', bgColor: 'bg-blue-500/10', icon: '🔵' },
-  { level: 'B1', label: 'متوسط', color: 'text-purple-500', bgColor: 'bg-purple-500/10', icon: '🟣' },
-  { level: 'B2', label: 'متقدم', color: 'text-orange-500', bgColor: 'bg-orange-500/10', icon: '🟠' },
+const levelOptions: LevelOption[] = [
+  { 
+    level: 'A1', 
+    label: 'مبتدئ', 
+    color: 'text-emerald-600', 
+    bgColor: 'bg-emerald-50', 
+    borderColor: 'border-emerald-200',
+    icon: '🟢',
+    available: true 
+  },
+  { 
+    level: 'A2', 
+    label: 'أساسي', 
+    color: 'text-blue-600', 
+    bgColor: 'bg-blue-50', 
+    borderColor: 'border-blue-200',
+    icon: '🔵',
+    available: false 
+  },
+  { 
+    level: 'B1', 
+    label: 'متوسط', 
+    color: 'text-purple-600', 
+    bgColor: 'bg-purple-50', 
+    borderColor: 'border-purple-200',
+    icon: '🟣',
+    available: false 
+  },
+  { 
+    level: 'B2', 
+    label: 'متقدم', 
+    color: 'text-orange-600', 
+    bgColor: 'bg-orange-50', 
+    borderColor: 'border-orange-200',
+    icon: '🟠',
+    available: false 
+  },
 ];
 
-const levelOrder = ['A1', 'A2', 'B1', 'B2'];
-
-const SectionCard: React.FC<{
-  section: DifficultySection;
-  totalCount: number;
-  learnedCount: number;
+const LevelCard: React.FC<{
+  option: LevelOption;
   index: number;
   onClick: () => void;
-  isUserLevel: boolean;
   isLocked: boolean;
-}> = ({ section, totalCount, learnedCount, index, onClick, isUserLevel, isLocked }) => {
-  const progress = totalCount > 0 ? (learnedCount / totalCount) * 100 : 0;
-
+  isPremiumRequired: boolean;
+}> = ({ option, index, onClick, isLocked, isPremiumRequired }) => {
   return (
     <motion.button
       initial={{ opacity: 0, y: 20 }}
@@ -45,67 +72,43 @@ const SectionCard: React.FC<{
       onClick={isLocked ? undefined : onClick}
       disabled={isLocked}
       className={cn(
-        "w-full bg-card rounded-2xl p-5 card-shadow text-right transition-all",
-        !isLocked && "active:scale-[0.98]",
-        isLocked && "opacity-60 cursor-not-allowed",
-        isUserLevel && "ring-2 ring-primary ring-offset-2"
+        "relative w-full aspect-square rounded-3xl p-4 flex flex-col items-center justify-center transition-all border-2",
+        option.bgColor,
+        option.borderColor,
+        !isLocked && "active:scale-[0.97] shadow-lg",
+        isLocked && "opacity-50 cursor-not-allowed grayscale"
       )}
     >
-      <div className="flex items-center justify-between">
-        {isLocked ? (
-          <Lock size={20} className="text-muted-foreground" />
-        ) : (
-          <ChevronLeft size={20} className="text-muted-foreground" />
-        )}
-        <div className="flex items-center gap-3 flex-1">
-          <div className={cn(
-            "w-12 h-12 rounded-xl flex items-center justify-center text-2xl",
-            section.bgColor,
-            isLocked && "grayscale"
-          )}>
-            {section.icon}
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className={cn("text-lg font-bold", section.color, isLocked && "text-muted-foreground")}>
-                {section.level}
-              </span>
-              <span className={cn("font-semibold", isLocked && "text-muted-foreground")}>
-                {section.label}
-              </span>
-              {isUserLevel && (
-                <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full flex items-center gap-1">
-                  <Crown size={10} />
-                  مستواك
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {isLocked ? (
-                'أكمل المستوى السابق للفتح'
-              ) : (
-                `${totalCount} كلمة • ${learnedCount} متعلمة`
-              )}
-            </p>
-          </div>
+      {/* Lock Icon for locked levels */}
+      {isLocked && (
+        <div className="absolute top-3 right-3">
+          <Lock size={18} className="text-gray-400" />
         </div>
-      </div>
+      )}
 
-      {!isLocked && (
-        <div className="mt-4 h-2 bg-secondary rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
-            className={cn(
-              "h-full rounded-full",
-              section.level === 'A1' ? 'bg-emerald-500' :
-              section.level === 'A2' ? 'bg-blue-500' :
-              section.level === 'B1' ? 'bg-purple-500' :
-              'bg-orange-500'
-            )}
-          />
+      {/* Premium Badge for A1 */}
+      {isPremiumRequired && !isLocked && (
+        <div className="absolute top-3 left-3">
+          <Crown size={18} className="text-amber-500" />
         </div>
+      )}
+
+      {/* Level Icon */}
+      <div className="text-5xl mb-3">{option.icon}</div>
+
+      {/* Level Name */}
+      <span className={cn("text-3xl font-black", option.color)}>
+        {option.level}
+      </span>
+
+      {/* Level Label */}
+      <span className="text-sm text-muted-foreground mt-1 font-medium">
+        {option.label}
+      </span>
+
+      {/* Status text */}
+      {isLocked && !option.available && (
+        <span className="text-xs text-muted-foreground mt-2">قريباً</span>
       )}
     </motion.button>
   );
@@ -113,100 +116,103 @@ const SectionCard: React.FC<{
 
 const Words: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { data: profile } = useUserProfile();
-  const { data: wordCounts, isLoading: isLoadingCounts } = useWordCountByDifficulty();
-  const { data: learnedCounts, isLoading: isLoadingLearned } = useLearnedWordsCount(user?.id);
+  const { isPremium } = useSubscription();
+  const [showPaywall, setShowPaywall] = React.useState(false);
 
-  const isLoading = isLoadingCounts || isLoadingLearned;
-  const userLevel = profile?.current_level || 'A1';
-  const userLevelIndex = levelOrder.indexOf(userLevel);
+  const handleLevelClick = (level: string) => {
+    // Only A1 is available currently
+    if (level !== 'A1') return;
 
-  const totalWords = wordCounts ? Object.values(wordCounts).reduce((a, b) => a + b, 0) : 0;
-  const totalLearned = learnedCounts ? Object.values(learnedCounts).reduce((a, b) => a + b, 0) : 0;
+    // Check premium status for A1
+    if (!isPremium) {
+      setShowPaywall(true);
+      return;
+    }
 
-  // المستخدم يمكنه الوصول لمستواه والمستويات الأقل منه
-  const isLevelAccessible = (level: string) => {
-    const levelIndex = levelOrder.indexOf(level);
-    return levelIndex <= userLevelIndex;
+    // Navigate to practice page
+    navigate(`/words-practice/${level}`);
   };
 
   return (
     <AppLayout>
-      <div className="p-4">
+      <div className="min-h-screen p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div />
           <div className="flex items-center gap-2">
-            <BookOpen size={20} className="text-primary" />
-            <h1 className="text-lg font-bold">الكلمات</h1>
+            <BookOpen size={22} className="text-wc-purple" />
+            <h1 className="text-xl font-bold">الكلمات</h1>
           </div>
-          <button onClick={() => navigate('/')} className="p-2">
-            <ArrowRight size={20} />
+          <button 
+            onClick={() => navigate('/')} 
+            className="p-2 rounded-full hover:bg-white/50 transition-colors"
+          >
+            <ArrowRight size={22} />
           </button>
         </div>
 
-        {/* Stats Card */}
+        {/* Description */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-white mb-6"
+          className="text-center mb-8"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white/70 text-sm">الكلمات المتعلمة</p>
-              <p className="text-4xl font-bold">{totalLearned}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-white/70 text-sm">مستواك الحالي</p>
-              <p className="text-2xl font-bold">{userLevel}</p>
-            </div>
-          </div>
-          
-          {/* Overall Progress */}
-          <div className="mt-4">
-            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${totalWords > 0 ? (totalLearned / totalWords) * 100 : 0}%` }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="h-full bg-white rounded-full"
-              />
-            </div>
-            <p className="text-white/70 text-xs mt-2 text-center">
-              {totalWords > 0 ? Math.round((totalLearned / totalWords) * 100) : 0}% مكتمل
-            </p>
-          </div>
+          <p className="text-muted-foreground">
+            اختر المستوى المناسب لك وابدأ التدريب
+          </p>
         </motion.div>
 
-        {/* Sections */}
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-28 rounded-2xl" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {difficultySections.map((section, index) => {
-              const isAccessible = isLevelAccessible(section.level);
-              const isUserCurrentLevel = section.level === userLevel;
-              
-              return (
-                <SectionCard
-                  key={section.level}
-                  section={section}
-                  totalCount={wordCounts?.[section.level] || 0}
-                  learnedCount={learnedCounts?.[section.level] || 0}
-                  index={index}
-                  onClick={() => navigate(`/learn/${section.level}`)}
-                  isUserLevel={isUserCurrentLevel}
-                  isLocked={!isAccessible}
-                />
-              );
-            })}
-          </div>
+        {/* Levels Grid */}
+        <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+          {levelOptions.map((option, index) => {
+            const isNotAvailable = !option.available;
+            const needsPremium = option.level === 'A1' && !isPremium;
+            const isLocked = isNotAvailable || needsPremium;
+
+            return (
+              <LevelCard
+                key={option.level}
+                option={option}
+                index={index}
+                onClick={() => handleLevelClick(option.level)}
+                isLocked={isLocked}
+                isPremiumRequired={option.level === 'A1'}
+              />
+            );
+          })}
+        </div>
+
+        {/* Premium Notice */}
+        {!isPremium && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 max-w-sm mx-auto"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
+                <Crown className="text-white" size={24} />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-sm">اشترك للوصول الكامل</p>
+                <p className="text-xs text-muted-foreground">
+                  افتح جميع المستويات والميزات
+                </p>
+              </div>
+            </div>
+          </motion.div>
         )}
+
+        {/* Paywall Modal */}
+        <Dialog open={showPaywall} onOpenChange={setShowPaywall}>
+          <DialogContent className="max-w-sm p-0 border-0 bg-transparent">
+            <PaywallPrompt 
+              reason="words_limit" 
+              onSkip={() => setShowPaywall(false)} 
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

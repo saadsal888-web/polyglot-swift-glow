@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { GuestAllowedRoute } from "./components/auth/GuestAllowedRoute";
 import Index from "./pages/Index";
 import Words from "./pages/Words";
+import WordsPractice from "./pages/WordsPractice";
 import LearnWords from "./pages/LearnWords";
 import Phrases from "./pages/Phrases";
 import LearnPhrases from "./pages/LearnPhrases";
@@ -49,6 +50,7 @@ const App = () => (
               
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/words" element={<ProtectedRoute><Words /></ProtectedRoute>} />
+              <Route path="/words-practice/:difficulty" element={<ProtectedRoute><WordsPractice /></ProtectedRoute>} />
               <Route path="/learn/:difficulty" element={<GuestAllowedRoute><LearnWords /></GuestAllowedRoute>} />
               <Route path="/phrases" element={<ProtectedRoute><Phrases /></ProtectedRoute>} />
               <Route path="/learn-phrases/:difficulty" element={<ProtectedRoute><LearnPhrases /></ProtectedRoute>} />
