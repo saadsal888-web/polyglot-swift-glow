@@ -1,11 +1,27 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Clock, Smartphone } from 'lucide-react';
+import { Crown, Clock, Smartphone, Sparkles } from 'lucide-react';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
 
 export const TimeUpOverlay: React.FC = () => {
   const { isPremium, isTimeUp, hasAndroidApp, triggerPaywall } = usePremiumGate();
+  const { prices } = useSubscription();
+
+  // Extract numeric price from string (e.g., "79 ر.س" → 79)
+  const extractPrice = (priceStr: string): number => {
+    const match = priceStr?.match(/[\d.]+/);
+    return match ? parseFloat(match[0]) : 79;
+  };
+
+  // Real price from RevenueCat
+  const realPrice = prices?.yearly || '٧٩ ر.س';
+  const realPriceNum = extractPrice(realPrice);
+  
+  // Old price (double the real price) - creates 50% discount perception
+  const oldPriceNum = Math.round(realPriceNum * 2);
+  const oldPrice = `${oldPriceNum} ر.س`;
 
   // Don't show for premium users or if time hasn't run out
   if (isPremium || !isTimeUp) return null;
@@ -59,14 +75,47 @@ export const TimeUpOverlay: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-8"
+          className="mb-6"
         >
           <p className="text-white/80 mb-2">
-            انتهت فترة التجربة المجانية (10 دقائق)
+            انتهت فترة التجربة المجانية (5 دقائق)
           </p>
           <p className="text-white/60 text-sm">
             اشترك الآن للاستمرار في التعلم بدون حدود
           </p>
+        </motion.div>
+
+        {/* Pricing Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.35 }}
+          className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl p-5 mb-6 border border-amber-500/30 relative overflow-hidden"
+        >
+          {/* Discount Badge */}
+          <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
+            خصم 50%
+          </div>
+          
+          {/* Prices */}
+          <div className="flex items-center justify-center gap-4 mt-4 mb-3">
+            {/* Old Price (strikethrough) */}
+            <span className="text-white/50 line-through text-xl">
+              {oldPrice}
+            </span>
+            
+            {/* Real Price */}
+            <span className="text-4xl font-bold text-amber-400">
+              {realPrice}
+            </span>
+          </div>
+          
+          {/* Duration */}
+          <div className="flex items-center justify-center gap-2 text-amber-200 font-medium">
+            <Sparkles size={18} className="text-amber-300" />
+            <span>سنة كاملة</span>
+            <Sparkles size={18} className="text-amber-300" />
+          </div>
         </motion.div>
 
         {/* Subscribe Button */}
