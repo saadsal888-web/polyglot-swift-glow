@@ -20,6 +20,8 @@ declare global {
       subscribe: (productId?: string) => void;
       restorePurchases: () => void;
       requestPaywall: () => void;
+      logIn: (appUserID: string) => void;
+      logOut: () => void;
     };
   }
 }
