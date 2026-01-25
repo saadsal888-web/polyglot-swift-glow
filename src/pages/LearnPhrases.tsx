@@ -1,17 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Check, SkipForward, MessageCircle, Trophy } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useNewPhrasesForLearning } from '@/hooks/usePhrases';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useFreeLimits } from '@/hooks/useFreeLimits';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ProgressBar } from '@/components/common/ProgressBar';
-import { PaywallPrompt } from '@/components/subscription/PaywallPrompt';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { PremiumBlockScreen } from '@/components/subscription/PremiumBlockScreen';
 import { toast } from 'sonner';
 
 const difficultyLabels: Record<string, string> = {
@@ -25,45 +24,75 @@ const LearnPhrases: React.FC = () => {
   const navigate = useNavigate();
   const { difficulty } = useParams<{ difficulty: string }>();
   const { user } = useAuth();
-  const { isPremium } = useSubscription();
-  const { hasReachedPhrasesLimit } = useFreeLimits(user?.id);
   const { data: phrases, isLoading } = useNewPhrasesForLearning(difficulty || 'A1', 5);
+  
+  const { isPremium, hasReachedLimit, incrementFreeWords, triggerPaywall, freeWordsUsed, FREE_WORDS_LIMIT } = usePremiumGate();
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [learnedCount, setLearnedCount] = useState(0);
   const [skippedCount, setSkippedCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
 
   const currentPhrase = phrases?.[currentIndex];
   const totalPhrases = phrases?.length || 0;
   const progress = totalPhrases > 0 ? ((currentIndex) / totalPhrases) * 100 : 0;
 
-  const handleLearn = async () => {
-    if (!user || !currentPhrase) return;
-
-    try {
-      const { error } = await supabase
-        .from('user_phrase_progress')
-        .upsert({
-          user_id: user.id,
-          phrase_id: currentPhrase.id,
-          mastery_level: 1,
-          times_practiced: 1,
-          last_practiced_at: new Date().toISOString(),
-          is_deleted: false,
-        }, {
-          onConflict: 'user_id,phrase_id'
-        });
-
-      if (error) throw error;
-
-      setLearnedCount(prev => prev + 1);
-      goToNext();
-    } catch (error) {
-      console.error('Error saving phrase progress:', error);
-      toast.error('حدث خطأ في حفظ الجملة');
+  // Check limit on mount
+  useEffect(() => {
+    if (!isPremium && hasReachedLimit) {
+      setLimitReached(true);
     }
+  }, [isPremium, hasReachedLimit]);
+
+  const handleLearn = async () => {
+    if (!currentPhrase) return;
+
+    // Check limit BEFORE saving
+    if (!isPremium) {
+      if (hasReachedLimit) {
+        setLimitReached(true);
+        triggerPaywall();
+        return;
+      }
+      // Increment the counter (shares the same limit as words)
+      incrementFreeWords();
+    }
+
+    // Save progress if user is logged in
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('user_phrase_progress')
+          .upsert({
+            user_id: user.id,
+            phrase_id: currentPhrase.id,
+            mastery_level: 1,
+            times_practiced: 1,
+            last_practiced_at: new Date().toISOString(),
+            is_deleted: false,
+          }, {
+            onConflict: 'user_id,phrase_id'
+          });
+
+        if (error) throw error;
+      } catch (error) {
+        console.error('Error saving phrase progress:', error);
+        toast.error('حدث خطأ في حفظ الجملة');
+      }
+    }
+
+    setLearnedCount(prev => prev + 1);
+    
+    // Check if limit is now reached after increment
+    if (!isPremium && freeWordsUsed + 1 >= FREE_WORDS_LIMIT) {
+      setLimitReached(true);
+      triggerPaywall();
+      return;
+    }
+    
+    goToNext();
   };
 
   const handleSkip = () => {
@@ -88,6 +117,15 @@ const LearnPhrases: React.FC = () => {
     setShowTranslation(false);
   };
 
+  // Show block screen if limit reached
+  if (limitReached) {
+    return (
+      <AppLayout>
+        <PremiumBlockScreen onBack={() => navigate('/phrases')} />
+      </AppLayout>
+    );
+  }
+
   if (isLoading) {
     return (
       <AppLayout>
@@ -96,18 +134,6 @@ const LearnPhrases: React.FC = () => {
           <Skeleton className="h-64 w-full rounded-2xl" />
           <Skeleton className="h-12 w-full rounded-xl" />
         </div>
-      </AppLayout>
-    );
-  }
-
-  // Check free limit for non-premium users
-  if (!isPremium && hasReachedPhrasesLimit) {
-    return (
-      <AppLayout>
-        <PaywallPrompt 
-          reason="phrases_limit" 
-          onSkip={() => navigate('/phrases')} 
-        />
       </AppLayout>
     );
   }
@@ -160,6 +186,15 @@ const LearnPhrases: React.FC = () => {
             </div>
           </div>
 
+          {/* Show remaining for free users */}
+          {!isPremium && (
+            <div className="bg-muted/50 rounded-xl px-4 py-2 mb-4">
+              <p className="text-sm text-muted-foreground">
+                المتبقي: {Math.max(0, FREE_WORDS_LIMIT - freeWordsUsed)} / {FREE_WORDS_LIMIT}
+              </p>
+            </div>
+          )}
+
           <div className="w-full max-w-xs space-y-3">
             <Button onClick={() => navigate('/train-phrases')} className="w-full">
               ابدأ التدريب
@@ -187,6 +222,11 @@ const LearnPhrases: React.FC = () => {
           <div className="flex items-center gap-2">
             <MessageCircle size={18} className="text-primary" />
             <span className="font-semibold">تعلم {difficulty}</span>
+            {!isPremium && (
+              <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                {freeWordsUsed}/{FREE_WORDS_LIMIT}
+              </span>
+            )}
           </div>
           <button onClick={() => navigate('/phrases')} className="p-2">
             <ArrowRight size={20} />

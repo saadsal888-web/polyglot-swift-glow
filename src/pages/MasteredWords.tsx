@@ -5,10 +5,22 @@ import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { PremiumBlockScreen } from '@/components/subscription/PremiumBlockScreen';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const MasteredWords: React.FC = () => {
   const navigate = useNavigate();
+  const { isPremium, hasReachedLimit } = usePremiumGate();
+
+  // Block access if limit reached
+  if (!isPremium && hasReachedLimit) {
+    return (
+      <AppLayout>
+        <PremiumBlockScreen onBack={() => navigate('/')} />
+      </AppLayout>
+    );
+  }
 
   const { data: masteredWords, isLoading } = useQuery({
     queryKey: ['mastered-words'],
