@@ -107,9 +107,12 @@ const DifficultWords: React.FC = () => {
       {/* Word Repetition Overlay */}
       <WordRepetitionOverlay
         word={currentWord?.word || ''}
+        pronunciation={currentWord?.pronunciation || ''}
+        meaning={currentWord?.translation || ''}
         isVisible={showRepetition && isPracticing}
         onComplete={handleRepetitionComplete}
-        duration={4000}
+        duration={6000}
+        repeatCount={3}
       />
 
       {/* Practice Complete Screen */}
