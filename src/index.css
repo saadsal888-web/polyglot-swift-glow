@@ -135,8 +135,13 @@
 
 @layer utilities {
   .app-container {
-    @apply max-w-sm mx-auto min-h-screen bg-background relative;
+    @apply max-w-sm mx-auto min-h-screen relative;
     max-width: 375px;
+    background: linear-gradient(180deg, 
+      hsl(250 100% 98%) 0%, 
+      hsl(330 100% 98%) 50%,
+      hsl(250 100% 97%) 100%
+    );
   }
 
   .card-shadow {
