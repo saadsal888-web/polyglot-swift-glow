@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Volume2 } from 'lucide-react';
 
@@ -43,9 +43,25 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
   const [shouldShow, setShouldShow] = useState(false);
   const [cardPositionIndex, setCardPositionIndex] = useState(0);
   const [showListenButton, setShowListenButton] = useState(false);
+  
+  // Audio control refs
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isStoppedRef = useRef(false);
+
+  // Stop any playing audio
+  const stopAudio = () => {
+    isStoppedRef.current = true;
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+  };
 
   // Speak word repeatedly with pauses between
   const speakWordRepeatedly = async (wordToSpeak: string, count: number) => {
+    isStoppedRef.current = false;
+    
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       const { data } = await supabase
@@ -56,7 +72,11 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
 
       if (data?.audio_url) {
         for (let i = 0; i < count; i++) {
+          // Check if stopped
+          if (isStoppedRef.current) break;
+          
           const audio = new Audio(data.audio_url);
+          currentAudioRef.current = audio;
           
           await new Promise<void>((resolve) => {
             audio.onended = () => resolve();
@@ -64,7 +84,8 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
             audio.play().catch(() => resolve());
           });
           
-          if (i < count - 1) {
+          // Pause between repetitions
+          if (i < count - 1 && !isStoppedRef.current) {
             await new Promise(resolve => setTimeout(resolve, 400));
           }
         }
@@ -143,16 +164,21 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
         onComplete();
       }, duration);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        stopAudio(); // Stop audio on cleanup
+      };
     }
   }, [isVisible, duration, onComplete, word, repeatCount]);
 
   const handleSkip = () => {
+    stopAudio();
     setShouldShow(false);
     onComplete();
   };
 
   const handleStop = () => {
+    stopAudio();
     setShouldShow(false);
     onStop?.();
   };
