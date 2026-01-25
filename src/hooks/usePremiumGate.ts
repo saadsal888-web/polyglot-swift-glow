@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useState, useEffect, useCallback, useContext } from 'react';
+import { SubscriptionContext } from '@/contexts/SubscriptionContext';
 
 const FREE_WORDS_LIMIT = 5;
 const STORAGE_KEY = 'free_words_used';
@@ -26,7 +26,10 @@ const detectWebView = (): boolean => {
 };
 
 export const usePremiumGate = () => {
-  const { isPremium } = useSubscription();
+  // Use context directly with fallback for when provider isn't available yet
+  const context = useContext(SubscriptionContext);
+  const isPremium = context?.isPremium ?? false;
+  
   const [freeWordsUsed, setFreeWordsUsed] = useState(0);
 
   // Load from localStorage on mount

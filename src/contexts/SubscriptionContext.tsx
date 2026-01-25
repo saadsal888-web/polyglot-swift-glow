@@ -41,7 +41,7 @@ interface SubscriptionContextType {
   packages: PurchasesPackage[];
 }
 
-const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
+export const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isPremium, setIsPremium] = useState<boolean>(() => {
