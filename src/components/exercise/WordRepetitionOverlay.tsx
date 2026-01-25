@@ -14,9 +14,12 @@ interface WordPosition {
 
 interface WordRepetitionOverlayProps {
   word: string;
+  pronunciation?: string;
+  meaning?: string;
   isVisible: boolean;
   onComplete: () => void;
-  duration?: number; // in milliseconds
+  duration?: number;
+  repeatCount?: number;
 }
 
 const sizes = [
@@ -43,11 +46,47 @@ const colors = [
 
 export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
   word,
+  pronunciation,
+  meaning,
   isVisible,
   onComplete,
-  duration = 3500,
+  duration = 5000,
+  repeatCount = 3,
 }) => {
   const [shouldShow, setShouldShow] = useState(false);
+
+  // Speak word repeatedly with pauses between
+  const speakWordRepeatedly = async (wordToSpeak: string, count: number) => {
+    try {
+      // Get audio URL from words table
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase
+        .from('words')
+        .select('audio_url')
+        .eq('word_en', wordToSpeak)
+        .maybeSingle();
+
+      if (data?.audio_url) {
+        for (let i = 0; i < count; i++) {
+          const audio = new Audio(data.audio_url);
+          
+          // Wait for audio to finish before next repetition
+          await new Promise<void>((resolve) => {
+            audio.onended = () => resolve();
+            audio.onerror = () => resolve();
+            audio.play().catch(() => resolve());
+          });
+          
+          // Short pause between repetitions
+          if (i < count - 1) {
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+    }
+  };
 
   // Generate random positions for the word
   const wordPositions = useMemo((): WordPosition[] => {
@@ -71,8 +110,12 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
   }, [word]);
 
   useEffect(() => {
-    if (isVisible) {
+    if (isVisible && word) {
       setShouldShow(true);
+      
+      // Start repeating audio
+      speakWordRepeatedly(word, repeatCount);
+      
       const timer = setTimeout(() => {
         setShouldShow(false);
         onComplete();
@@ -80,7 +123,7 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [isVisible, duration, onComplete]);
+  }, [isVisible, duration, onComplete, word, repeatCount]);
 
   const handleSkip = () => {
     setShouldShow(false);
@@ -128,6 +171,33 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl sm:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg"
           >
             {word}
+          </motion.div>
+
+          {/* Word Info Section - Bottom */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="absolute bottom-24 left-0 right-0 text-center px-6"
+          >
+            {/* الكلمة الإنجليزية */}
+            <p className="text-4xl font-bold text-foreground mb-3">
+              {word}
+            </p>
+            
+            {/* النطق بالعربي */}
+            {pronunciation && (
+              <p className="text-2xl text-purple-600 dark:text-purple-400 font-semibold mb-2">
+                {pronunciation}
+              </p>
+            )}
+            
+            {/* المعنى بالعربي */}
+            {meaning && (
+              <p className="text-xl text-muted-foreground">
+                {meaning}
+              </p>
+            )}
           </motion.div>
 
           {/* Skip hint */}
