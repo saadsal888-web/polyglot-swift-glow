@@ -12,6 +12,8 @@ import { CelebrationEffect } from "./components/common/CelebrationEffect";
 import { OnboardingScreen } from "./components/onboarding/OnboardingScreen";
 import { LoadingScreen } from "./components/common/LoadingScreen";
 import { useCelebration } from "./hooks/useCelebration";
+import { TrialTimer } from "./components/subscription/TrialTimer";
+import { TimeUpOverlay } from "./components/subscription/TimeUpOverlay";
 import Index from "./pages/Index";
 import Words from "./pages/Words";
 import WordsPractice from "./pages/WordsPractice";
@@ -80,6 +82,10 @@ const AppContent = () => {
 
   return (
     <>
+      {/* Global Trial Timer and Overlay */}
+      <TrialTimer />
+      <TimeUpOverlay />
+      
       {/* Global Celebration Effect */}
       <CelebrationEffect isActive={showCelebration} onComplete={resetCelebration} />
       

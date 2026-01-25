@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Volume2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,15 +12,7 @@ import { PremiumBlockScreen } from '@/components/subscription/PremiumBlockScreen
 
 const DifficultWords: React.FC = () => {
   const navigate = useNavigate();
-  const { isPremium, hasReachedLimit, FREE_WORDS_LIMIT, freeWordsUsed } = usePremiumGate();
-  const [limitReached, setLimitReached] = useState(false);
-  
-  // Check limit on mount
-  useEffect(() => {
-    if (!isPremium && hasReachedLimit) {
-      setLimitReached(true);
-    }
-  }, [isPremium, hasReachedLimit]);
+  const { isPremium, isTimeUp } = usePremiumGate();
   
   // Selected word for practice
   const [selectedWord, setSelectedWord] = useState<{
@@ -93,14 +85,7 @@ const DifficultWords: React.FC = () => {
     }
   };
 
-  // Show block screen if limit reached
-  if (limitReached) {
-    return (
-      <AppLayout>
-        <PremiumBlockScreen onBack={() => navigate('/')} />
-      </AppLayout>
-    );
-  }
+  // Time up is handled by global overlay
 
   return (
     <AppLayout>

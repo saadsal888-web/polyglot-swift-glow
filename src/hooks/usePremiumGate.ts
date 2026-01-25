@@ -1,22 +1,20 @@
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { SubscriptionContext } from '@/contexts/SubscriptionContext';
 
-const FREE_WORDS_LIMIT = 5;
-const STORAGE_KEY = 'free_words_used';
+const TRIAL_DURATION = 600; // 10 minutes = 600 seconds
+const STORAGE_KEY = 'freeTrialTimeLeft';
+const TRIAL_START_KEY = 'freeTrialStarted';
 
 // Detect if running inside WebView (Android/iOS native wrapper)
 const detectWebView = (): boolean => {
-  // Check for Android WebView bridge
   if (typeof window !== 'undefined' && window.AndroidApp !== undefined) {
     return true;
   }
   
-  // Check for Despia platform
   if (typeof navigator !== 'undefined' && navigator.userAgent.includes('Despia')) {
     return true;
   }
   
-  // Check for common WebView indicators
   const userAgent = navigator.userAgent.toLowerCase();
   const isWebView = userAgent.includes('wv') || 
                     userAgent.includes('webview') ||
@@ -26,43 +24,100 @@ const detectWebView = (): boolean => {
 };
 
 export const usePremiumGate = () => {
-  // Use context directly with fallback for when provider isn't available yet
   const context = useContext(SubscriptionContext);
   const isPremium = context?.isPremium ?? false;
   
-  const [freeWordsUsed, setFreeWordsUsed] = useState(0);
+  const [timeLeft, setTimeLeft] = useState<number>(TRIAL_DURATION);
+  const [isTimeUp, setIsTimeUp] = useState<boolean>(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load from localStorage on mount
+  // Initialize timer from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setFreeWordsUsed(parseInt(stored, 10));
+    if (isPremium) {
+      // Premium users don't need timer
+      setTimeLeft(TRIAL_DURATION);
+      setIsTimeUp(false);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(TRIAL_START_KEY);
+      } catch (e) {
+        console.warn('[PremiumGate] Could not clear timer storage:', e);
+      }
+      return;
     }
-  }, []);
 
-  // Get count from localStorage (fresh read)
-  const getFreeWordsUsed = useCallback((): number => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? parseInt(stored, 10) : 0;
-  }, []);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const trialStarted = localStorage.getItem(TRIAL_START_KEY);
+      
+      if (stored !== null) {
+        // Resume from stored time
+        const storedTime = parseInt(stored, 10);
+        if (storedTime <= 0) {
+          setTimeLeft(0);
+          setIsTimeUp(true);
+        } else {
+          setTimeLeft(storedTime);
+        }
+      } else if (!trialStarted) {
+        // First time - start fresh trial
+        localStorage.setItem(TRIAL_START_KEY, 'true');
+        localStorage.setItem(STORAGE_KEY, String(TRIAL_DURATION));
+        setTimeLeft(TRIAL_DURATION);
+      }
+    } catch (e) {
+      console.warn('[PremiumGate] Could not access localStorage:', e);
+    }
+  }, [isPremium]);
 
-  // Increment counter (call after each word/phrase action)
-  const incrementFreeWords = useCallback((): void => {
-    if (isPremium) return;
-    const current = getFreeWordsUsed();
-    const newCount = current + 1;
-    localStorage.setItem(STORAGE_KEY, String(newCount));
-    setFreeWordsUsed(newCount);
-  }, [isPremium, getFreeWordsUsed]);
+  // Countdown timer
+  useEffect(() => {
+    if (isPremium || isTimeUp) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
 
-  // Check if limit reached
-  const hasReachedLimit = useCallback((): boolean => {
-    if (isPremium) return false;
-    return getFreeWordsUsed() >= FREE_WORDS_LIMIT;
-  }, [isPremium, getFreeWordsUsed]);
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        const newTime = prev - 1;
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem(STORAGE_KEY, String(Math.max(0, newTime)));
+        } catch (e) {
+          console.warn('[PremiumGate] Could not save time:', e);
+        }
+        
+        if (newTime <= 0) {
+          setIsTimeUp(true);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          return 0;
+        }
+        
+        return newTime;
+      });
+    }, 1000);
 
-  // Check if currently at limit (reactive)
-  const isAtLimit = !isPremium && freeWordsUsed >= FREE_WORDS_LIMIT;
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isPremium, isTimeUp]);
+
+  // Format time as MM:SS
+  const formattedTime = useCallback((): string => {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [timeLeft]);
 
   // Detect if running in WebView
   const isInWebView = detectWebView();
@@ -92,24 +147,27 @@ export const usePremiumGate = () => {
     return false;
   }, [isInWebView]);
 
-  // Reset counter (for testing/admin purposes)
-  const resetCounter = useCallback((): void => {
-    localStorage.removeItem(STORAGE_KEY);
-    setFreeWordsUsed(0);
+  // Reset timer (for testing/admin purposes)
+  const resetTimer = useCallback((): void => {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(TRIAL_DURATION));
+      localStorage.setItem(TRIAL_START_KEY, 'true');
+    } catch (e) {
+      console.warn('[PremiumGate] Could not reset timer:', e);
+    }
+    setTimeLeft(TRIAL_DURATION);
+    setIsTimeUp(false);
   }, []);
 
   return {
     isPremium,
-    freeWordsUsed,
-    wordsRemaining: Math.max(0, FREE_WORDS_LIMIT - freeWordsUsed),
-    hasReachedLimit: hasReachedLimit(),
-    isAtLimit,
-    incrementFreeWords,
+    timeLeft,
+    isTimeUp,
+    formattedTime: formattedTime(),
     triggerPaywall,
     isInWebView,
     hasAndroidApp,
-    resetCounter,
-    FREE_WORDS_LIMIT,
-    getFreeWordsUsed,
+    resetTimer,
+    TRIAL_DURATION,
   };
 };

@@ -86,7 +86,7 @@ const generateExercises = (words: DbWord[]): ExerciseData[] => {
 const Exercise: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isPremium, hasReachedLimit } = usePremiumGate();
+  const { isPremium, isTimeUp } = usePremiumGate();
 
   // استخدام الكلمات المتعلمة فقط بدلاً من كل الكلمات
   const { data: learnedWordsData, isLoading } = useLearnedWords(user?.id);
@@ -102,14 +102,7 @@ const Exercise: React.FC = () => {
   const [showWordRepetition, setShowWordRepetition] = useState(false);
   const [repetitionWord, setRepetitionWord] = useState('');
 
-  // Block access if limit reached
-  if (!isPremium && hasReachedLimit) {
-    return (
-      <AppLayout>
-        <PremiumBlockScreen onBack={() => navigate('/')} />
-      </AppLayout>
-    );
-  }
+  // Time up is handled by global overlay
 
   useEffect(() => {
     if (words && words.length >= 4) {
