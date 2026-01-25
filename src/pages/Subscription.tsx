@@ -40,6 +40,7 @@ const Subscription: React.FC = () => {
   const { isPremium, isLoading, prices } = useSubscription();
 
   const isNative = Capacitor.isNativePlatform();
+  const hasAndroidApp = typeof window !== 'undefined' && window.AndroidApp !== undefined;
 
   const refreshUserData = async () => {
     await queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
@@ -53,23 +54,61 @@ const Subscription: React.FC = () => {
     }
   }, [isPremium, isLoading, navigate]);
 
+  // الاستماع لنتيجة الشراء من Android
+  useEffect(() => {
+    const handlePurchaseResult = async (e: CustomEvent<{ success: boolean; message?: string }>) => {
+      if (e.detail.success) {
+        toast.success('تم تفعيل اشتراكك بنجاح! 🎉');
+        await refreshUserData();
+        navigate('/', { replace: true });
+      } else if (e.detail.message && e.detail.message !== 'User cancelled') {
+        toast.error(e.detail.message);
+      }
+    };
+    
+    window.addEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    return () => {
+      window.removeEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    };
+  }, [navigate]);
+
   const handleSubscribe = async () => {
+    // أولوية 1: AndroidApp WebView bridge
+    if (hasAndroidApp && window.AndroidApp?.subscribe) {
+      window.AndroidApp.subscribe('annual');
+      return;
+    }
+    
+    // أولوية 2: Despia
     if (isDespiaPlatform()) {
       await presentPaywall();
       setTimeout(refreshUserData, 2000);
-    } else if (isNative) {
+      return;
+    }
+    
+    // أولوية 3: Capacitor Native
+    if (isNative) {
       const success = await presentPaywall();
       if (success) {
         toast.success('تم تفعيل اشتراكك بنجاح! 🎉');
         await refreshUserData();
         navigate('/', { replace: true });
       }
-    } else {
-      toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
+      return;
     }
+    
+    // Web fallback
+    toast.info('سيتم فتح شاشة الدفع على الجهاز الحقيقي');
   };
 
   const handleRestore = async () => {
+    // أولوية 1: AndroidApp WebView bridge
+    if (hasAndroidApp && window.AndroidApp?.restorePurchases) {
+      window.AndroidApp.restorePurchases();
+      return;
+    }
+    
+    // Capacitor Native
     if (isNative) {
       const success = await revenueCatRestore();
       if (success) {

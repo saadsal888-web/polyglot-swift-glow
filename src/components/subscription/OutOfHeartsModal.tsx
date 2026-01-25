@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Crown, Home, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -17,23 +17,49 @@ export const OutOfHeartsModal: React.FC<OutOfHeartsModalProps> = ({ isOpen, onCl
   const navigate = useNavigate();
   const { prices } = useSubscription();
 
+  // الاستماع لنتيجة الشراء من Android
+  useEffect(() => {
+    const handlePurchaseResult = (e: CustomEvent<{ success: boolean; message?: string }>) => {
+      if (e.detail.success) {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    return () => {
+      window.removeEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    };
+  }, [onClose]);
+
   if (!isOpen) return null;
 
   // السعر من RevenueCat أو الافتراضي
   const yearlyPrice = prices?.yearly || '٧٩ ر.س/سنة';
 
   const handleSubscribe = async () => {
+    // أولوية 1: AndroidApp WebView bridge
+    if (window.AndroidApp?.subscribe) {
+      window.AndroidApp.subscribe('annual');
+      return;
+    }
+    
+    // أولوية 2: Despia
     if (isDespiaPlatform()) {
-      // Despia handles everything internally
       await presentPaywall();
-    } else if (Capacitor.isNativePlatform()) {
+      return;
+    }
+    
+    // أولوية 3: Capacitor Native
+    if (Capacitor.isNativePlatform()) {
       const success = await presentPaywall();
       if (success) {
         window.location.reload();
       }
-    } else {
-      toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
+      return;
     }
+    
+    // Web fallback
+    toast.info('سيتم فتح شاشة الدفع على الجهاز الحقيقي');
   };
 
   const handleGoHome = () => {

@@ -15,6 +15,7 @@ declare global {
     __SUBSCRIPTION_PRICES__?: SubscriptionPrices | null;
     setPremiumStatus?: (isPremium: boolean) => void;
     setSubscriptionPrices?: (prices: SubscriptionPrices) => void;
+    onPurchaseResult?: (success: boolean, message?: string) => void;
     AndroidApp?: {
       subscribe: (productId?: string) => void;
       restorePurchases: () => void;
@@ -118,6 +119,19 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setPrices(newPrices);
         };
 
+        // جسر نتيجة الشراء من Android
+        window.onPurchaseResult = (success: boolean, message?: string) => {
+          console.log('[Subscription] Purchase result from Android:', success, message);
+          if (success) {
+            setIsPremium(true);
+            localStorage.setItem('isPremium', 'true');
+          }
+          // إرسال event للمكونات الأخرى
+          window.dispatchEvent(new CustomEvent('purchaseResult', { 
+            detail: { success, message } 
+          }));
+        };
+
         // Listen for custom events from Android
         const handlePremiumChange = (e: CustomEvent<{ isPremium: boolean }>) => {
           setIsPremium(e.detail.isPremium);
@@ -134,6 +148,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return () => {
           window.removeEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
           window.removeEventListener('pricesUpdated', handlePricesUpdate as EventListener);
+          window.onPurchaseResult = undefined;
         };
       }
 
