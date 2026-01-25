@@ -6,6 +6,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useTrainingPhrases, DbPhrase } from '@/hooks/usePhrases';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { PremiumBlockScreen } from '@/components/subscription/PremiumBlockScreen';
 import { Button } from '@/components/ui/button';
 
 const SESSION_LIMIT = 10;
@@ -13,12 +15,22 @@ const SESSION_LIMIT = 10;
 const TrainPhrases: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isPremium, hasReachedLimit } = usePremiumGate();
   const { data: trainingData, isLoading } = useTrainingPhrases(user?.id, SESSION_LIMIT);
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [completed, setCompleted] = useState<string[]>([]);
   const [sessionComplete, setSessionComplete] = useState(false);
+
+  // Block access if limit reached
+  if (!isPremium && hasReachedLimit) {
+    return (
+      <AppLayout>
+        <PremiumBlockScreen onBack={() => navigate('/')} />
+      </AppLayout>
+    );
+  }
 
   const phrases = useMemo(() => {
     return trainingData?.map(item => item.phrases).filter(Boolean) as DbPhrase[] || [];

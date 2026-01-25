@@ -4,17 +4,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLearnedWords } from '@/hooks/useWords';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { PremiumBlockScreen } from '@/components/subscription/PremiumBlockScreen';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const SpellingPractice: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isPremium, hasReachedLimit } = usePremiumGate();
   const { data: learnedWords, isLoading } = useLearnedWords(user?.id);
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealedCount, setRevealedCount] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  // Block access if limit reached
+  if (!isPremium && hasReachedLimit) {
+    return <PremiumBlockScreen onBack={() => navigate('/')} />;
+  }
 
   const currentWord = learnedWords?.[currentIndex];
   const letters = currentWord?.word_en?.split('') || [];
@@ -48,22 +56,20 @@ const SpellingPractice: React.FC = () => {
     setIsPlayingAudio(true);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        `https://wiyetipqsuzhretlmfio.supabase.co/functions/v1/elevenlabs-tts`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpeWV0aXBxc3V6aHJldGxtZmlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MTIyNjEsImV4cCI6MjA4MjA4ODI2MX0.Er6FTKMy8CCfubQ5aPNPuKSC_afF3plkbpBrqqXH43E",
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndpeWV0aXBxc3V6aHJldGxtZmlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1MTIyNjEsImV4cCI6MjA4MjA4ODI2MX0.Er6FTKMy8CCfubQ5aPNPuKSC_afF3plkbpBrqqXH43E`,
           },
           body: JSON.stringify({ text: word }),
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("TTS error details:", errorData);
-        throw new Error(errorData.details || errorData.error || `TTS failed: ${response.status}`);
+        throw new Error(`TTS failed: ${response.status}`);
       }
 
       const audioBlob = await response.blob();

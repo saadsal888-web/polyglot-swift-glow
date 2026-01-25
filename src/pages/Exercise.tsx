@@ -6,11 +6,11 @@ import { ExerciseHeader } from '@/components/exercise/ExerciseHeader';
 import { QuestionCard } from '@/components/exercise/QuestionCard';
 import { OptionsGrid } from '@/components/exercise/OptionsGrid';
 import { ActionButtons } from '@/components/exercise/ActionButtons';
-import { OutOfHeartsModal } from '@/components/subscription/OutOfHeartsModal';
 import { WordRepetitionOverlay } from '@/components/exercise/WordRepetitionOverlay';
 import { useLearnedWords, DbWord } from '@/hooks/useWords';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { PremiumBlockScreen } from '@/components/subscription/PremiumBlockScreen';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { BookOpen } from 'lucide-react';
@@ -86,7 +86,7 @@ const generateExercises = (words: DbWord[]): ExerciseData[] => {
 const Exercise: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isPremium } = useSubscription();
+  const { isPremium, hasReachedLimit } = usePremiumGate();
 
   // استخدام الكلمات المتعلمة فقط بدلاً من كل الكلمات
   const { data: learnedWordsData, isLoading } = useLearnedWords(user?.id);
@@ -99,10 +99,17 @@ const Exercise: React.FC = () => {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
-  const [hearts, setHearts] = useState(5);
-  const [showOutOfHeartsModal, setShowOutOfHeartsModal] = useState(false);
   const [showWordRepetition, setShowWordRepetition] = useState(false);
   const [repetitionWord, setRepetitionWord] = useState('');
+
+  // Block access if limit reached
+  if (!isPremium && hasReachedLimit) {
+    return (
+      <AppLayout>
+        <PremiumBlockScreen onBack={() => navigate('/')} />
+      </AppLayout>
+    );
+  }
 
   useEffect(() => {
     if (words && words.length >= 4) {
@@ -134,14 +141,6 @@ const Exercise: React.FC = () => {
     const correct = selectedOption === currentExercise.correctAnswer;
     setIsCorrect(correct);
     setIsAnswered(true);
-    
-    if (!correct && !isPremium) {
-      const newHearts = Math.max(0, hearts - 1);
-      setHearts(newHearts);
-      if (newHearts === 0) {
-        setShowOutOfHeartsModal(true);
-      }
-    }
   };
 
   const handleNext = () => {
@@ -157,14 +156,6 @@ const Exercise: React.FC = () => {
   };
 
   const handleSkip = () => {
-    if (!isPremium) {
-      const newHearts = Math.max(0, hearts - 1);
-      setHearts(newHearts);
-      if (newHearts === 0) {
-        setShowOutOfHeartsModal(true);
-        return;
-      }
-    }
     handleNext();
   };
 
@@ -217,15 +208,10 @@ const Exercise: React.FC = () => {
       <ExerciseHeader
         currentQuestion={currentIndex + 1}
         totalQuestions={exercises.length}
-        hearts={hearts}
+        hearts={isPremium ? 999 : 5}
         lightning={150}
         timeRemaining={1}
         isPremium={isPremium}
-      />
-
-      <OutOfHeartsModal
-        isOpen={showOutOfHeartsModal}
-        onClose={() => setShowOutOfHeartsModal(false)}
       />
 
       <AnimatePresence mode="wait">
