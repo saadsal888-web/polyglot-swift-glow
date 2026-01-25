@@ -123,13 +123,7 @@ const Words: React.FC = () => {
     // Only A1 is available currently
     if (level !== 'A1') return;
 
-    // Check premium status for A1
-    if (!isPremium) {
-      setShowPaywall(true);
-      return;
-    }
-
-    // Navigate to practice page
+    // A1 is open for everyone - navigate directly
     navigate(`/words-practice/${level}`);
   };
 
@@ -164,10 +158,9 @@ const Words: React.FC = () => {
 
         {/* Levels Grid */}
         <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
-          {levelOptions.map((option, index) => {
-            const isNotAvailable = !option.available;
-            const needsPremium = option.level === 'A1' && !isPremium;
-            const isLocked = isNotAvailable || needsPremium;
+        {levelOptions.map((option, index) => {
+            // A1 is open for everyone, others are coming soon
+            const isLocked = !option.available;
 
             return (
               <LevelCard
@@ -176,7 +169,7 @@ const Words: React.FC = () => {
                 index={index}
                 onClick={() => handleLevelClick(option.level)}
                 isLocked={isLocked}
-                isPremiumRequired={option.level === 'A1'}
+                isPremiumRequired={false}
               />
             );
           })}
