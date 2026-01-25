@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Smartphone, ArrowRight, Crown } from 'lucide-react';
+import { Lock, Smartphone, ArrowRight, Crown, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { toast } from 'sonner';
 
 /**
  * Subscription page - No payment processing on website
@@ -27,6 +28,17 @@ const Subscription: React.FC = () => {
       window.AndroidApp.requestPaywall();
     }
   }, [hasAndroidApp]);
+
+  // Handle restore purchases
+  const handleRestorePurchases = () => {
+    if (window.AndroidApp?.restorePurchases) {
+      console.log('[Subscription] Calling AndroidApp.restorePurchases()');
+      window.AndroidApp.restorePurchases();
+      toast.info('جاري استعادة الاشتراك...');
+    } else {
+      toast.error('استعادة الاشتراك متاحة فقط في التطبيق');
+    }
+  };
 
   // AndroidApp available: Show loading state while native paywall is triggered
   if (hasAndroidApp) {
@@ -110,12 +122,12 @@ const Subscription: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Back Button */}
+      {/* Action Buttons */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="w-full max-w-sm"
+        className="w-full max-w-sm space-y-3"
       >
         <Button
           onClick={() => navigate('/')}
@@ -124,6 +136,15 @@ const Subscription: React.FC = () => {
         >
           <ArrowRight size={18} className="ml-2" />
           العودة للرئيسية
+        </Button>
+        
+        <Button
+          onClick={handleRestorePurchases}
+          variant="ghost"
+          className="w-full h-12"
+        >
+          <RefreshCw size={18} className="ml-2" />
+          استعادة الاشتراك
         </Button>
       </motion.div>
     </div>

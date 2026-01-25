@@ -275,16 +275,20 @@ const LearnWords: React.FC = () => {
           <div className="flex items-center gap-2">
             <BookOpen size={18} className="text-primary" />
             <span className="font-semibold">تعلم {difficulty}</span>
-            {!isPremium && (
-              <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                {freeWordsUsed}/{FREE_WORDS_LIMIT}
-              </span>
-            )}
           </div>
           <button onClick={() => navigate('/words')} className="p-2">
             <ArrowRight size={20} />
           </button>
         </div>
+
+        {/* Remaining words counter for non-premium users */}
+        {!isPremium && (
+          <div className="bg-amber-100 dark:bg-amber-900/30 rounded-lg px-4 py-2 mb-4 text-center">
+            <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">
+              {Math.max(0, FREE_WORDS_LIMIT - freeWordsUsed)} من {FREE_WORDS_LIMIT} كلمات مجانية متبقية
+            </span>
+          </div>
+        )}
 
         {/* Progress */}
         <ProgressBar progress={progress} className="mb-6" />

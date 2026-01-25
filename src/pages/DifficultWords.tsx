@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Volume2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,9 +7,20 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WordRepetitionOverlay } from '@/components/exercise/WordRepetitionOverlay';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { PremiumBlockScreen } from '@/components/subscription/PremiumBlockScreen';
 
 const DifficultWords: React.FC = () => {
   const navigate = useNavigate();
+  const { isPremium, hasReachedLimit, FREE_WORDS_LIMIT, freeWordsUsed } = usePremiumGate();
+  const [limitReached, setLimitReached] = useState(false);
+  
+  // Check limit on mount
+  useEffect(() => {
+    if (!isPremium && hasReachedLimit) {
+      setLimitReached(true);
+    }
+  }, [isPremium, hasReachedLimit]);
   
   // Selected word for practice
   const [selectedWord, setSelectedWord] = useState<{
@@ -81,6 +92,15 @@ const DifficultWords: React.FC = () => {
       audioEl.play();
     }
   };
+
+  // Show block screen if limit reached
+  if (limitReached) {
+    return (
+      <AppLayout>
+        <PremiumBlockScreen onBack={() => navigate('/')} />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
