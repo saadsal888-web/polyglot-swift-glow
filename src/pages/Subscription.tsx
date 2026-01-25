@@ -1,10 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Smartphone, ArrowRight, Crown, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { toast } from 'sonner';
+
+// Define custom event type for purchaseResult
+interface PurchaseResultEvent extends CustomEvent {
+  detail: { success: boolean; message?: string };
+}
 
 /**
  * Subscription page - No payment processing on website
@@ -30,15 +35,33 @@ const Subscription: React.FC = () => {
   }, [hasAndroidApp]);
 
   // Handle restore purchases
-  const handleRestorePurchases = () => {
-    if (window.AndroidApp?.restorePurchases) {
+  const handleRestorePurchases = useCallback(() => {
+    if (hasAndroidApp && window.AndroidApp?.restorePurchases) {
       console.log('[Subscription] Calling AndroidApp.restorePurchases()');
-      window.AndroidApp.restorePurchases();
       toast.info('جاري استعادة الاشتراك...');
+      window.AndroidApp.restorePurchases();
     } else {
       toast.error('استعادة الاشتراك متاحة فقط في التطبيق');
     }
-  };
+  }, [hasAndroidApp]);
+
+  // Listen for purchase result from Android bridge
+  useEffect(() => {
+    const handlePurchaseResult = (e: PurchaseResultEvent) => {
+      console.log('[Subscription] Purchase result received:', e.detail);
+      if (e.detail.success) {
+        toast.success('تم استعادة اشتراكك بنجاح! 🎉');
+        setTimeout(() => navigate('/'), 2000);
+      } else {
+        toast.error('لم يتم العثور على اشتراك سابق');
+      }
+    };
+    
+    window.addEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    return () => {
+      window.removeEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    };
+  }, [navigate]);
 
   // AndroidApp available: Show loading state while native paywall is triggered
   if (hasAndroidApp) {
