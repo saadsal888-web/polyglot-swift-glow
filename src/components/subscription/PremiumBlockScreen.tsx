@@ -11,7 +11,7 @@ interface PremiumBlockScreenProps {
 
 export const PremiumBlockScreen: React.FC<PremiumBlockScreenProps> = ({ onBack }) => {
   const navigate = useNavigate();
-  const { hasAndroidApp, triggerPaywall, freeWordsUsed, FREE_WORDS_LIMIT } = usePremiumGate();
+  const { hasAndroidApp, triggerPaywall, formattedTime, TRIAL_DURATION } = usePremiumGate();
 
   // Automatically trigger paywall when AndroidApp is available
   useEffect(() => {
@@ -90,7 +90,7 @@ export const PremiumBlockScreen: React.FC<PremiumBlockScreenProps> = ({ onBack }
         className="text-center mb-6"
       >
         <p className="text-muted-foreground mb-2">
-          لقد تعلمت {freeWordsUsed} من {FREE_WORDS_LIMIT} كلمات مجانية
+          انتهت فترة التجربة المجانية (10 دقائق)
         </p>
         <p className="text-foreground font-medium">
           Premium is available only in the mobile app.

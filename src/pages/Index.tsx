@@ -25,7 +25,7 @@ const Index: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
-  const { wordsRemaining, FREE_WORDS_LIMIT, hasAndroidApp } = usePremiumGate();
+  const { formattedTime, isTimeUp, hasAndroidApp } = usePremiumGate();
 
   const { data: words } = useAllWords();
   const { data: phrases } = useAllPhrases();
@@ -187,7 +187,7 @@ const Index: React.FC = () => {
           <div className="w-12 h-1 bg-wc-purple rounded-full mt-1" />
         </motion.div>
 
-        {/* Free Words Remaining Banner - Only for non-premium users */}
+        {/* Free Trial Banner - Only for non-premium users */}
         {!isPremium && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -204,8 +204,9 @@ const Index: React.FC = () => {
                 <Crown size={14} className="ml-1" />
                 اشترك الآن
               </Button>
-              <span className="text-sm text-amber-800 dark:text-amber-300 font-medium">
-                {wordsRemaining} من {FREE_WORDS_LIMIT} كلمات مجانية متبقية
+              <span className="text-sm text-amber-800 dark:text-amber-300 font-medium flex items-center gap-2">
+                <span dir="ltr" className="font-bold tabular-nums">⏱️ {formattedTime}</span>
+                <span>تجربة مجانية</span>
               </span>
             </div>
           </motion.div>

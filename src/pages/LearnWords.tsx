@@ -26,7 +26,7 @@ const LearnWords: React.FC = () => {
   const { user } = useAuth();
   const { data: words, isLoading } = useNewWordsForLearning(difficulty || 'A1');
   
-  const { isPremium, hasReachedLimit, incrementFreeWords, triggerPaywall, freeWordsUsed, FREE_WORDS_LIMIT } = usePremiumGate();
+  const { isPremium, isTimeUp, formattedTime, triggerPaywall } = usePremiumGate();
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [learnedCount, setLearnedCount] = useState(0);
@@ -34,18 +34,11 @@ const LearnWords: React.FC = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [limitReached, setLimitReached] = useState(false);
 
   const currentWord = words?.[currentIndex];
   const totalWords = words?.length || 0;
   const progress = totalWords > 0 ? ((currentIndex) / totalWords) * 100 : 0;
 
-  // Check limit on mount
-  useEffect(() => {
-    if (!isPremium && hasReachedLimit) {
-      setLimitReached(true);
-    }
-  }, [isPremium, hasReachedLimit]);
 
   const speakWord = useCallback(async (word: string) => {
     if (isPlayingAudio) return;
@@ -101,15 +94,10 @@ const LearnWords: React.FC = () => {
   const handleLearn = async () => {
     if (!currentWord) return;
 
-    // Check limit BEFORE saving
-    if (!isPremium) {
-      if (hasReachedLimit) {
-        setLimitReached(true);
-        triggerPaywall();
-        return;
-      }
-      // Increment the counter
-      incrementFreeWords();
+    // Check time limit
+    if (!isPremium && isTimeUp) {
+      triggerPaywall();
+      return;
     }
 
     // Save progress if user is logged in
@@ -137,14 +125,6 @@ const LearnWords: React.FC = () => {
     }
 
     setLearnedCount(prev => prev + 1);
-    
-    // Check if limit is now reached after increment
-    if (!isPremium && freeWordsUsed + 1 >= FREE_WORDS_LIMIT) {
-      setLimitReached(true);
-      triggerPaywall();
-      return;
-    }
-    
     goToNext();
   };
 
@@ -170,14 +150,7 @@ const LearnWords: React.FC = () => {
     setShowTranslation(false);
   };
 
-  // Show block screen if limit reached
-  if (limitReached) {
-    return (
-      <AppLayout>
-        <PremiumBlockScreen onBack={() => navigate('/words')} />
-      </AppLayout>
-    );
-  }
+  // Time up is handled by global overlay, no need for local block
 
   if (isLoading) {
     return (
@@ -239,14 +212,6 @@ const LearnWords: React.FC = () => {
             </div>
           </div>
 
-          {/* Show remaining words for free users */}
-          {!isPremium && (
-            <div className="bg-muted/50 rounded-xl px-4 py-2 mb-4">
-              <p className="text-sm text-muted-foreground">
-                الكلمات المتبقية: {Math.max(0, FREE_WORDS_LIMIT - freeWordsUsed)} / {FREE_WORDS_LIMIT}
-              </p>
-            </div>
-          )}
 
           <div className="w-full max-w-xs space-y-3">
             <Button onClick={() => navigate('/exercise')} className="w-full">
@@ -281,11 +246,11 @@ const LearnWords: React.FC = () => {
           </button>
         </div>
 
-        {/* Remaining words counter for non-premium users */}
+        {/* Timer for non-premium users */}
         {!isPremium && (
           <div className="bg-amber-100 dark:bg-amber-900/30 rounded-lg px-4 py-2 mb-4 text-center">
             <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-              {Math.max(0, FREE_WORDS_LIMIT - freeWordsUsed)} من {FREE_WORDS_LIMIT} كلمات مجانية متبقية
+              ⏱️ الوقت المتبقي: <span dir="ltr" className="font-bold">{formattedTime}</span>
             </span>
           </div>
         )}

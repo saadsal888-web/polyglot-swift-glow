@@ -11,18 +11,11 @@ import { Button } from '@/components/ui/button';
 
 const Flashcards: React.FC = () => {
   const navigate = useNavigate();
-  const { isPremium, hasReachedLimit } = usePremiumGate();
+  const { isPremium, isTimeUp } = usePremiumGate();
 
   const { data: allWords, isLoading } = useAllWords();
 
-  // Block access if limit reached
-  if (!isPremium && hasReachedLimit) {
-    return (
-      <AppLayout>
-        <PremiumBlockScreen onBack={() => navigate('/')} />
-      </AppLayout>
-    );
-  }
+  // Time up is handled by global overlay
 
   // Shuffle words once on load
   const words = useMemo(() => {

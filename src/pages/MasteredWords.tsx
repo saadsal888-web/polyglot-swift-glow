@@ -11,16 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const MasteredWords: React.FC = () => {
   const navigate = useNavigate();
-  const { isPremium, hasReachedLimit } = usePremiumGate();
+  const { isPremium, isTimeUp } = usePremiumGate();
 
-  // Block access if limit reached
-  if (!isPremium && hasReachedLimit) {
-    return (
-      <AppLayout>
-        <PremiumBlockScreen onBack={() => navigate('/')} />
-      </AppLayout>
-    );
-  }
+  // Time up is handled by global overlay
 
   const { data: masteredWords, isLoading } = useQuery({
     queryKey: ['mastered-words'],

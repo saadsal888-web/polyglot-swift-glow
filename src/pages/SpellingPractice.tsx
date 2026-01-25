@@ -12,17 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 const SpellingPractice: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isPremium, hasReachedLimit } = usePremiumGate();
+  const { isPremium, isTimeUp } = usePremiumGate();
   const { data: learnedWords, isLoading } = useLearnedWords(user?.id);
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealedCount, setRevealedCount] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
-  // Block access if limit reached
-  if (!isPremium && hasReachedLimit) {
-    return <PremiumBlockScreen onBack={() => navigate('/')} />;
-  }
+  // Time up is handled by global overlay
 
   const currentWord = learnedWords?.[currentIndex];
   const letters = currentWord?.word_en?.split('') || [];

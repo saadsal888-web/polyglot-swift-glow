@@ -15,7 +15,7 @@ const SESSION_LIMIT = 10;
 const TrainPhrases: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isPremium, hasReachedLimit } = usePremiumGate();
+  const { isPremium, isTimeUp } = usePremiumGate();
   const { data: trainingData, isLoading } = useTrainingPhrases(user?.id, SESSION_LIMIT);
   
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -23,14 +23,7 @@ const TrainPhrases: React.FC = () => {
   const [completed, setCompleted] = useState<string[]>([]);
   const [sessionComplete, setSessionComplete] = useState(false);
 
-  // Block access if limit reached
-  if (!isPremium && hasReachedLimit) {
-    return (
-      <AppLayout>
-        <PremiumBlockScreen onBack={() => navigate('/')} />
-      </AppLayout>
-    );
-  }
+  // Time up is handled by global overlay
 
   const phrases = useMemo(() => {
     return trainingData?.map(item => item.phrases).filter(Boolean) as DbPhrase[] || [];
