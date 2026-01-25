@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { SubscriptionContext } from '@/contexts/SubscriptionContext';
 
-const TRIAL_DURATION = 600; // 10 minutes = 600 seconds
+const TRIAL_DURATION = 300; // 5 minutes = 300 seconds
 const STORAGE_KEY = 'freeTrialTimeLeft';
 const TRIAL_START_KEY = 'freeTrialStarted';
 

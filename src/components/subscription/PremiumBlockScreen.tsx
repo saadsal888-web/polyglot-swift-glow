@@ -90,7 +90,7 @@ export const PremiumBlockScreen: React.FC<PremiumBlockScreenProps> = ({ onBack }
         className="text-center mb-6"
       >
         <p className="text-muted-foreground mb-2">
-          انتهت فترة التجربة المجانية (10 دقائق)
+          انتهت فترة التجربة المجانية (5 دقائق)
         </p>
         <p className="text-foreground font-medium">
           Premium is available only in the mobile app.
