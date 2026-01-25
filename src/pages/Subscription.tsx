@@ -4,6 +4,7 @@ import { Lock, Smartphone, ArrowRight, Crown, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { triggerCelebration } from '@/hooks/useCelebration';
 import { toast } from 'sonner';
 
 // Define custom event type for purchaseResult
@@ -50,6 +51,8 @@ const Subscription: React.FC = () => {
     const handlePurchaseResult = (e: PurchaseResultEvent) => {
       console.log('[Subscription] Purchase result received:', e.detail);
       if (e.detail.success) {
+        // Trigger celebration effect
+        triggerCelebration();
         toast.success('تم استعادة اشتراكك بنجاح! 🎉');
         setTimeout(() => navigate('/'), 2000);
       } else {
