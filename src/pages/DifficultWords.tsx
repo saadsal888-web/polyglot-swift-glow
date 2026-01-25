@@ -16,7 +16,6 @@ const DifficultWords: React.FC = () => {
   const [isPracticing, setIsPracticing] = useState(false);
   const [currentPracticeIndex, setCurrentPracticeIndex] = useState(0);
   const [showRepetition, setShowRepetition] = useState(false);
-  const [practiceComplete, setPracticeComplete] = useState(false);
 
   const { data: difficultWords, isLoading } = useQuery({
     queryKey: ['difficult-words'],
@@ -59,29 +58,24 @@ const DifficultWords: React.FC = () => {
       setCurrentPracticeIndex(0);
       setIsPracticing(true);
       setShowRepetition(true);
-      setPracticeComplete(false);
     }
   };
 
-  // Handle when word repetition completes
+  // Handle when word repetition completes - loops infinitely
   const handleRepetitionComplete = useCallback(() => {
     setShowRepetition(false);
     
     setTimeout(() => {
-      if (currentPracticeIndex < (difficultWords?.length || 0) - 1) {
-        setCurrentPracticeIndex(prev => prev + 1);
-        setShowRepetition(true);
-      } else {
-        // Practice complete
-        setPracticeComplete(true);
-      }
+      // Loop back to first word when reaching the end
+      const nextIndex = (currentPracticeIndex + 1) % (difficultWords?.length || 1);
+      setCurrentPracticeIndex(nextIndex);
+      setShowRepetition(true);
     }, 300);
   }, [currentPracticeIndex, difficultWords?.length]);
 
   // End practice and return to list
   const endPractice = () => {
     setIsPracticing(false);
-    setPracticeComplete(false);
     setCurrentPracticeIndex(0);
     setShowRepetition(false);
   };
@@ -118,51 +112,6 @@ const DifficultWords: React.FC = () => {
         repeatCount={3}
       />
 
-      {/* Practice Complete Screen */}
-      <AnimatePresence>
-        {isPracticing && practiceComplete && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-gradient-to-br from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-950 dark:to-green-950 flex flex-col items-center justify-center p-6"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-              className="text-7xl mb-6"
-            >
-              🎉
-            </motion.div>
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-2xl font-bold text-foreground mb-2"
-            >
-              أحسنت!
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="text-muted-foreground mb-8"
-            >
-              تدربت على {difficultWords?.length} كلمة صعبة
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <Button onClick={endPractice} size="lg" className="rounded-xl px-8">
-                العودة للقائمة
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Progress indicator during practice */}
       <AnimatePresence>
