@@ -1,16 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface WordPosition {
-  id: number;
-  text: string;
-  x: number;
-  y: number;
-  size: string;
-  opacity: number;
-  rotation: number;
-  color: string;
-}
+import { X, Volume2 } from 'lucide-react';
 
 interface WordRepetitionOverlayProps {
   word: string;
@@ -18,30 +8,24 @@ interface WordRepetitionOverlayProps {
   meaning?: string;
   isVisible: boolean;
   onComplete: () => void;
+  onStop?: () => void;
+  currentIndex?: number;
+  totalWords?: number;
   duration?: number;
   repeatCount?: number;
 }
 
-const sizes = [
-  'text-xs',
-  'text-sm', 
-  'text-base',
-  'text-lg',
-  'text-xl',
-  'text-2xl',
-  'text-3xl',
-  'text-4xl',
-];
+// Grid configuration
+const GRID_COLS = 5;
+const GRID_ROWS = 4;
 
-const colors = [
-  'text-purple-300',
-  'text-purple-400',
-  'text-purple-500',
-  'text-pink-300',
-  'text-pink-400',
-  'text-pink-500',
-  'text-indigo-400',
-  'text-indigo-500',
+// Floating card positions
+const cardPositions = [
+  { x: 50, y: 45 },
+  { x: 30, y: 35 },
+  { x: 70, y: 55 },
+  { x: 50, y: 30 },
+  { x: 40, y: 60 },
 ];
 
 export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
@@ -50,15 +34,19 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
   meaning,
   isVisible,
   onComplete,
+  onStop,
+  currentIndex = 0,
+  totalWords = 1,
   duration = 5000,
   repeatCount = 3,
 }) => {
   const [shouldShow, setShouldShow] = useState(false);
+  const [cardPositionIndex, setCardPositionIndex] = useState(0);
+  const [showListenButton, setShowListenButton] = useState(false);
 
   // Speak word repeatedly with pauses between
   const speakWordRepeatedly = async (wordToSpeak: string, count: number) => {
     try {
-      // Get audio URL from words table
       const { supabase } = await import('@/integrations/supabase/client');
       const { data } = await supabase
         .from('words')
@@ -70,14 +58,12 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
         for (let i = 0; i < count; i++) {
           const audio = new Audio(data.audio_url);
           
-          // Wait for audio to finish before next repetition
           await new Promise<void>((resolve) => {
             audio.onended = () => resolve();
             audio.onerror = () => resolve();
             audio.play().catch(() => resolve());
           });
           
-          // Short pause between repetitions
           if (i < count - 1) {
             await new Promise(resolve => setTimeout(resolve, 400));
           }
@@ -88,32 +74,68 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
     }
   };
 
-  // Generate random positions for the word
-  const wordPositions = useMemo((): WordPosition[] => {
-    const positions: WordPosition[] = [];
-    const count = 18; // Number of word instances
+  // Play single audio
+  const playAudio = async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase
+        .from('words')
+        .select('audio_url')
+        .eq('word_en', word)
+        .maybeSingle();
 
-    for (let i = 0; i < count; i++) {
-      positions.push({
-        id: i,
-        text: word,
-        x: Math.random() * 75 + 10, // 10% - 85%
-        y: Math.random() * 75 + 10, // 10% - 85%
-        size: sizes[Math.floor(Math.random() * sizes.length)],
-        opacity: Math.random() * 0.5 + 0.3, // 0.3 - 0.8
-        rotation: Math.random() * 30 - 15, // -15° to 15°
-        color: colors[Math.floor(Math.random() * colors.length)],
-      });
+      if (data?.audio_url) {
+        const audio = new Audio(data.audio_url);
+        audio.play();
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
     }
+  };
 
+  // Generate grid positions
+  const gridPositions = useMemo(() => {
+    const positions = [];
+    for (let row = 0; row < GRID_ROWS; row++) {
+      for (let col = 0; col < GRID_COLS; col++) {
+        positions.push({
+          id: `${row}-${col}`,
+          x: ((col + 0.5) * 100) / GRID_COLS,
+          y: 18 + row * 16,
+        });
+      }
+    }
     return positions;
-  }, [word]);
+  }, []);
+
+  // Animate card position
+  useEffect(() => {
+    if (!shouldShow) return;
+    
+    const interval = setInterval(() => {
+      setCardPositionIndex(prev => (prev + 1) % cardPositions.length);
+    }, 1200);
+    
+    return () => clearInterval(interval);
+  }, [shouldShow]);
+
+  // Show listen button near the end
+  useEffect(() => {
+    if (!shouldShow) return;
+    
+    const timer = setTimeout(() => {
+      setShowListenButton(true);
+    }, duration - 1500);
+    
+    return () => clearTimeout(timer);
+  }, [shouldShow, duration]);
 
   useEffect(() => {
     if (isVisible && word) {
       setShouldShow(true);
+      setCardPositionIndex(0);
+      setShowListenButton(false);
       
-      // Start repeating audio
       speakWordRepeatedly(word, repeatCount);
       
       const timer = setTimeout(() => {
@@ -130,6 +152,13 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
     onComplete();
   };
 
+  const handleStop = () => {
+    setShouldShow(false);
+    onStop?.();
+  };
+
+  const currentCardPos = cardPositions[cardPositionIndex];
+
   return (
     <AnimatePresence>
       {shouldShow && (
@@ -138,79 +167,120 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 bg-gradient-to-br from-indigo-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950 overflow-hidden cursor-pointer"
-          onClick={handleSkip}
+          className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900 overflow-hidden"
         >
-          {/* Words scattered across the screen */}
-          {wordPositions.map((pos, index) => (
+          {/* Header */}
+          <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-10">
+            {/* Close button */}
+            <motion.button
+              onClick={handleSkip}
+              whileTap={{ scale: 0.9 }}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-800 shadow-sm"
+            >
+              <X size={22} className="text-gray-600 dark:text-gray-300" />
+            </motion.button>
+            
+            {/* Progress counter */}
+            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
+              {currentIndex + 1}/{totalWords}
+            </span>
+            
+            {/* Progress dots */}
+            <div className="flex gap-1.5">
+              {[...Array(Math.min(4, totalWords))].map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    i <= currentIndex % 4 
+                      ? 'bg-primary' 
+                      : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Background grid of words */}
+          {gridPositions.map((pos, index) => (
             <motion.div
               key={pos.id}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: pos.opacity, scale: 1 }}
-              transition={{
-                delay: index * 0.08,
-                duration: 0.4,
-                ease: 'easeOut',
-              }}
-              className={`absolute ${pos.size} ${pos.color} font-bold select-none`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: index * 0.02, duration: 0.3 }}
+              className="absolute text-center select-none pointer-events-none"
               style={{
                 left: `${pos.x}%`,
                 top: `${pos.y}%`,
-                transform: `rotate(${pos.rotation}deg)`,
+                transform: 'translate(-50%, -50%)',
               }}
             >
-              {pos.text}
+              <p className="text-gray-300 dark:text-gray-700 text-sm font-medium leading-tight">
+                {word}
+              </p>
+              <p className="text-gray-200 dark:text-gray-800 text-xs leading-tight">
+                {meaning}
+              </p>
             </motion.div>
           ))}
 
-          {/* Center word - larger and more prominent with gradient */}
+          {/* Floating card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5, type: 'spring', stiffness: 150 }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl sm:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg"
+            animate={{
+              left: `${currentCardPos.x}%`,
+              top: `${currentCardPos.y}%`,
+            }}
+            transition={{ 
+              type: 'spring', 
+              stiffness: 80, 
+              damping: 15,
+              duration: 0.8 
+            }}
+            className="absolute -translate-x-1/2 -translate-y-1/2 z-20"
           >
-            {word}
-          </motion.div>
-
-          {/* Word Info Section - Bottom */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="absolute bottom-24 left-0 right-0 text-center px-6"
-          >
-            {/* الكلمة الإنجليزية */}
-            <p className="text-4xl font-bold text-foreground mb-3">
-              {word}
-            </p>
-            
-            {/* النطق بالعربي */}
-            {pronunciation && (
-              <p className="text-2xl text-purple-600 dark:text-purple-400 font-semibold mb-2">
-                {pronunciation}
-              </p>
-            )}
-            
-            {/* المعنى بالعربي */}
-            {meaning && (
-              <p className="text-xl text-muted-foreground">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl px-10 py-8 min-w-[180px] text-center"
+            >
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                {word}
+              </h2>
+              <p className="text-xl text-primary font-semibold">
                 {meaning}
               </p>
-            )}
+              
+              {/* Listen button */}
+              <AnimatePresence>
+                {showListenButton && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    onClick={playAudio}
+                    className="mt-4 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-4 py-2 rounded-full flex items-center gap-2 mx-auto text-sm font-medium"
+                  >
+                    <Volume2 size={16} />
+                    استمع
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </motion.div>
 
-          {/* Skip hint */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            transition={{ delay: 1 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-sm text-muted-foreground"
+          {/* Stop button */}
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={handleStop}
+            whileTap={{ scale: 0.98 }}
+            className="absolute bottom-8 left-6 right-6 bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-2xl text-lg shadow-lg transition-colors"
           >
-            اضغط للتخطي
-          </motion.p>
+            إيقاف
+          </motion.button>
 
-          {/* Progress bar */}
+          {/* Progress bar at very bottom */}
           <motion.div
             className="absolute bottom-0 left-0 h-1 bg-primary"
             initial={{ width: '0%' }}
