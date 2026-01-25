@@ -421,6 +421,48 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          created_at: string | null
+          email: string
+          entitlement: string | null
+          expires_at: string | null
+          id: string
+          product_id: string | null
+          revenuecat_customer_id: string | null
+          source: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          entitlement?: string | null
+          expires_at?: string | null
+          id?: string
+          product_id?: string | null
+          revenuecat_customer_id?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          entitlement?: string | null
+          expires_at?: string | null
+          id?: string
+          product_id?: string | null
+          revenuecat_customer_id?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       units: {
         Row: {
           created_at: string | null
@@ -588,6 +630,86 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_list_items: {
+        Row: {
+          created_at: string | null
+          example_sentence: string | null
+          id: string
+          list_id: string
+          mastery_level: number | null
+          notes: string | null
+          pronunciation: string | null
+          times_practiced: number | null
+          user_id: string
+          word_ar: string
+          word_en: string
+        }
+        Insert: {
+          created_at?: string | null
+          example_sentence?: string | null
+          id?: string
+          list_id: string
+          mastery_level?: number | null
+          notes?: string | null
+          pronunciation?: string | null
+          times_practiced?: number | null
+          user_id: string
+          word_ar: string
+          word_en: string
+        }
+        Update: {
+          created_at?: string | null
+          example_sentence?: string | null
+          id?: string
+          list_id?: string
+          mastery_level?: number | null
+          notes?: string | null
+          pronunciation?: string | null
+          times_practiced?: number | null
+          user_id?: string
+          word_ar?: string
+          word_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "user_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_lists: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_phrase_progress: {
         Row: {

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { GuestAllowedRoute } from "./components/auth/GuestAllowedRoute";
 import Index from "./pages/Index";
 import Words from "./pages/Words";
 import LearnWords from "./pages/LearnWords";
@@ -48,7 +49,7 @@ const App = () => (
               
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/words" element={<ProtectedRoute><Words /></ProtectedRoute>} />
-              <Route path="/learn/:difficulty" element={<ProtectedRoute><LearnWords /></ProtectedRoute>} />
+              <Route path="/learn/:difficulty" element={<GuestAllowedRoute><LearnWords /></GuestAllowedRoute>} />
               <Route path="/phrases" element={<ProtectedRoute><Phrases /></ProtectedRoute>} />
               <Route path="/learn-phrases/:difficulty" element={<ProtectedRoute><LearnPhrases /></ProtectedRoute>} />
               <Route path="/deleted-phrases" element={<ProtectedRoute><DeletedPhrases /></ProtectedRoute>} />

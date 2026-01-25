@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -7,6 +7,7 @@ import { QuestionCard } from '@/components/exercise/QuestionCard';
 import { OptionsGrid } from '@/components/exercise/OptionsGrid';
 import { ActionButtons } from '@/components/exercise/ActionButtons';
 import { OutOfHeartsModal } from '@/components/subscription/OutOfHeartsModal';
+import { WordRepetitionOverlay } from '@/components/exercise/WordRepetitionOverlay';
 import { useLearnedWords, DbWord } from '@/hooks/useWords';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -100,6 +101,8 @@ const Exercise: React.FC = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [hearts, setHearts] = useState(5);
   const [showOutOfHeartsModal, setShowOutOfHeartsModal] = useState(false);
+  const [showWordRepetition, setShowWordRepetition] = useState(false);
+  const [repetitionWord, setRepetitionWord] = useState('');
 
   useEffect(() => {
     if (words && words.length >= 4) {
@@ -108,6 +111,23 @@ const Exercise: React.FC = () => {
   }, [learnedWordsData]);
 
   const currentExercise = exercises[currentIndex];
+
+  // Show word repetition before each new question
+  useEffect(() => {
+    if (currentExercise && currentIndex > 0) {
+      // Show the word from the PREVIOUS question after moving to next
+      const prevExercise = exercises[currentIndex - 1];
+      if (prevExercise) {
+        setRepetitionWord(prevExercise.word.word_en);
+        setShowWordRepetition(true);
+      }
+    }
+  }, [currentIndex, exercises]);
+
+  const handleRepetitionComplete = useCallback(() => {
+    setShowWordRepetition(false);
+    setRepetitionWord('');
+  }, []);
 
   const handleCheck = () => {
     if (!selectedOption || !currentExercise) return;
@@ -263,6 +283,14 @@ const Exercise: React.FC = () => {
         onCheck={handleCheck}
         onNext={handleNext}
         onSkip={handleSkip}
+      />
+
+      {/* Word Repetition Overlay for memorization */}
+      <WordRepetitionOverlay
+        word={repetitionWord}
+        isVisible={showWordRepetition}
+        onComplete={handleRepetitionComplete}
+        duration={3000}
       />
     </AppLayout>
   );
