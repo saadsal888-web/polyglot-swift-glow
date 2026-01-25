@@ -23,15 +23,15 @@ export const TimeUpOverlay: React.FC = () => {
   const oldPriceNum = Math.round(realPriceNum * 2);
   const oldPrice = `${oldPriceNum} ر.س`;
 
-  // Don't show for premium users or if time hasn't run out
-  if (isPremium || !isTimeUp) return null;
-
   // Automatically trigger paywall when AndroidApp is available
   useEffect(() => {
-    if (hasAndroidApp && window.AndroidApp?.requestPaywall) {
+    if (isTimeUp && hasAndroidApp && window.AndroidApp?.requestPaywall) {
       window.AndroidApp.requestPaywall();
     }
-  }, [hasAndroidApp]);
+  }, [hasAndroidApp, isTimeUp]);
+
+  // Don't show for premium users or if time hasn't run out
+  if (isPremium || !isTimeUp) return null;
 
   const handleSubscribe = async () => {
     // Try native paywall first
