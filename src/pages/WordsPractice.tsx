@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { RotateCcw, ChevronLeft, AudioWaveform } from 'lucide-react';
+import { RotateCcw, ChevronLeft, AudioWaveform, Check, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useWordsByDifficulty } from '@/hooks/useWords';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { PaywallPrompt } from '@/components/subscription/PaywallPrompt';
+import { supabase } from '@/integrations/supabase/client';
 
 const WordsPractice: React.FC = () => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const WordsPractice: React.FC = () => {
   const [revealedCount, setRevealedCount] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [addedToDifficult, setAddedToDifficult] = useState<Set<string>>(new Set());
+  const [showAddedFeedback, setShowAddedFeedback] = useState(false);
 
   // Check premium access - A1 is free for everyone
   useEffect(() => {
@@ -126,6 +129,34 @@ const WordsPractice: React.FC = () => {
     setRevealedCount(0);
   }, []);
 
+  const handleAddToDifficult = useCallback(async () => {
+    if (!currentWord) return;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    // Already added
+    if (addedToDifficult.has(currentWord.id)) return;
+    
+    // Upsert to user_word_progress with is_difficult = true
+    const { error } = await supabase
+      .from('user_word_progress')
+      .upsert({
+        user_id: user.id,
+        word_id: currentWord.id,
+        is_difficult: true,
+      }, { onConflict: 'user_id,word_id' });
+    
+    if (!error) {
+      // Update local state for visual feedback
+      setAddedToDifficult(prev => new Set([...prev, currentWord.id]));
+      setShowAddedFeedback(true);
+      
+      // Hide feedback after animation
+      setTimeout(() => setShowAddedFeedback(false), 2000);
+    }
+  }, [currentWord, addedToDifficult]);
+
   // Handle paywall close - navigate back if not premium
   const handlePaywallClose = () => {
     setShowPaywall(false);
@@ -187,9 +218,16 @@ const WordsPractice: React.FC = () => {
           {/* Add to Difficult Words */}
           <motion.button 
             whileTap={{ scale: 0.95 }}
-            className="bg-wc-orange/20 text-wc-orange font-semibold w-10 h-10 rounded-xl text-lg flex items-center justify-center"
+            onClick={handleAddToDifficult}
+            animate={addedToDifficult.has(currentWord?.id || '') ? { scale: [1, 1.2, 1] } : {}}
+            transition={{ duration: 0.3 }}
+            className={`w-10 h-10 rounded-xl text-lg flex items-center justify-center transition-all duration-300 ${
+              addedToDifficult.has(currentWord?.id || '') 
+                ? 'bg-wc-green text-white shadow-lg shadow-green-500/30' 
+                : 'bg-wc-orange/20 text-wc-orange'
+            }`}
           >
-            +
+            {addedToDifficult.has(currentWord?.id || '') ? <Check size={20} /> : <Plus size={20} />}
           </motion.button>
         </div>
       </div>
@@ -322,6 +360,21 @@ const WordsPractice: React.FC = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Added to Difficult Toast */}
+      <AnimatePresence>
+        {showAddedFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-36 left-1/2 -translate-x-1/2 bg-wc-green text-white px-5 py-3 rounded-full shadow-xl shadow-green-500/30 text-sm font-bold flex items-center gap-2 z-50"
+          >
+            <Check size={18} />
+            <span>تمت الإضافة للكلمات الصعبة</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bottom Actions - iOS Style */}
       <div className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-border/30 p-4 pb-6">
