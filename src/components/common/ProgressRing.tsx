@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 interface ProgressRingProps {
   progress: number;
@@ -7,12 +7,8 @@ interface ProgressRingProps {
   children?: React.ReactNode;
 }
 
-export const ProgressRing: React.FC<ProgressRingProps> = ({
-  progress,
-  size = 80,
-  strokeWidth = 6,
-  children,
-}) => {
+export const ProgressRing = forwardRef<HTMLDivElement, ProgressRingProps>(
+  ({ progress, size = 80, strokeWidth = 6, children }, ref) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (progress / 100) * circumference;
@@ -46,4 +42,6 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
       </div>
     </div>
   );
-};
+});
+
+ProgressRing.displayName = 'ProgressRing';

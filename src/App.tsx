@@ -10,6 +10,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { GuestAllowedRoute } from "./components/auth/GuestAllowedRoute";
 import { CelebrationEffect } from "./components/common/CelebrationEffect";
 import { OnboardingScreen } from "./components/onboarding/OnboardingScreen";
+import { LoadingScreen } from "./components/common/LoadingScreen";
 import { useCelebration } from "./hooks/useCelebration";
 import Index from "./pages/Index";
 import Words from "./pages/Words";
@@ -43,19 +44,39 @@ const ONBOARDING_KEY = 'onboarding_seen';
 const AppContent = () => {
   const { isActive: showCelebration, reset: resetCelebration } = useCelebration();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Check if onboarding has been seen
-    const hasSeenOnboarding = localStorage.getItem(ONBOARDING_KEY);
-    if (!hasSeenOnboarding) {
-      setShowOnboarding(true);
-    }
+    // تأخير بسيط للسماح بتهيئة WebView قبل الوصول لـ localStorage
+    const timer = setTimeout(() => {
+      try {
+        const hasSeenOnboarding = localStorage.getItem(ONBOARDING_KEY);
+        if (!hasSeenOnboarding) {
+          setShowOnboarding(true);
+        }
+      } catch (e) {
+        console.warn('[App] localStorage not available:', e);
+        // تخطي الـ onboarding إذا فشل الوصول لـ localStorage
+      }
+      setIsReady(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleOnboardingComplete = () => {
-    localStorage.setItem(ONBOARDING_KEY, 'true');
+    try {
+      localStorage.setItem(ONBOARDING_KEY, 'true');
+    } catch (e) {
+      console.warn('[App] Failed to save onboarding status:', e);
+    }
     setShowOnboarding(false);
   };
+
+  // عرض شاشة تحميل أثناء التهيئة
+  if (!isReady) {
+    return <LoadingScreen />;
+  }
 
   return (
     <>
