@@ -31,13 +31,14 @@ const sizes = [
 ];
 
 const colors = [
-  'text-gray-300',
-  'text-gray-400',
-  'text-gray-500',
-  'text-gray-600',
-  'text-gray-700',
-  'text-gray-800',
-  'text-gray-900',
+  'text-purple-300',
+  'text-purple-400',
+  'text-purple-500',
+  'text-pink-300',
+  'text-pink-400',
+  'text-pink-500',
+  'text-indigo-400',
+  'text-indigo-500',
 ];
 
 export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
@@ -94,7 +95,7 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 bg-white dark:bg-gray-950 overflow-hidden cursor-pointer"
+          className="fixed inset-0 z-50 bg-gradient-to-br from-indigo-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-950 dark:to-purple-950 overflow-hidden cursor-pointer"
           onClick={handleSkip}
         >
           {/* Words scattered across the screen */}
@@ -119,12 +120,12 @@ export const WordRepetitionOverlay: React.FC<WordRepetitionOverlayProps> = ({
             </motion.div>
           ))}
 
-          {/* Center word - larger and more prominent */}
+          {/* Center word - larger and more prominent with gradient */}
           <motion.div
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.5, type: 'spring', stiffness: 150 }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl sm:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-lg"
           >
             {word}
           </motion.div>

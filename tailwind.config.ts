@@ -70,6 +70,14 @@ export default {
           DEFAULT: "hsl(var(--level-badge))",
           foreground: "hsl(var(--level-badge-foreground))",
         },
+        // WordCards iOS Theme Colors
+        wc: {
+          purple: "hsl(var(--wc-purple))",
+          pink: "hsl(var(--wc-pink))",
+          orange: "hsl(var(--wc-orange))",
+          red: "hsl(var(--wc-red))",
+          indigo: "hsl(var(--wc-indigo))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

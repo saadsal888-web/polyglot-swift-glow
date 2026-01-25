@@ -51,6 +51,13 @@
     --streak: 24 95% 53%;
     --streak-foreground: 0 0% 100%;
 
+    /* WordCards iOS Theme Colors */
+    --wc-purple: 239 84% 67%;
+    --wc-pink: 330 81% 60%;
+    --wc-orange: 25 95% 53%;
+    --wc-red: 0 84% 60%;
+    --wc-indigo: 239 84% 67%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
