@@ -10,8 +10,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useAllWords } from '@/hooks/useWords';
 import { useAllPhrases } from '@/hooks/usePhrases';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +25,7 @@ const Index: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
+  const { wordsRemaining, FREE_WORDS_LIMIT, hasAndroidApp } = usePremiumGate();
 
   const { data: words } = useAllWords();
   const { data: phrases } = useAllPhrases();
@@ -183,6 +186,30 @@ const Index: React.FC = () => {
           <h1 className="text-2xl font-bold">مرحباً بك 👋</h1>
           <div className="w-12 h-1 bg-wc-purple rounded-full mt-1" />
         </motion.div>
+
+        {/* Free Words Remaining Banner - Only for non-premium users */}
+        {!isPremium && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="mx-4 mt-3 bg-gradient-to-l from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-800/20 rounded-xl p-3 border border-amber-200/50 dark:border-amber-700/30"
+          >
+            <div className="flex items-center justify-between">
+              <Button 
+                size="sm" 
+                onClick={handleSubscribeClick}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md"
+              >
+                <Crown size={14} className="ml-1" />
+                اشترك الآن
+              </Button>
+              <span className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+                {wordsRemaining} من {FREE_WORDS_LIMIT} كلمات مجانية متبقية
+              </span>
+            </div>
+          </motion.div>
+        )}
 
         {/* Streak Card */}
         <motion.div

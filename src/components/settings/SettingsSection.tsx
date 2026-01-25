@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Globe, FileText, Shield, FileCheck, Mail, LogOut, Trash2, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -6,6 +6,11 @@ import { Capacitor } from '@capacitor/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { restorePurchases as revenueCatRestore } from '@/services/revenuecat';
+
+// Define custom event type for purchaseResult
+interface PurchaseResultEvent extends CustomEvent {
+  detail: { success: boolean; message?: string };
+}
 
 interface SettingsItemProps {
   icon: React.ReactNode;
@@ -54,7 +59,31 @@ export const SettingsSection: React.FC = () => {
     navigate('/auth', { replace: true });
   };
 
-  const handleRestorePurchases = async () => {
+  // Listen for purchase result from Android bridge
+  useEffect(() => {
+    const handlePurchaseResult = (e: PurchaseResultEvent) => {
+      console.log('[Settings] Purchase result received:', e.detail);
+      if (e.detail.success) {
+        toast({
+          title: 'تم استعادة اشتراكك! 🎉',
+          description: 'يمكنك الآن الوصول لجميع المميزات',
+        });
+      } else {
+        toast({
+          title: 'لم يتم العثور على اشتراك',
+          description: 'تأكد من استخدام نفس حساب المتجر',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    window.addEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    return () => {
+      window.removeEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    };
+  }, [toast]);
+
+  const handleRestorePurchases = useCallback(async () => {
     // أولوية 1: AndroidApp WebView bridge
     if (window.AndroidApp?.restorePurchases) {
       toast({
@@ -88,7 +117,7 @@ export const SettingsSection: React.FC = () => {
       title: 'غير متاح',
       description: 'استعادة المشتريات متاحة على التطبيق فقط',
     });
-  };
+  }, [toast]);
 
   return (
     <div className="px-4 py-4 space-y-3">
