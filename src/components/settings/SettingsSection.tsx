@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { triggerCelebration } from '@/hooks/useCelebration';
 import { restorePurchases as revenueCatRestore } from '@/services/revenuecat';
 
 // Define custom event type for purchaseResult
@@ -64,6 +65,8 @@ export const SettingsSection: React.FC = () => {
     const handlePurchaseResult = (e: PurchaseResultEvent) => {
       console.log('[Settings] Purchase result received:', e.detail);
       if (e.detail.success) {
+        // Trigger celebration effect
+        triggerCelebration();
         toast({
           title: 'تم استعادة اشتراكك! 🎉',
           description: 'يمكنك الآن الوصول لجميع المميزات',
