@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   User, Crown, Heart, BookOpen, MessageSquare, 
   ChevronLeft, Brain, Puzzle, List, Star, 
@@ -66,19 +66,47 @@ const Index: React.FC = () => {
   };
 
   const handleSubscribeClick = async () => {
+    // أولوية 1: AndroidApp WebView bridge
+    if (window.AndroidApp?.subscribe) {
+      window.AndroidApp.subscribe('annual');
+      return;
+    }
+    
+    // أولوية 2: Despia
     if (isDespiaPlatform()) {
       await presentPaywall();
       setTimeout(refreshUserData, 2000);
-    } else if (Capacitor.isNativePlatform()) {
+      return;
+    }
+    
+    // أولوية 3: Capacitor Native
+    if (Capacitor.isNativePlatform()) {
       const success = await presentPaywall();
       if (success) {
         toast.success('تم تفعيل اشتراكك بنجاح! 🎉');
         await refreshUserData();
       }
-    } else {
-      toast.info('سيتم فتح شاشة الدفع RevenueCat على الجهاز الحقيقي');
+      return;
     }
+    
+    // Web fallback
+    navigate('/subscription');
   };
+
+  // الاستماع لنتيجة الشراء من Android
+  useEffect(() => {
+    const handlePurchaseResult = async (e: CustomEvent<{ success: boolean; message?: string }>) => {
+      if (e.detail.success) {
+        toast.success('تم تفعيل اشتراكك بنجاح! 🎉');
+        await refreshUserData();
+      }
+    };
+    
+    window.addEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    return () => {
+      window.removeEventListener('purchaseResult', handlePurchaseResult as EventListener);
+    };
+  }, [refreshUserData]);
 
   return (
     <AppLayout>
@@ -97,7 +125,20 @@ const Index: React.FC = () => {
 
           {/* Center - Brand */}
           <div className="flex items-center gap-2">
-            <span className="bg-wc-purple text-white text-[10px] px-1.5 py-0.5 rounded font-bold">PRO</span>
+            {isPremium ? (
+              <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                <Crown size={10} />
+                Plus
+              </span>
+            ) : (
+              <motion.button
+                onClick={handleSubscribeClick}
+                whileTap={{ scale: 0.95 }}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-sm"
+              >
+                Plus ✨
+              </motion.button>
+            )}
             <div className="text-center">
               <p className="font-bold text-xs">WORDCARDS</p>
               <p className="text-[10px] text-muted-foreground">Learn English</p>
@@ -366,26 +407,6 @@ const Index: React.FC = () => {
             </div>
           </motion.button>
 
-          {/* Premium Card */}
-          {!isPremium && (
-            <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleSubscribeClick}
-              className="w-full bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 shadow-sm flex items-center justify-between"
-            >
-              <ChevronLeft size={18} className="text-gray-400" />
-              <div className="flex-1 text-right mr-3">
-                <h3 className="font-bold text-sm">انضم إلى WordCards Plus</h3>
-                <p className="text-xs text-muted-foreground">افتح جميع المميزات والقصص التفاعلية</p>
-              </div>
-              <div className="w-11 h-11 bg-amber-500 rounded-xl flex items-center justify-center">
-                <Crown size={20} className="text-white" />
-              </div>
-            </motion.button>
-          )}
         </div>
       </div>
     </AppLayout>
