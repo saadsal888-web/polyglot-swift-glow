@@ -64,20 +64,28 @@ export const usePremiumGate = () => {
   // Detect if running in WebView
   const isInWebView = detectWebView();
 
-  // Trigger paywall - sends postMessage to native app
+  // Check if AndroidApp bridge is available
+  const hasAndroidApp = typeof window !== 'undefined' && window.AndroidApp !== undefined;
+
+  // Trigger paywall - uses AndroidApp.requestPaywall() or fallback to postMessage
   const triggerPaywall = useCallback((): boolean => {
+    // Priority 1: AndroidApp.requestPaywall() - best option
+    if (window.AndroidApp?.requestPaywall) {
+      console.log('[PremiumGate] Calling AndroidApp.requestPaywall()');
+      window.AndroidApp.requestPaywall();
+      return true;
+    }
+    
+    // Priority 2: Fallback postMessage for other WebViews
     if (isInWebView) {
-      // Send message to native app
       window.postMessage('PAYWALL', '*');
-      
-      // Also try parent window in case of iframe
       if (window.parent && window.parent !== window) {
         window.parent.postMessage('PAYWALL', '*');
       }
-      
       console.log('[PremiumGate] Sent PAYWALL postMessage to native app');
       return true;
     }
+    
     return false;
   }, [isInWebView]);
 
@@ -96,6 +104,7 @@ export const usePremiumGate = () => {
     incrementFreeWords,
     triggerPaywall,
     isInWebView,
+    hasAndroidApp,
     resetCounter,
     FREE_WORDS_LIMIT,
     getFreeWordsUsed,

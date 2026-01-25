@@ -11,14 +11,14 @@ interface PremiumBlockScreenProps {
 
 export const PremiumBlockScreen: React.FC<PremiumBlockScreenProps> = ({ onBack }) => {
   const navigate = useNavigate();
-  const { isInWebView, triggerPaywall, freeWordsUsed, FREE_WORDS_LIMIT } = usePremiumGate();
+  const { hasAndroidApp, triggerPaywall, freeWordsUsed, FREE_WORDS_LIMIT } = usePremiumGate();
 
-  // Automatically trigger paywall when in WebView
+  // Automatically trigger paywall when AndroidApp is available
   useEffect(() => {
-    if (isInWebView) {
-      triggerPaywall();
+    if (hasAndroidApp && window.AndroidApp?.requestPaywall) {
+      window.AndroidApp.requestPaywall();
     }
-  }, [isInWebView, triggerPaywall]);
+  }, [hasAndroidApp]);
 
   const handleBack = () => {
     if (onBack) {
@@ -28,8 +28,8 @@ export const PremiumBlockScreen: React.FC<PremiumBlockScreenProps> = ({ onBack }
     }
   };
 
-  // WebView: Show loading state while native paywall is triggered
-  if (isInWebView) {
+  // AndroidApp available: Show loading state while native paywall is triggered
+  if (hasAndroidApp) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-6">
         <motion.div

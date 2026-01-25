@@ -19,6 +19,7 @@ declare global {
     AndroidApp?: {
       subscribe: (productId?: string) => void;
       restorePurchases: () => void;
+      requestPaywall: () => void;
     };
   }
 }

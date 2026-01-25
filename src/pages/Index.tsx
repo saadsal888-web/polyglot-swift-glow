@@ -66,20 +66,26 @@ const Index: React.FC = () => {
   };
 
   const handleSubscribeClick = async () => {
-    // أولوية 1: AndroidApp WebView bridge
+    // أولوية 1: AndroidApp.requestPaywall() - الأفضل
+    if (window.AndroidApp?.requestPaywall) {
+      window.AndroidApp.requestPaywall();
+      return;
+    }
+    
+    // أولوية 2: AndroidApp.subscribe() - fallback
     if (window.AndroidApp?.subscribe) {
       window.AndroidApp.subscribe('annual');
       return;
     }
     
-    // أولوية 2: Despia
+    // أولوية 3: Despia
     if (isDespiaPlatform()) {
       await presentPaywall();
       setTimeout(refreshUserData, 2000);
       return;
     }
     
-    // أولوية 3: Capacitor Native
+    // أولوية 4: Capacitor Native
     if (Capacitor.isNativePlatform()) {
       const success = await presentPaywall();
       if (success) {
