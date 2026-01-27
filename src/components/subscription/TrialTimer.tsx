@@ -1,17 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 
 export const TrialTimer: React.FC = () => {
-  const { isPremium, formattedTime, timeLeft, isTimeUp } = usePremiumGate();
+  const { isPremium, formattedTimeHours, timeLeft, isTimeUp } = usePremiumGate();
 
   // Hide for premium users or when time is up (overlay will show instead)
   if (isPremium || isTimeUp) return null;
 
-  // Determine urgency color
-  const isUrgent = timeLeft <= 60; // Less than 1 minute
-  const isWarning = timeLeft <= 180; // Less than 3 minutes
+  // Determine urgency based on hours remaining
+  const hoursLeft = Math.floor(timeLeft / 3600);
+  const isUrgent = hoursLeft < 1; // Less than 1 hour
+  const isWarning = hoursLeft < 3; // Less than 3 hours
 
   return (
     <motion.div
@@ -25,16 +26,15 @@ export const TrialTimer: React.FC = () => {
             ? 'bg-destructive/90 text-white' 
             : isWarning 
               ? 'bg-amber-500/90 text-white'
-              : 'bg-black/70 text-white'
+              : 'bg-gradient-to-r from-primary/90 to-purple-600/90 text-white'
         }`}
         animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
         transition={isUrgent ? { repeat: Infinity, duration: 1 } : {}}
       >
-        <Clock size={16} className={isUrgent ? 'animate-pulse' : ''} />
-        <span className="font-bold text-sm tabular-nums" dir="ltr">
-          {formattedTime}
+        <Gift size={16} className={isUrgent ? 'animate-pulse' : ''} />
+        <span className="font-bold text-sm" dir="rtl">
+          🎁 يومك المجاني: {formattedTimeHours}
         </span>
-        <span className="text-xs opacity-80">تجربة مجانية</span>
       </motion.div>
     </motion.div>
   );
