@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Clock, Smartphone, Sparkles, RefreshCw } from 'lucide-react';
+import { Crown, Gift, Smartphone, Sparkles, RefreshCw, Rocket, ArrowLeft, Languages, Zap, Star } from 'lucide-react';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 const PRICE_TIMEOUT = 10000; // 10 seconds timeout
 
 export const TimeUpOverlay: React.FC = () => {
-  const { isPremium, isTimeUp, hasAndroidApp, triggerPaywall } = usePremiumGate();
+  const { isPremium, isTimeUp, isFirstDay, hasAndroidApp, triggerPaywall, skipPayment } = usePremiumGate();
   const { prices, isPricesLoading, requestPrices } = useSubscription();
   const [isRetrying, setIsRetrying] = useState(false);
   const [hasTimedOut, setHasTimedOut] = useState(false);
@@ -83,21 +83,25 @@ export const TimeUpOverlay: React.FC = () => {
     }, PRICE_TIMEOUT);
   };
 
+  const handleSkip = () => {
+    skipPayment();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-6"
+      className="fixed inset-0 z-[9999] bg-gradient-to-b from-black/95 via-black/90 to-purple-950/95 flex items-center justify-center p-4 overflow-y-auto"
     >
-      <div className="text-center max-w-sm">
+      <div className="text-center max-w-sm w-full py-6">
         {/* Icon */}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', duration: 0.6 }}
-          className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mx-auto mb-6"
+          className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/30"
         >
-          <Clock size={48} className="text-white" />
+          <Gift size={40} className="text-white" />
         </motion.div>
 
         {/* Title */}
@@ -105,24 +109,46 @@ export const TimeUpOverlay: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-2xl font-bold text-white mb-3"
+          className="text-2xl font-bold text-white mb-2"
         >
-          انتهى الوقت! ⏰
+          🎉 استمتعت باليوم المجاني!
         </motion.h2>
 
         {/* Description */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="text-white/70 text-sm mb-5"
+        >
+          اشترك الآن للاستمرار في رحلة تعلم اللغة الإنجليزية
+        </motion.p>
+
+        {/* Future Development Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-6"
+          className="bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-2xl p-4 mb-5 border border-primary/30 text-right"
         >
-          <p className="text-white/80 mb-2">
-            انتهت فترة التجربة المجانية (5 دقائق)
-          </p>
-          <p className="text-white/60 text-sm">
-            اشترك الآن للاستمرار في التعلم بدون حدود
-          </p>
+          <div className="flex items-center justify-end gap-2 mb-3">
+            <span className="font-bold text-white">🚀 تطوير مستمر قادم!</span>
+            <Rocket size={20} className="text-primary" />
+          </div>
+          <ul className="text-sm text-white/80 space-y-2">
+            <li className="flex items-center justify-end gap-2">
+              <span>إضافة لغات جديدة قريباً</span>
+              <Languages size={16} className="text-amber-400" />
+            </li>
+            <li className="flex items-center justify-end gap-2">
+              <span>تحديثات أسبوعية</span>
+              <Zap size={16} className="text-green-400" />
+            </li>
+            <li className="flex items-center justify-end gap-2">
+              <span>ميزات حصرية للمشتركين</span>
+              <Star size={16} className="text-purple-400" />
+            </li>
+          </ul>
         </motion.div>
 
         {/* Pricing Card */}
@@ -130,7 +156,7 @@ export const TimeUpOverlay: React.FC = () => {
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.35 }}
-          className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl p-5 mb-6 border border-amber-500/30 relative overflow-hidden"
+          className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl p-5 mb-5 border border-amber-500/30 relative overflow-hidden"
         >
           {!hasPrices && hasAndroidApp ? (
             /* Loading State or Retry State */
@@ -169,30 +195,36 @@ export const TimeUpOverlay: React.FC = () => {
               )}
               
               {/* Prices */}
-              <div className="flex items-center justify-center gap-4 mt-4 mb-3">
+              <div className="flex items-center justify-center gap-4 mt-4 mb-2">
                 {/* Old Price (strikethrough) */}
                 {oldPrice && (
-                  <span className="text-white/50 line-through text-xl">
+                  <span className="text-white/50 line-through text-lg">
                     {oldPrice}
                   </span>
                 )}
                 
                 {/* Real Price */}
-                <span className="text-4xl font-bold text-amber-400">
+                <span className="text-3xl font-bold text-amber-400">
                   {realPrice || prices?.monthly || '---'}
                 </span>
               </div>
               
-              {/* Duration */}
-              <div className="flex items-center justify-center gap-2 text-amber-200 font-medium">
-                <Sparkles size={18} className="text-amber-300" />
-                <span>{realPrice ? 'سنة كاملة' : 'شهرياً'}</span>
-                <Sparkles size={18} className="text-amber-300" />
-              </div>
+              {/* "سنة كاملة" - Big text */}
+              <motion.div 
+                className="flex items-center justify-center gap-2 my-3"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              >
+                <Sparkles size={24} className="text-amber-300" />
+                <span className="text-3xl font-bold text-amber-200">
+                  سنة كاملة
+                </span>
+                <Sparkles size={24} className="text-amber-300" />
+              </motion.div>
               
               {/* Monthly price if yearly exists */}
               {realPrice && prices?.monthly && (
-                <p className="text-white/40 text-xs mt-2">
+                <p className="text-white/40 text-xs">
                   أو {prices.monthly} شهرياً
                 </p>
               )}
@@ -215,21 +247,40 @@ export const TimeUpOverlay: React.FC = () => {
           </Button>
         </motion.div>
 
+        {/* Skip Button (First day only) */}
+        {isFirstDay && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="mt-4"
+          >
+            <Button
+              onClick={handleSkip}
+              variant="ghost"
+              className="w-full text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <ArrowLeft size={18} className="ml-2" />
+              تخطي ← (مجاني اليوم فقط)
+            </Button>
+          </motion.div>
+        )}
+
         {/* Web fallback message */}
         {!hasAndroidApp && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="mt-8 bg-white/10 rounded-2xl p-5"
+            className="mt-6 bg-white/10 rounded-2xl p-4"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <Smartphone size={24} className="text-white" />
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <Smartphone size={20} className="text-white" />
               </div>
               <div className="text-right">
-                <h3 className="font-bold text-white">حمّل التطبيق</h3>
-                <p className="text-sm text-white/70">للاشتراك والاستمتاع بجميع الميزات</p>
+                <h3 className="font-bold text-white text-sm">حمّل التطبيق</h3>
+                <p className="text-xs text-white/70">للاشتراك والاستمتاع بجميع الميزات</p>
               </div>
             </div>
             <p className="text-xs text-white/50 text-center">
@@ -239,12 +290,12 @@ export const TimeUpOverlay: React.FC = () => {
         )}
 
         {/* Loading state for native paywall */}
-        {hasAndroidApp && (
+        {hasAndroidApp && !isFirstDay && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="mt-6 text-white/50 text-sm"
+            className="mt-4 text-white/50 text-sm"
           >
             جاري فتح صفحة الاشتراك...
           </motion.p>

@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useContext, useRef } from 'react';
+import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { SubscriptionContext } from '@/contexts/SubscriptionContext';
 
-const TRIAL_DURATION = 300; // 5 minutes = 300 seconds
+const TRIAL_DURATION = 86400; // 24 hours = 86400 seconds
 const STORAGE_KEY = 'freeTrialTimeLeft';
 const TRIAL_START_KEY = 'freeTrialStarted';
+const FIRST_DAY_START_KEY = 'firstDayTrialStart';
 
 // Detect if running inside WebView (Android/iOS native wrapper)
 const detectWebView = (): boolean => {
@@ -30,6 +31,23 @@ export const usePremiumGate = () => {
   const [timeLeft, setTimeLeft] = useState<number>(TRIAL_DURATION);
   const [isTimeUp, setIsTimeUp] = useState<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check if user is in their first day (24 hours from first visit)
+  const isFirstDay = useMemo(() => {
+    try {
+      const startTime = localStorage.getItem(FIRST_DAY_START_KEY);
+      if (!startTime) {
+        // First time user - set the start time
+        localStorage.setItem(FIRST_DAY_START_KEY, String(Date.now()));
+        return true;
+      }
+      const elapsed = Date.now() - parseInt(startTime, 10);
+      return elapsed < 86400000; // Less than 24 hours in milliseconds
+    } catch (e) {
+      console.warn('[PremiumGate] Could not check first day status:', e);
+      return true; // Default to first day if localStorage fails
+    }
+  }, []);
 
   // Initialize timer from localStorage
   useEffect(() => {
@@ -112,11 +130,18 @@ export const usePremiumGate = () => {
     };
   }, [isPremium, isTimeUp]);
 
-  // Format time as MM:SS
+  // Format time as MM:SS (for backwards compatibility)
   const formattedTime = useCallback((): string => {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [timeLeft]);
+
+  // Format time as hours and minutes for 24-hour display
+  const formattedTimeHours = useMemo((): string => {
+    const hours = Math.floor(timeLeft / 3600);
+    const minutes = Math.floor((timeLeft % 3600) / 60);
+    return `${hours}س ${minutes}د`;
   }, [timeLeft]);
 
   // Detect if running in WebView
@@ -147,11 +172,38 @@ export const usePremiumGate = () => {
     return false;
   }, [isInWebView]);
 
+  // Skip payment (only available on first day)
+  const skipPayment = useCallback((): boolean => {
+    if (!isFirstDay) {
+      console.log('[PremiumGate] Skip payment not available - not first day');
+      return false;
+    }
+    
+    console.log('[PremiumGate] Skipping payment - first day free access');
+    setIsTimeUp(false);
+    
+    // Restore remaining time for the day
+    try {
+      const startTime = localStorage.getItem(FIRST_DAY_START_KEY);
+      if (startTime) {
+        const elapsed = Math.floor((Date.now() - parseInt(startTime, 10)) / 1000);
+        const remaining = Math.max(0, TRIAL_DURATION - elapsed);
+        setTimeLeft(remaining);
+        localStorage.setItem(STORAGE_KEY, String(remaining));
+      }
+    } catch (e) {
+      console.warn('[PremiumGate] Could not restore time:', e);
+    }
+    
+    return true;
+  }, [isFirstDay]);
+
   // Reset timer (for testing/admin purposes)
   const resetTimer = useCallback((): void => {
     try {
       localStorage.setItem(STORAGE_KEY, String(TRIAL_DURATION));
       localStorage.setItem(TRIAL_START_KEY, 'true');
+      localStorage.setItem(FIRST_DAY_START_KEY, String(Date.now()));
     } catch (e) {
       console.warn('[PremiumGate] Could not reset timer:', e);
     }
@@ -163,8 +215,11 @@ export const usePremiumGate = () => {
     isPremium,
     timeLeft,
     isTimeUp,
+    isFirstDay,
     formattedTime: formattedTime(),
+    formattedTimeHours,
     triggerPaywall,
+    skipPayment,
     isInWebView,
     hasAndroidApp,
     resetTimer,
