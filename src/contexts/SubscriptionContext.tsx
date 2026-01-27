@@ -22,8 +22,10 @@ interface SubscriptionContextType {
   isPremium: boolean;
   isInApp: boolean;
   isLoading: boolean;
+  isPricesLoading: boolean;
   subscribe: (packageToPurchase?: PurchasesPackage) => Promise<void>;
   restorePurchases: () => Promise<void>;
+  requestPrices: () => void;
   prices: SubscriptionPrices | null;
   packages: PurchasesPackage[];
 }
@@ -46,6 +48,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   });
   
   const [isLoading, setIsLoading] = useState(true);
+  const [isPricesLoading, setIsPricesLoading] = useState(true);
   const [isInApp, setIsInApp] = useState(false);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [prices, setPrices] = useState<SubscriptionPrices | null>(() => {
@@ -105,6 +108,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         window.setSubscriptionPrices = (newPrices: SubscriptionPrices) => {
           console.log('[Subscription] Prices updated via bridge:', newPrices);
           setPrices(newPrices);
+          setIsPricesLoading(false);
         };
 
         // جسر نتيجة الشراء من Android مع مزامنة Supabase
@@ -220,13 +224,26 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, []);
 
+  // Request prices from Android bridge
+  const requestPrices = useCallback(() => {
+    if (window.AndroidApp?.requestPrices) {
+      console.log('[Subscription] Manually requesting prices from Android...');
+      setIsPricesLoading(true);
+      window.AndroidApp.requestPrices();
+    } else {
+      console.warn('[Subscription] No requestPrices method available');
+    }
+  }, []);
+
   return (
     <SubscriptionContext.Provider value={{ 
       isPremium, 
       isInApp, 
       isLoading,
+      isPricesLoading,
       subscribe, 
       restorePurchases,
+      requestPrices,
       prices,
       packages
     }}>
