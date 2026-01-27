@@ -1,16 +1,41 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Clock, Smartphone, Sparkles } from 'lucide-react';
+import { Crown, Clock, Smartphone, Sparkles, RefreshCw } from 'lucide-react';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Button } from '@/components/ui/button';
 
+const PRICE_TIMEOUT = 10000; // 10 seconds timeout
+
 export const TimeUpOverlay: React.FC = () => {
   const { isPremium, isTimeUp, hasAndroidApp, triggerPaywall } = usePremiumGate();
-  const { prices } = useSubscription();
+  const { prices, isPricesLoading, requestPrices } = useSubscription();
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [hasTimedOut, setHasTimedOut] = useState(false);
 
-  // Check if prices are loading (no prices received yet from native)
-  const isPricesLoading = !prices?.yearly && hasAndroidApp;
+  // Check if prices are available
+  const hasPrices = prices?.yearly || prices?.monthly;
+
+  // Timeout for price loading
+  useEffect(() => {
+    if (!isTimeUp || hasPrices || !hasAndroidApp) return;
+
+    const timeoutId = setTimeout(() => {
+      if (!hasPrices) {
+        setHasTimedOut(true);
+      }
+    }, PRICE_TIMEOUT);
+
+    return () => clearTimeout(timeoutId);
+  }, [isTimeUp, hasPrices, hasAndroidApp]);
+
+  // Reset timeout when prices arrive
+  useEffect(() => {
+    if (hasPrices) {
+      setHasTimedOut(false);
+      setIsRetrying(false);
+    }
+  }, [hasPrices]);
 
   // Extract numeric price from string (e.g., "79 ر.س" → 79)
   const extractPrice = (priceStr: string): number | null => {
@@ -45,6 +70,17 @@ export const TimeUpOverlay: React.FC = () => {
       // Web fallback - just show message
       console.log('[TimeUpOverlay] No native paywall available');
     }
+  };
+
+  const handleRetryPrices = () => {
+    setIsRetrying(true);
+    setHasTimedOut(false);
+    requestPrices();
+    
+    // Set another timeout for retry
+    setTimeout(() => {
+      setIsRetrying(false);
+    }, PRICE_TIMEOUT);
   };
 
   return (
@@ -96,14 +132,32 @@ export const TimeUpOverlay: React.FC = () => {
           transition={{ delay: 0.35 }}
           className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl p-5 mb-6 border border-amber-500/30 relative overflow-hidden"
         >
-          {isPricesLoading ? (
-            /* Loading State */
+          {!hasPrices && hasAndroidApp ? (
+            /* Loading State or Retry State */
             <div className="py-4">
-              <div className="animate-pulse flex flex-col items-center gap-3">
-                <div className="h-10 w-32 bg-white/20 rounded-lg"></div>
-                <div className="h-5 w-24 bg-white/10 rounded"></div>
-              </div>
-              <p className="text-white/50 text-sm mt-3">جاري تحميل الأسعار...</p>
+              {(isPricesLoading || isRetrying) && !hasTimedOut ? (
+                <>
+                  <div className="animate-pulse flex flex-col items-center gap-3">
+                    <div className="h-10 w-32 bg-white/20 rounded-lg"></div>
+                    <div className="h-5 w-24 bg-white/10 rounded"></div>
+                  </div>
+                  <p className="text-white/50 text-sm mt-3">جاري تحميل الأسعار...</p>
+                </>
+              ) : (
+                /* Timeout - Show retry button */
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-white/60 text-sm">تعذر تحميل الأسعار</p>
+                  <Button
+                    onClick={handleRetryPrices}
+                    variant="outline"
+                    size="sm"
+                    className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20"
+                  >
+                    <RefreshCw size={16} className="ml-2" />
+                    إعادة المحاولة
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -125,16 +179,23 @@ export const TimeUpOverlay: React.FC = () => {
                 
                 {/* Real Price */}
                 <span className="text-4xl font-bold text-amber-400">
-                  {realPrice || 'السعر غير متاح'}
+                  {realPrice || prices?.monthly || '---'}
                 </span>
               </div>
               
               {/* Duration */}
               <div className="flex items-center justify-center gap-2 text-amber-200 font-medium">
                 <Sparkles size={18} className="text-amber-300" />
-                <span>سنة كاملة</span>
+                <span>{realPrice ? 'سنة كاملة' : 'شهرياً'}</span>
                 <Sparkles size={18} className="text-amber-300" />
               </div>
+              
+              {/* Monthly price if yearly exists */}
+              {realPrice && prices?.monthly && (
+                <p className="text-white/40 text-xs mt-2">
+                  أو {prices.monthly} شهرياً
+                </p>
+              )}
             </>
           )}
         </motion.div>
