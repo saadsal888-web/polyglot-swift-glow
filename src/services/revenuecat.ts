@@ -13,13 +13,7 @@ export interface RevenueCatState {
   packages: PurchasesPackage[];
   customerInfo: CustomerInfo | null;
 }
-
-// Declare despia as a global function (injected by Despia container)
-declare global {
-  interface Window {
-    despia?: (command: string) => void;
-  }
-}
+// Despia global function is defined in vite-env.d.ts
 
 /**
  * Check if running inside Despia container
