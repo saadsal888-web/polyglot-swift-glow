@@ -2,17 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-declare global {
-  interface Window {
-    AndroidApp?: {
-      subscribe: (productId?: string) => void;
-      restorePurchases: () => void;
-      requestPaywall: () => void;
-      logIn: (appUserID: string) => void;
-      logOut: () => void;
-    };
-  }
-}
+// AndroidApp interface is defined in SubscriptionContext.tsx
 
 interface AuthContextType {
   user: User | null;

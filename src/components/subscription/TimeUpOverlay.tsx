@@ -9,19 +9,23 @@ export const TimeUpOverlay: React.FC = () => {
   const { isPremium, isTimeUp, hasAndroidApp, triggerPaywall } = usePremiumGate();
   const { prices } = useSubscription();
 
+  // Check if prices are loading (no prices received yet from native)
+  const isPricesLoading = !prices?.yearly && hasAndroidApp;
+
   // Extract numeric price from string (e.g., "79 ر.س" → 79)
-  const extractPrice = (priceStr: string): number => {
-    const match = priceStr?.match(/[\d.]+/);
-    return match ? parseFloat(match[0]) : 79;
+  const extractPrice = (priceStr: string): number | null => {
+    if (!priceStr) return null;
+    const match = priceStr.match(/[\d.]+/);
+    return match ? parseFloat(match[0]) : null;
   };
 
-  // Real price from RevenueCat
-  const realPrice = prices?.yearly || '٧٩ ر.س';
-  const realPriceNum = extractPrice(realPrice);
+  // Real price from RevenueCat (null if not loaded yet)
+  const realPrice = prices?.yearly;
+  const realPriceNum = realPrice ? extractPrice(realPrice) : null;
   
   // Old price (double the real price) - creates 50% discount perception
-  const oldPriceNum = Math.round(realPriceNum * 2);
-  const oldPrice = `${oldPriceNum} ر.س`;
+  const oldPriceNum = realPriceNum ? Math.round(realPriceNum * 2) : null;
+  const oldPrice = oldPriceNum ? `${oldPriceNum} ر.س` : null;
 
   // Automatically trigger paywall when AndroidApp is available
   useEffect(() => {
@@ -92,30 +96,47 @@ export const TimeUpOverlay: React.FC = () => {
           transition={{ delay: 0.35 }}
           className="bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-2xl p-5 mb-6 border border-amber-500/30 relative overflow-hidden"
         >
-          {/* Discount Badge */}
-          <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
-            خصم 50%
-          </div>
-          
-          {/* Prices */}
-          <div className="flex items-center justify-center gap-4 mt-4 mb-3">
-            {/* Old Price (strikethrough) */}
-            <span className="text-white/50 line-through text-xl">
-              {oldPrice}
-            </span>
-            
-            {/* Real Price */}
-            <span className="text-4xl font-bold text-amber-400">
-              {realPrice}
-            </span>
-          </div>
-          
-          {/* Duration */}
-          <div className="flex items-center justify-center gap-2 text-amber-200 font-medium">
-            <Sparkles size={18} className="text-amber-300" />
-            <span>سنة كاملة</span>
-            <Sparkles size={18} className="text-amber-300" />
-          </div>
+          {isPricesLoading ? (
+            /* Loading State */
+            <div className="py-4">
+              <div className="animate-pulse flex flex-col items-center gap-3">
+                <div className="h-10 w-32 bg-white/20 rounded-lg"></div>
+                <div className="h-5 w-24 bg-white/10 rounded"></div>
+              </div>
+              <p className="text-white/50 text-sm mt-3">جاري تحميل الأسعار...</p>
+            </div>
+          ) : (
+            <>
+              {/* Discount Badge */}
+              {oldPrice && (
+                <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl">
+                  خصم 50%
+                </div>
+              )}
+              
+              {/* Prices */}
+              <div className="flex items-center justify-center gap-4 mt-4 mb-3">
+                {/* Old Price (strikethrough) */}
+                {oldPrice && (
+                  <span className="text-white/50 line-through text-xl">
+                    {oldPrice}
+                  </span>
+                )}
+                
+                {/* Real Price */}
+                <span className="text-4xl font-bold text-amber-400">
+                  {realPrice || 'السعر غير متاح'}
+                </span>
+              </div>
+              
+              {/* Duration */}
+              <div className="flex items-center justify-center gap-2 text-amber-200 font-medium">
+                <Sparkles size={18} className="text-amber-300" />
+                <span>سنة كاملة</span>
+                <Sparkles size={18} className="text-amber-300" />
+              </div>
+            </>
+          )}
         </motion.div>
 
         {/* Subscribe Button */}

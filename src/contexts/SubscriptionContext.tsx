@@ -9,22 +9,7 @@ import {
 } from '@/services/revenuecat';
 import { PurchasesPackage } from '@revenuecat/purchases-capacitor';
 
-declare global {
-  interface Window {
-    __IS_PREMIUM__?: boolean;
-    __SUBSCRIPTION_PRICES__?: SubscriptionPrices | null;
-    setPremiumStatus?: (isPremium: boolean) => void;
-    setSubscriptionPrices?: (prices: SubscriptionPrices) => void;
-    onPurchaseResult?: (success: boolean, message?: string) => void;
-    AndroidApp?: {
-      subscribe: (productId?: string) => void;
-      restorePurchases: () => void;
-      requestPaywall: () => void;
-      logIn: (appUserID: string) => void;
-      logOut: () => void;
-    };
-  }
-}
+// Global Window interface is defined in vite-env.d.ts
 
 export interface SubscriptionPrices {
   monthly?: string;
@@ -165,6 +150,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         window.addEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
         window.addEventListener('pricesUpdated', handlePricesUpdate as EventListener);
+
+        // طلب الأسعار من Android تلقائياً
+        if (window.AndroidApp?.requestPrices) {
+          console.log('[Subscription] Requesting prices from Android...');
+          window.AndroidApp.requestPrices();
+        }
 
         return () => {
           window.removeEventListener('premiumStatusChanged', handlePremiumChange as EventListener);
