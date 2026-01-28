@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Lock, BookOpen } from 'lucide-react';
+import { ChevronRight, Lock, BookOpen, Check } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
@@ -17,11 +17,18 @@ const Words: React.FC = () => {
   const { isPremium } = useSubscription();
 
   const handleLevelClick = (level: typeof LEVELS[0]) => {
-    if (!level.free && !isPremium) {
-      // Show paywall or navigate to subscription
+    // Premium users can access all levels
+    if (isPremium) {
+      navigate(`/words-practice/${level.id}`);
+      return;
+    }
+    
+    // Free users can only access free levels
+    if (!level.free) {
       navigate('/subscription');
       return;
     }
+    
     navigate(`/words-practice/${level.id}`);
   };
 
@@ -30,60 +37,68 @@ const Words: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Header */}
         <motion.header
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between px-4 py-4 sticky top-0 bg-background/80 backdrop-blur-sm z-10"
+          transition={{ duration: 0.15 }}
+          className="flex items-center justify-between px-4 py-3 sticky top-0 bg-background/80 backdrop-blur-sm z-10"
         >
           <button
             onClick={() => navigate('/')}
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-muted flex items-center justify-center"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={18} />
           </button>
-          <h1 className="text-xl font-bold">الكلمات</h1>
-          <div className="w-10" />
+          <h1 className="text-lg font-bold">الكلمات</h1>
+          <div className="w-9" />
         </motion.header>
 
         {/* Levels Grid */}
-        <div className="px-4 py-6 space-y-4">
-          <p className="text-muted-foreground text-center mb-6">
+        <div className="px-4 py-4 space-y-3">
+          <p className="text-muted-foreground text-center text-sm mb-4">
             اختر المستوى المناسب لك
           </p>
 
           {LEVELS.map((level, index) => {
-            const isLocked = !level.free && !isPremium;
+            // Premium users have access to all levels
+            const isLocked = !isPremium && !level.free;
+            const isUnlocked = isPremium || level.free;
             
             return (
               <motion.button
                 key={level.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05, duration: 0.15 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleLevelClick(level)}
-                className={`w-full bg-card rounded-2xl p-5 shadow-sm border border-border/50 flex items-center justify-between ${
-                  isLocked ? 'opacity-75' : ''
+                className={`w-full bg-card rounded-xl p-4 shadow-sm border border-border/50 flex items-center justify-between ${
+                  isLocked ? 'opacity-60' : ''
                 }`}
               >
                 <div className="flex items-center gap-1">
-                  <ChevronRight size={18} className="text-muted-foreground" />
-                  {isLocked && (
-                    <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                      <Lock size={12} />
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                  {isLocked ? (
+                    <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <Lock size={10} />
                       Premium
                     </span>
-                  )}
+                  ) : isPremium && !level.free ? (
+                    <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <Check size={10} />
+                      مفتوح
+                    </span>
+                  ) : null}
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <div className="text-right">
-                    <h3 className="font-bold text-lg">{level.id} - {level.name}</h3>
-                    <p className="text-sm text-muted-foreground">{level.words} كلمة</p>
+                    <h3 className="font-bold">{level.id} - {level.name}</h3>
+                    <p className="text-xs text-muted-foreground">{level.words} كلمة</p>
                   </div>
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                    level.free ? 'bg-wc-purple/20' : 'bg-muted'
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+                    isUnlocked ? 'bg-wc-purple/20' : 'bg-muted'
                   }`}>
-                    <BookOpen size={24} className={level.free ? 'text-wc-purple' : 'text-muted-foreground'} />
+                    <BookOpen size={20} className={isUnlocked ? 'text-wc-purple' : 'text-muted-foreground'} />
                   </div>
                 </div>
               </motion.button>
