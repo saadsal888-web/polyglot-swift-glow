@@ -1,12 +1,10 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Gift, Flame, ArrowLeft, Sparkles } from 'lucide-react';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 
 export const TrialTimer: React.FC = () => {
-  const navigate = useNavigate();
-  const { isPremium, formattedTimeMinutes, formattedOfferTime, timeLeft, isTimeUp, isOfferActive } = usePremiumGate();
+  const { isPremium, formattedTimeMinutes, formattedOfferTime, isTimeUp, isOfferActive } = usePremiumGate();
 
   // Hide for premium users
   if (isPremium) return null;
@@ -15,7 +13,7 @@ export const TrialTimer: React.FC = () => {
   if (isTimeUp && !isOfferActive) return null;
 
   const handleClick = () => {
-    navigate('/subscription');
+    window.location.href = '/subscription';
   };
 
   // During 30-minute trial
