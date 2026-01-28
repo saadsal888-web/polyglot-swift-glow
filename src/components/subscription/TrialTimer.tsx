@@ -22,7 +22,7 @@ export const TrialTimer: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="fixed bottom-20 left-4 z-50"
+        className="fixed bottom-4 left-4 z-50"
       >
         <motion.div 
           className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-sm ${
@@ -50,7 +50,7 @@ export const TrialTimer: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.9 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="fixed bottom-20 left-4 z-50"
+        className="fixed bottom-4 left-4 z-50"
       >
         <motion.div 
           className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-sm bg-gradient-to-r from-red-500/90 to-orange-500/90 text-white"
