@@ -76,7 +76,12 @@ export const usePremiumGate = () => {
       if (stored !== null) {
         // Resume from stored time
         const storedTime = parseInt(stored, 10);
-        if (storedTime <= 0) {
+        
+        // If stored time exceeds trial duration (legacy 24h data), reset to 30 minutes
+        if (storedTime > TRIAL_DURATION) {
+          localStorage.setItem(STORAGE_KEY, String(TRIAL_DURATION));
+          setTimeLeft(TRIAL_DURATION);
+        } else if (storedTime <= 0) {
           setTimeLeft(0);
           setIsTimeUp(true);
         } else {
