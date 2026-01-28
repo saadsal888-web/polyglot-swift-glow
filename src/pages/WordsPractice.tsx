@@ -227,7 +227,7 @@ const WordsPractice: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50" dir="rtl">
       {/* iOS-style Header */}
-      <div className="sticky top-0 z-10 px-4 py-3 bg-white/50 backdrop-blur-lg">
+      <div className="sticky top-0 z-10 px-4 py-2 bg-white/50 backdrop-blur-lg">
         <div className="flex items-center justify-between">
           {/* Exit Button */}
           <motion.button 
@@ -264,7 +264,7 @@ const WordsPractice: React.FC = () => {
 
       {/* Main Content Area - Tappable */}
       <div 
-        className="flex-1 px-6 py-8 flex flex-col items-center min-h-[60vh]"
+        className="flex-1 px-6 py-4 flex flex-col items-center"
         onClick={handleTap}
       >
         {/* Pronunciation Badge */}
@@ -272,9 +272,9 @@ const WordsPractice: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/90 backdrop-blur-sm rounded-full px-6 py-2 shadow-sm mb-6"
+            className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-sm mb-3"
           >
-            <span className="text-lg font-medium text-muted-foreground" dir="ltr">
+            <span className="text-base font-medium text-muted-foreground" dir="ltr">
               {currentWord.pronunciation}
             </span>
           </motion.div>
@@ -290,9 +290,9 @@ const WordsPractice: React.FC = () => {
             }
           }}
           disabled={isPlayingAudio}
-          className={`w-20 h-20 rounded-full bg-gradient-to-br from-wc-purple to-wc-indigo flex items-center justify-center mb-10 shadow-xl shadow-purple-500/30 transition-all ${isPlayingAudio ? 'opacity-70 scale-95' : ''}`}
+          className={`w-14 h-14 rounded-full bg-gradient-to-br from-wc-purple to-wc-indigo flex items-center justify-center mb-6 shadow-xl shadow-purple-500/30 transition-all ${isPlayingAudio ? 'opacity-70 scale-95' : ''}`}
         >
-          <AudioWaveform size={36} className={`text-white ${isPlayingAudio ? 'animate-pulse' : ''}`} />
+          <AudioWaveform size={24} className={`text-white ${isPlayingAudio ? 'animate-pulse' : ''}`} />
         </motion.button>
 
         {/* Letters Display - iOS Style */}
@@ -302,7 +302,7 @@ const WordsPractice: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="flex justify-center gap-2 flex-wrap mb-8"
+            className="flex justify-center gap-2 flex-wrap mb-5"
             dir="ltr"
           >
             {letters.map((letter, index) => (
@@ -317,7 +317,7 @@ const WordsPractice: React.FC = () => {
                 className="flex flex-col items-center"
               >
                 <motion.span 
-                  className={`text-5xl font-bold transition-all duration-300 ${
+                  className={`text-4xl font-bold transition-all duration-300 ${
                     index < revealedCount 
                       ? 'text-wc-purple' 
                       : 'text-gray-300'
@@ -349,7 +349,7 @@ const WordsPractice: React.FC = () => {
         <motion.p 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold text-foreground mb-6"
+          className="text-2xl font-bold text-foreground mb-4"
         >
           {currentWord?.word_ar}
         </motion.p>
@@ -407,26 +407,26 @@ const WordsPractice: React.FC = () => {
       </AnimatePresence>
 
       {/* Bottom Actions - iOS Style */}
-      <div className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-border/30 p-4 pb-6">
-        <div className="flex gap-3">
+      <div className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-border/30 p-3 pb-4">
+        <div className="flex gap-2">
           {/* Next Button - Purple */}
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleNext}
             disabled={currentIndex >= totalWords - 1}
-            className="flex-1 bg-gradient-to-r from-wc-purple to-wc-indigo text-white font-bold py-4 rounded-2xl shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none"
+            className="flex-1 bg-gradient-to-r from-wc-purple to-wc-indigo text-white font-bold py-3 rounded-2xl shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none"
           >
             <span>التالي</span>
-            <ChevronLeft size={20} />
+            <ChevronLeft size={18} />
           </motion.button>
 
           {/* Skip Button - Gray/Orange - تخطي نهائي */}
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleSkip}
-            className="flex-1 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-gray-500/30 flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold py-3 rounded-2xl shadow-lg shadow-gray-500/30 flex items-center justify-center gap-2"
           >
-            <SkipForward size={20} />
+            <SkipForward size={18} />
             <span>تخطي</span>
           </motion.button>
 
@@ -435,17 +435,10 @@ const WordsPractice: React.FC = () => {
             whileTap={{ scale: 0.97 }}
             onClick={handleRestart}
             disabled={revealedCount === 0}
-            className="w-14 bg-gradient-to-r from-wc-pink to-pink-400 text-white font-bold py-4 rounded-2xl shadow-lg shadow-pink-500/30 flex items-center justify-center disabled:opacity-50 disabled:shadow-none"
+            className="w-12 bg-gradient-to-r from-wc-pink to-pink-400 text-white font-bold py-3 rounded-2xl shadow-lg shadow-pink-500/30 flex items-center justify-center disabled:opacity-50 disabled:shadow-none"
           >
-            <RotateCcw size={20} />
+            <RotateCcw size={18} />
           </motion.button>
-        </div>
-
-        {/* Level Badge */}
-        <div className="flex justify-center mt-4">
-          <span className="bg-wc-purple/10 text-wc-purple font-bold px-4 py-1 rounded-full text-sm">
-            المستوى {difficulty}
-          </span>
         </div>
       </div>
 
