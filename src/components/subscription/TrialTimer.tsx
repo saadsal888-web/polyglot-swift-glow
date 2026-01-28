@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gift, Flame } from 'lucide-react';
+import { Gift, Flame, ArrowLeft, Sparkles } from 'lucide-react';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 
 export const TrialTimer: React.FC = () => {
+  const navigate = useNavigate();
   const { isPremium, formattedTimeMinutes, formattedOfferTime, timeLeft, isTimeUp, isOfferActive } = usePremiumGate();
 
   // Hide for premium users
@@ -12,34 +14,47 @@ export const TrialTimer: React.FC = () => {
   // Hide if trial ended and offer is not active
   if (isTimeUp && !isOfferActive) return null;
 
+  const handleClick = () => {
+    navigate('/subscription');
+  };
+
   // During 30-minute trial
   if (!isTimeUp) {
-    const minutesLeft = Math.floor(timeLeft / 60);
-    const isUrgent = minutesLeft < 5;
-    const isWarning = minutesLeft < 10;
-
     return (
       <motion.div
+        onClick={handleClick}
         initial={{ opacity: 0, y: 20, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="fixed bottom-4 left-4 z-50"
+        animate={{ 
+          opacity: 1, 
+          y: [0, -4, 0], 
+          scale: [1, 1.02, 1] 
+        }}
+        transition={{ 
+          opacity: { duration: 0.3 },
+          y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+          scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-4 left-4 z-50 cursor-pointer"
       >
-        <motion.div 
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-sm ${
-            isUrgent 
-              ? 'bg-destructive/90 text-white' 
-              : isWarning 
-                ? 'bg-amber-500/90 text-white'
-                : 'bg-gradient-to-r from-primary/90 to-purple-600/90 text-white'
-          }`}
-          animate={isUrgent ? { scale: [1, 1.05, 1] } : {}}
-          transition={isUrgent ? { repeat: Infinity, duration: 1 } : {}}
-        >
-          <Gift size={16} className={isUrgent ? 'animate-pulse' : ''} />
-          <span className="font-bold text-sm" dir="rtl">
-            🎁 تجربة مجانية: {formattedTimeMinutes}
-          </span>
-        </motion.div>
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl px-4 py-3 text-white shadow-xl border border-white/20">
+          {/* Main row */}
+          <div className="flex items-center gap-2 text-sm font-bold">
+            <Gift size={16} className="flex-shrink-0" />
+            <span>🎁 عرض لفترة محدودة!</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+              ⏱️ {formattedTimeMinutes}
+            </span>
+          </div>
+          
+          {/* Sub row */}
+          <div className="text-xs opacity-90 mt-1.5 flex items-center gap-1" dir="rtl">
+            <Sparkles size={12} className="flex-shrink-0" />
+            <span>سنة كاملة + تحديثات مجانية</span>
+            <ArrowLeft size={12} className="flex-shrink-0 mr-1" />
+          </div>
+        </div>
       </motion.div>
     );
   }
@@ -48,20 +63,40 @@ export const TrialTimer: React.FC = () => {
   if (isOfferActive) {
     return (
       <motion.div
+        onClick={handleClick}
         initial={{ opacity: 0, y: 20, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="fixed bottom-4 left-4 z-50"
+        animate={{ 
+          opacity: 1, 
+          y: [0, -4, 0], 
+          scale: [1, 1.03, 1] 
+        }}
+        transition={{ 
+          opacity: { duration: 0.3 },
+          y: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+          scale: { duration: 1.5, repeat: Infinity, ease: "easeInOut" }
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-4 left-4 z-50 cursor-pointer"
       >
-        <motion.div 
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg backdrop-blur-sm bg-gradient-to-r from-red-500/90 to-orange-500/90 text-white"
-          animate={{ scale: [1, 1.03, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-        >
-          <Flame size={16} className="animate-pulse" />
-          <span className="font-bold text-sm" dir="rtl">
-            🔥 لحق عليه: {formattedOfferTime.display}
-          </span>
-        </motion.div>
+        <div className="bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl px-4 py-3 text-white shadow-xl border border-white/20">
+          {/* Main row */}
+          <div className="flex items-center gap-2 text-sm font-bold">
+            <Flame size={16} className="flex-shrink-0 animate-pulse" />
+            <span>🔥 لحق العرض الآن!</span>
+          </div>
+          
+          {/* Timer row */}
+          <div className="bg-white/20 rounded-lg px-2 py-1 mt-1.5 text-center">
+            <span className="text-xs font-bold">⏱️ {formattedOfferTime.display} متبقي</span>
+          </div>
+          
+          {/* Sub row */}
+          <div className="text-xs opacity-90 mt-1.5 flex items-center gap-1" dir="rtl">
+            <span>اشترك قبل ما ينتهي!</span>
+            <ArrowLeft size={12} className="flex-shrink-0 mr-1" />
+          </div>
+        </div>
       </motion.div>
     );
   }
