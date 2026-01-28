@@ -25,7 +25,7 @@ const Index: React.FC = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
-  const { formattedTime, isTimeUp, hasAndroidApp } = usePremiumGate();
+  const { formattedTimeMinutes, isTimeUp, hasAndroidApp } = usePremiumGate();
 
   const { data: words } = useAllWords();
   const { data: phrases } = useAllPhrases();
@@ -205,7 +205,7 @@ const Index: React.FC = () => {
                 اشترك الآن
               </Button>
               <span className="text-sm text-amber-800 dark:text-amber-300 font-medium flex items-center gap-2">
-                <span dir="ltr" className="font-bold tabular-nums">⏱️ {formattedTime}</span>
+                <span dir="ltr" className="font-bold tabular-nums">⏱️ {formattedTimeMinutes}</span>
                 <span>تجربة مجانية</span>
               </span>
             </div>
