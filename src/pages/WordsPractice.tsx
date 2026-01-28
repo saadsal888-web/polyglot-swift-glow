@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { RotateCcw, ChevronLeft, AudioWaveform, Check, Plus } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { RotateCcw, ChevronLeft, AudioWaveform, Check, Plus, SkipForward, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useWordsByDifficulty } from '@/hooks/useWords';
+import { useWordsByDifficulty, DbWord } from '@/hooks/useWords';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useSkippedWords } from '@/hooks/useSkippedWords';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -14,7 +15,16 @@ const WordsPractice: React.FC = () => {
   const navigate = useNavigate();
   const { difficulty = 'A1' } = useParams<{ difficulty: string }>();
   const { isPremium } = useSubscription();
-  const { data: words, isLoading } = useWordsByDifficulty(difficulty);
+  const { data: allWords, isLoading: wordsLoading } = useWordsByDifficulty(difficulty);
+  const { skippedIds, isLoading: skippedLoading, skipWord } = useSkippedWords();
+  
+  // فلترة الكلمات المتخطاة
+  const words = useMemo(() => {
+    if (!allWords) return [];
+    return allWords.filter(word => !skippedIds.has(word.id));
+  }, [allWords, skippedIds]);
+
+  const isLoading = wordsLoading || skippedLoading;
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [revealedCount, setRevealedCount] = useState(0);
@@ -125,6 +135,22 @@ const WordsPractice: React.FC = () => {
     }
   }, [currentIndex, totalWords]);
 
+  // تخطي الكلمة نهائياً - لن ترجع أبداً
+  const handleSkip = useCallback(async () => {
+    if (!currentWord) return;
+    
+    // حفظ الكلمة كمتخطاة
+    await skipWord(currentWord.id);
+    
+    // الانتقال للكلمة التالية أو الرجوع للرئيسية إذا انتهت الكلمات
+    if (currentIndex < totalWords - 1) {
+      setCurrentIndex(prev => prev + 1);
+      setRevealedCount(0);
+    } else {
+      navigate('/');
+    }
+  }, [currentWord, currentIndex, totalWords, skipWord, navigate]);
+
   const handleRestart = useCallback(() => {
     setRevealedCount(0);
   }, []);
@@ -161,7 +187,7 @@ const WordsPractice: React.FC = () => {
   const handlePaywallClose = () => {
     setShowPaywall(false);
     if (!isPremium) {
-      navigate('/words');
+      navigate('/');
     }
   };
 
@@ -181,13 +207,17 @@ const WordsPractice: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50 p-4 flex flex-col items-center justify-center" dir="rtl">
         <div className="text-center space-y-4">
-          <p className="text-xl font-bold text-foreground">لا توجد كلمات في هذا المستوى</p>
-          <p className="text-muted-foreground">جرب مستوى آخر</p>
+          <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check size={40} className="text-success" />
+          </div>
+          <p className="text-xl font-bold text-foreground">أحسنت! أكملت جميع الكلمات 🎉</p>
+          <p className="text-muted-foreground">لقد تعلمت كل كلمات المستوى {difficulty}</p>
           <Button 
-            onClick={() => navigate('/words')}
-            className="bg-wc-purple hover:bg-wc-purple/90 text-white rounded-2xl px-6 py-3"
+            onClick={() => navigate('/')}
+            className="bg-wc-purple hover:bg-wc-purple/90 text-white rounded-2xl px-6 py-3 flex items-center gap-2"
           >
-            العودة للمستويات
+            <Home size={18} />
+            العودة للرئيسية
           </Button>
         </div>
       </div>
@@ -202,7 +232,7 @@ const WordsPractice: React.FC = () => {
           {/* Exit Button */}
           <motion.button 
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/words')}
+            onClick={() => navigate('/')}
             className="bg-wc-red text-white font-semibold px-4 py-2 rounded-xl text-sm shadow-lg shadow-red-500/25"
           >
             خروج
@@ -390,22 +420,31 @@ const WordsPractice: React.FC = () => {
             <ChevronLeft size={20} />
           </motion.button>
 
+          {/* Skip Button - Gray/Orange - تخطي نهائي */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSkip}
+            className="flex-1 bg-gradient-to-r from-gray-400 to-gray-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-gray-500/30 flex items-center justify-center gap-2"
+          >
+            <SkipForward size={20} />
+            <span>تخطي</span>
+          </motion.button>
+
           {/* Restart Button - Pink */}
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleRestart}
             disabled={revealedCount === 0}
-            className="flex-1 bg-gradient-to-r from-wc-pink to-pink-400 text-white font-bold py-4 rounded-2xl shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none"
+            className="w-14 bg-gradient-to-r from-wc-pink to-pink-400 text-white font-bold py-4 rounded-2xl shadow-lg shadow-pink-500/30 flex items-center justify-center disabled:opacity-50 disabled:shadow-none"
           >
             <RotateCcw size={20} />
-            <span>إعادة</span>
           </motion.button>
         </div>
 
         {/* Level Badge */}
         <div className="flex justify-center mt-4">
           <span className="bg-wc-purple/10 text-wc-purple font-bold px-4 py-1 rounded-full text-sm">
-            {difficulty}
+            المستوى {difficulty}
           </span>
         </div>
       </div>
