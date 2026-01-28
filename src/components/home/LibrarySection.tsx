@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle, Layers, Trash2, CheckCircle, Crown } from 'lucide-react';
+import { AlertCircle, Layers, Trash2, CheckCircle, Crown, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useDifficultPhrasesCount } from '@/hooks/useDifficultPhrases';
 
 interface LibraryItemProps {
   icon: React.ReactNode;
@@ -42,6 +43,7 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
 }) => {
   const navigate = useNavigate();
   const { isPremium } = useSubscription();
+  const { data: difficultPhrasesCount = 0 } = useDifficultPhrasesCount();
 
   return (
     <motion.section
@@ -61,6 +63,13 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({
           count={difficultWords}
           delay={0.35}
           onClick={() => navigate('/difficult-words')}
+        />
+        <LibraryItem
+          icon={<MessageCircle size={18} className="text-warning" />}
+          label="جمل صعبة"
+          count={difficultPhrasesCount}
+          delay={0.38}
+          onClick={() => navigate('/difficult-phrases')}
         />
         <LibraryItem
           icon={
