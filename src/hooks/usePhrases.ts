@@ -9,6 +9,7 @@ export type DbPhrase = {
   pronunciation: string | null;
   difficulty: string;
   category: string | null;
+  audio_url: string | null;
 };
 
 export const useAllPhrases = () => {

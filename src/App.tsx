@@ -32,6 +32,7 @@ import Terms from "./pages/Terms";
 import DeleteAccount from "./pages/DeleteAccount";
 import Auth from "./pages/Auth";
 import DifficultWords from "./pages/DifficultWords";
+import DifficultPhrases from "./pages/DifficultPhrases";
 import MasteredWords from "./pages/MasteredWords";
 
 import Flashcards from "./pages/Flashcards";
@@ -116,6 +117,7 @@ const AppContent = () => {
           <Route path="/placement-test" element={<ProtectedRoute requireLevel={false}><PlacementTest /></ProtectedRoute>} />
           <Route path="/delete-account" element={<ProtectedRoute><DeleteAccount /></ProtectedRoute>} />
           <Route path="/difficult-words" element={<ProtectedRoute><DifficultWords /></ProtectedRoute>} />
+          <Route path="/difficult-phrases" element={<ProtectedRoute><DifficultPhrases /></ProtectedRoute>} />
           <Route path="/mastered-words" element={<ProtectedRoute><MasteredWords /></ProtectedRoute>} />
           <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
           <Route path="/spelling-practice" element={<ProtectedRoute><SpellingPractice /></ProtectedRoute>} />

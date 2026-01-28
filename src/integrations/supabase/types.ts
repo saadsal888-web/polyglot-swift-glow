@@ -716,6 +716,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_deleted: boolean | null
+          is_difficult: boolean | null
           last_practiced_at: string | null
           mastery_level: number | null
           phrase_id: string | null
@@ -726,6 +727,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_deleted?: boolean | null
+          is_difficult?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
           phrase_id?: string | null
@@ -736,6 +738,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_deleted?: boolean | null
+          is_difficult?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
           phrase_id?: string | null
