@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useContext, useRef, useMemo } from 'react';
 import { SubscriptionContext } from '@/contexts/SubscriptionContext';
 
-const TRIAL_DURATION = 86400; // 24 hours = 86400 seconds
+const TRIAL_DURATION = 1800; // 30 minutes = 1800 seconds
+const OFFER_DURATION = 86400; // 24 hours for limited offer
 const STORAGE_KEY = 'freeTrialTimeLeft';
 const TRIAL_START_KEY = 'freeTrialStarted';
 const FIRST_DAY_START_KEY = 'firstDayTrialStart';
+const OFFER_START_KEY = 'limitedOfferStart';
 
 // Detect if running inside WebView (Android/iOS native wrapper)
 const detectWebView = (): boolean => {
@@ -30,7 +32,10 @@ export const usePremiumGate = () => {
   
   const [timeLeft, setTimeLeft] = useState<number>(TRIAL_DURATION);
   const [isTimeUp, setIsTimeUp] = useState<boolean>(false);
+  const [offerTimeLeft, setOfferTimeLeft] = useState<number>(OFFER_DURATION);
+  const [isOfferActive, setIsOfferActive] = useState<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const offerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if user is in their first day (24 hours from first visit)
   const isFirstDay = useMemo(() => {
@@ -137,12 +142,86 @@ export const usePremiumGate = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [timeLeft]);
 
-  // Format time as hours and minutes for 24-hour display
-  const formattedTimeHours = useMemo((): string => {
-    const hours = Math.floor(timeLeft / 3600);
-    const minutes = Math.floor((timeLeft % 3600) / 60);
-    return `${hours}س ${minutes}د`;
+  // Format time as MM:SS for 30-minute trial display
+  const formattedTimeMinutes = useMemo((): string => {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [timeLeft]);
+
+  // Format offer time as HH:MM:SS
+  const formattedOfferTime = useMemo(() => {
+    const hours = Math.floor(offerTimeLeft / 3600);
+    const minutes = Math.floor((offerTimeLeft % 3600) / 60);
+    const seconds = offerTimeLeft % 60;
+    return {
+      hours: hours.toString().padStart(2, '0'),
+      minutes: minutes.toString().padStart(2, '0'),
+      seconds: seconds.toString().padStart(2, '0'),
+      display: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    };
+  }, [offerTimeLeft]);
+
+  // Start offer timer when trial ends
+  useEffect(() => {
+    if (!isTimeUp || isPremium) return;
+
+    try {
+      const offerStart = localStorage.getItem(OFFER_START_KEY);
+      if (!offerStart) {
+        // First time - start offer timer
+        localStorage.setItem(OFFER_START_KEY, String(Date.now()));
+        setOfferTimeLeft(OFFER_DURATION);
+        setIsOfferActive(true);
+      } else {
+        // Resume offer timer
+        const elapsed = Math.floor((Date.now() - parseInt(offerStart, 10)) / 1000);
+        const remaining = OFFER_DURATION - elapsed;
+        if (remaining > 0) {
+          setOfferTimeLeft(remaining);
+          setIsOfferActive(true);
+        } else {
+          setOfferTimeLeft(0);
+          setIsOfferActive(false);
+        }
+      }
+    } catch (e) {
+      console.warn('[PremiumGate] Could not access offer storage:', e);
+    }
+  }, [isTimeUp, isPremium]);
+
+  // Offer countdown timer
+  useEffect(() => {
+    if (!isOfferActive || isPremium) {
+      if (offerIntervalRef.current) {
+        clearInterval(offerIntervalRef.current);
+        offerIntervalRef.current = null;
+      }
+      return;
+    }
+
+    offerIntervalRef.current = setInterval(() => {
+      setOfferTimeLeft((prev) => {
+        const newTime = prev - 1;
+        if (newTime <= 0) {
+          setIsOfferActive(false);
+          if (offerIntervalRef.current) {
+            clearInterval(offerIntervalRef.current);
+            offerIntervalRef.current = null;
+          }
+          return 0;
+        }
+        return newTime;
+      });
+    }, 1000);
+
+    return () => {
+      if (offerIntervalRef.current) {
+        clearInterval(offerIntervalRef.current);
+        offerIntervalRef.current = null;
+      }
+    };
+  }, [isOfferActive, isPremium]);
 
   // Detect if running in WebView
   const isInWebView = detectWebView();
@@ -217,12 +296,16 @@ export const usePremiumGate = () => {
     isTimeUp,
     isFirstDay,
     formattedTime: formattedTime(),
-    formattedTimeHours,
+    formattedTimeMinutes,
+    formattedOfferTime,
+    offerTimeLeft,
+    isOfferActive,
     triggerPaywall,
     skipPayment,
     isInWebView,
     hasAndroidApp,
     resetTimer,
     TRIAL_DURATION,
+    OFFER_DURATION,
   };
 };
