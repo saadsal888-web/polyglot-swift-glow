@@ -3,42 +3,32 @@ import { motion } from 'framer-motion';
 import { Lock, Smartphone, ArrowRight, Crown, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { usePremiumGate } from '@/hooks/usePremiumGate';
-import { triggerCelebration } from '@/hooks/useCelebration';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { toast } from 'sonner';
 
-// Define custom event type for purchaseResult
 interface PurchaseResultEvent extends CustomEvent {
   detail: { success: boolean; message?: string };
 }
 
-/**
- * Subscription page - No payment processing on website
- * Shows "download app" message for browser users
- * Triggers native paywall when AndroidApp is available
- */
 const Subscription: React.FC = () => {
   const navigate = useNavigate();
-  const { hasAndroidApp, isPremium } = usePremiumGate();
+  const { isPremium } = useSubscription();
+  const hasAndroidApp = typeof window !== 'undefined' && window.AndroidApp !== undefined;
 
-  // If already premium, redirect to home
   useEffect(() => {
     if (isPremium) {
       navigate('/');
     }
   }, [isPremium, navigate]);
 
-  // Trigger native paywall when AndroidApp is available
   useEffect(() => {
     if (hasAndroidApp && window.AndroidApp?.requestPaywall) {
       window.AndroidApp.requestPaywall();
     }
   }, [hasAndroidApp]);
 
-  // Handle restore purchases
   const handleRestorePurchases = useCallback(() => {
     if (hasAndroidApp && window.AndroidApp?.restorePurchases) {
-      console.log('[Subscription] Calling AndroidApp.restorePurchases()');
       toast.info('جاري استعادة الاشتراك...');
       window.AndroidApp.restorePurchases();
     } else {
@@ -46,13 +36,9 @@ const Subscription: React.FC = () => {
     }
   }, [hasAndroidApp]);
 
-  // Listen for purchase result from Android bridge
   useEffect(() => {
     const handlePurchaseResult = (e: PurchaseResultEvent) => {
-      console.log('[Subscription] Purchase result received:', e.detail);
       if (e.detail.success) {
-        // Trigger celebration effect
-        triggerCelebration();
         toast.success('تم استعادة اشتراكك بنجاح! 🎉');
         setTimeout(() => navigate('/'), 2000);
       } else {
@@ -66,7 +52,6 @@ const Subscription: React.FC = () => {
     };
   }, [navigate]);
 
-  // AndroidApp available: Show loading state while native paywall is triggered
   if (hasAndroidApp) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
@@ -89,7 +74,6 @@ const Subscription: React.FC = () => {
     );
   }
 
-  // Browser: Show "download app" message
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">
       <motion.div
@@ -116,21 +100,11 @@ const Subscription: React.FC = () => {
         transition={{ delay: 0.3 }}
         className="text-center mb-8"
       >
-        <p className="text-foreground font-medium mb-2">
-          Premium is available only in the mobile app.
-        </p>
-        <p className="text-foreground font-medium mb-4">
-          Please download the app to continue.
-        </p>
         <p className="text-sm text-muted-foreground">
           الاشتراك المميز متاح فقط في تطبيق الجوال.
         </p>
-        <p className="text-sm text-muted-foreground">
-          يرجى تحميل التطبيق للمتابعة.
-        </p>
       </motion.div>
 
-      {/* Download App Hint */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -148,27 +122,17 @@ const Subscription: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Action Buttons */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
         className="w-full max-w-sm space-y-3"
       >
-        <Button
-          onClick={() => navigate('/')}
-          variant="outline"
-          className="w-full h-12"
-        >
+        <Button onClick={() => navigate('/')} variant="outline" className="w-full h-12">
           <ArrowRight size={18} className="ml-2" />
           العودة للرئيسية
         </Button>
-        
-        <Button
-          onClick={handleRestorePurchases}
-          variant="ghost"
-          className="w-full h-12"
-        >
+        <Button onClick={handleRestorePurchases} variant="ghost" className="w-full h-12">
           <RefreshCw size={18} className="ml-2" />
           استعادة الاشتراك
         </Button>
