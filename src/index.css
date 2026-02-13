@@ -6,31 +6,31 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 222 47% 11%;
+    --background: 270 33% 99%;
+    --foreground: 244 58% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 244 58% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 244 58% 20%;
 
-    --primary: 217 91% 60%;
+    --primary: 263 84% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 270 100% 98%;
+    --secondary-foreground: 244 58% 20%;
 
     --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted-foreground: 220 13% 41%;
 
-    --accent: 24 95% 53%;
+    --accent: 38 92% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 350 89% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
@@ -38,25 +38,28 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 217 91% 60%;
+    --ring: 263 84% 50%;
 
     --radius: 1rem;
 
-    --promo: 0 84% 60%;
+    --promo: 350 89% 60%;
     --promo-foreground: 0 0% 100%;
 
-    --level-badge: 142 71% 45%;
+    --level-badge: 160 84% 39%;
     --level-badge-foreground: 0 0% 100%;
 
     --streak: 24 95% 53%;
     --streak-foreground: 0 0% 100%;
 
-    /* WordCards iOS Theme Colors */
-    --wc-purple: 239 84% 67%;
+    /* WordCards Theme Colors */
+    --wc-purple: 263 84% 50%;
     --wc-pink: 330 81% 60%;
     --wc-orange: 25 95% 53%;
-    --wc-red: 0 84% 60%;
-    --wc-indigo: 239 84% 67%;
+    --wc-red: 350 89% 60%;
+    --wc-indigo: 239 84% 56%;
+    --wc-emerald: 160 84% 39%;
+    --wc-cyan: 187 92% 55%;
+    --wc-gold: 38 92% 50%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -65,7 +68,7 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 263 84% 50%;
   }
 
   .dark {
@@ -135,13 +138,61 @@
 
 @layer utilities {
   .app-container {
-    @apply max-w-sm mx-auto min-h-screen relative;
+    @apply max-w-sm mx-auto min-h-screen relative overflow-hidden;
     max-width: 375px;
-    background: linear-gradient(180deg, 
-      hsl(250 100% 98%) 0%, 
-      hsl(330 100% 98%) 50%,
-      hsl(250 100% 97%) 100%
-    );
+    background: hsl(var(--background));
+  }
+
+  /* Liquid Background Blobs */
+  .liquid-bg {
+    @apply absolute inset-0 pointer-events-none overflow-hidden;
+  }
+
+  .liquid-blob {
+    @apply absolute rounded-full;
+    filter: blur(90px);
+  }
+
+  .liquid-blob-1 {
+    width: 250px;
+    height: 250px;
+    top: -60px;
+    left: -80px;
+    background: hsl(var(--wc-purple) / 0.12);
+    animation: blob-float-1 8s ease-in-out infinite;
+  }
+
+  .liquid-blob-2 {
+    width: 200px;
+    height: 200px;
+    bottom: 100px;
+    right: -60px;
+    background: hsl(var(--wc-pink) / 0.08);
+    animation: blob-float-2 10s ease-in-out infinite;
+  }
+
+  .liquid-blob-3 {
+    width: 180px;
+    height: 180px;
+    top: 40%;
+    left: 30%;
+    background: hsl(var(--wc-gold) / 0.05);
+    animation: blob-float-3 12s ease-in-out infinite;
+  }
+
+  @keyframes blob-float-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, 20px) scale(1.1); }
+  }
+
+  @keyframes blob-float-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-20px, -30px) scale(1.05); }
+  }
+
+  @keyframes blob-float-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(15px, -15px) scale(1.08); }
   }
 
   .card-shadow {
