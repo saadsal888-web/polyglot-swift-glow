@@ -79,6 +79,33 @@ export type Database = {
           },
         ]
       }
+      audio_cache: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          id: string
+          language: string
+          provider: string | null
+          text: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          language?: string
+          provider?: string | null
+          text: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          language?: string
+          provider?: string | null
+          text?: string
+        }
+        Relationships: []
+      }
       conversation_lines: {
         Row: {
           audio_url: string | null
@@ -200,6 +227,81 @@ export type Database = {
           is_active?: boolean | null
           sort_order?: number | null
           speakers_gender?: string
+          title_ar?: string
+          title_en?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      curriculum_content: {
+        Row: {
+          audio_url: string | null
+          content_type: string
+          created_at: string
+          id: string
+          language: string
+          lesson_id: string | null
+          source_file: string
+          text_en: string
+          translation_ar: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          content_type: string
+          created_at?: string
+          id?: string
+          language?: string
+          lesson_id?: string | null
+          source_file: string
+          text_en: string
+          translation_ar?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          language?: string
+          lesson_id?: string | null
+          source_file?: string
+          text_en?: string
+          translation_ar?: string | null
+        }
+        Relationships: []
+      }
+      learning_stories: {
+        Row: {
+          audio_url: string | null
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          level: string
+          order_index: number
+          title_ar: string
+          title_en: string
+          updated_at: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          id: string
+          is_active?: boolean | null
+          level?: string
+          order_index?: number
+          title_ar: string
+          title_en: string
+          updated_at?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          level?: string
+          order_index?: number
           title_ar?: string
           title_en?: string
           updated_at?: string | null
@@ -420,6 +522,120 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      story_paragraphs: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_index: number
+          story_id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_index?: number
+          story_id: string
+          text: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_index?: number
+          story_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_paragraphs_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "learning_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_quiz_questions: {
+        Row: {
+          correct_answer: string
+          created_at: string | null
+          explanation: string | null
+          hint: string | null
+          id: string
+          options: Json
+          question_order: number
+          question_text: string
+          story_id: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string | null
+          explanation?: string | null
+          hint?: string | null
+          id?: string
+          options?: Json
+          question_order?: number
+          question_text: string
+          story_id: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string | null
+          explanation?: string | null
+          hint?: string | null
+          id?: string
+          options?: Json
+          question_order?: number
+          question_text?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_quiz_questions_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "learning_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_vocabulary: {
+        Row: {
+          created_at: string | null
+          id: string
+          meaning_ar: string
+          order_index: number
+          part_of_speech_ar: string | null
+          story_id: string
+          word_en: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          meaning_ar: string
+          order_index?: number
+          part_of_speech_ar?: string | null
+          story_id: string
+          word_en: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          meaning_ar?: string
+          order_index?: number
+          part_of_speech_ar?: string | null
+          story_id?: string
+          word_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_vocabulary_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "learning_stories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -871,6 +1087,8 @@ export type Database = {
           example_sentence: string | null
           id: string
           image_url: string | null
+          language: string | null
+          part_of_speech: string | null
           pronunciation: string | null
           word_ar: string
           word_en: string
@@ -883,6 +1101,8 @@ export type Database = {
           example_sentence?: string | null
           id?: string
           image_url?: string | null
+          language?: string | null
+          part_of_speech?: string | null
           pronunciation?: string | null
           word_ar: string
           word_en: string
@@ -895,6 +1115,8 @@ export type Database = {
           example_sentence?: string | null
           id?: string
           image_url?: string | null
+          language?: string | null
+          part_of_speech?: string | null
           pronunciation?: string | null
           word_ar?: string
           word_en?: string
