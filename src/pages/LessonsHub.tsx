@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronRight, Star, BookOpen, Zap, Flame, Crown, Flag, Lock } from 'lucide-react';
+import { ChevronRight, Star, BookOpen, Zap, Flame, Crown, Flag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -188,14 +188,13 @@ const LessonsHub: React.FC = () => {
             const isLeft = idx % 2 === 0;
             const isCompleted = mod.stage_number < currentUnit;
             const isCurrent = mod.stage_number === currentUnit;
-            const isLocked = mod.stage_number > currentUnit;
             const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
 
             const circleColor = isCompleted
               ? 'bg-success'
               : isCurrent
                 ? levelConfig.bg
-                : 'bg-muted-foreground/20';
+                : levelConfig.bg + '/60';
 
             return (
               <div key={mod.id} className="relative">
@@ -224,34 +223,28 @@ const LessonsHub: React.FC = () => {
                   className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
                 >
                   <button
-                    onClick={() => !isLocked && navigate(`/lesson/${mod.id}/1`)}
+                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
                     className="flex flex-col items-center gap-0.5 flex-shrink-0"
-                    disabled={isLocked}
                   >
-                    <span className={`text-[10px] font-black ${isLocked ? 'text-muted-foreground/40' : isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
+                    <span className={`text-[10px] font-black ${isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
                       {mod.stage_number}
                     </span>
                     <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
                       isCompleted ? 'ring-success/20' : isCurrent ? getLevelRingClass() : 'ring-transparent'
-                    } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} ${isLocked ? 'opacity-40' : ''} transition-all`}>
-                      {isLocked ? (
-                        <Lock size={20} className="text-primary-foreground/60" />
-                      ) : (
-                        <IconComp size={22} className="text-primary-foreground" />
-                      )}
+                    } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} transition-all`}>
+                      <IconComp size={22} className="text-primary-foreground" />
                     </div>
                   </button>
 
                   <button
-                    onClick={() => !isLocked && navigate(`/lesson/${mod.id}/1`)}
-                    disabled={isLocked}
+                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
                     className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
                       isCurrent
                         ? getLevelBorderClass()
                         : isCompleted
                           ? 'border-success/20'
                           : 'border-border/20'
-                    } ${isLocked ? 'opacity-40' : 'active:scale-[0.98] transition-transform'}`}
+                    } active:scale-[0.98] transition-transform`}
                   >
                     <h4 className="font-bold text-xs mb-0.5">{mod.title_ar}</h4>
                     <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{mod.title_en}</p>
