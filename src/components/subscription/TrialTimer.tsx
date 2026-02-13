@@ -6,6 +6,9 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 export const TrialTimer: React.FC = () => {
   const { isPremium, formattedTimeMinutes, formattedOfferTime, isTimeUp, isOfferActive } = usePremiumGate();
 
+  // Temporarily hidden during development
+  return null;
+
   // Hide for premium users
   if (isPremium) return null;
 
