@@ -16,8 +16,6 @@ const LEVEL_CONFIG: Record<string, { label: string; icon: React.ElementType; col
 };
 
 const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2'];
-
-// Stage icons cycling
 const STAGE_ICONS = [Star, BookOpen, Zap, Flag, Crown, Flame];
 
 const LessonsHub: React.FC = () => {
@@ -25,7 +23,6 @@ const LessonsHub: React.FC = () => {
   const { user } = useAuth();
   const [selectedLevel, setSelectedLevel] = useState<string>('A1');
 
-  // Fetch units
   const { data: units } = useQuery({
     queryKey: ['units'],
     queryFn: async () => {
@@ -39,7 +36,6 @@ const LessonsHub: React.FC = () => {
     },
   });
 
-  // Fetch user progress
   const { data: userProgress } = useQuery({
     queryKey: ['user-progress', user?.id],
     queryFn: async () => {
@@ -56,7 +52,6 @@ const LessonsHub: React.FC = () => {
 
   const currentUnit = userProgress?.current_unit || 1;
 
-  // Group units by level
   const unitsByLevel = useMemo(() => {
     if (!units) return {};
     const grouped: Record<string, typeof units> = {};
@@ -70,63 +65,76 @@ const LessonsHub: React.FC = () => {
 
   const activeUnits = unitsByLevel[selectedLevel] || [];
   const levelConfig = LEVEL_CONFIG[selectedLevel] || LEVEL_CONFIG.A1;
-
-  // Stats
   const totalStages = activeUnits.length;
   const totalLessons = activeUnits.reduce((sum, u) => sum + (u.total_lessons || 4), 0);
   const completedStages = activeUnits.filter(u => u.unit_number < currentUnit).length;
   const progressPercent = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
 
+  const getLevelRingClass = () => {
+    switch (selectedLevel) {
+      case 'A1': return 'ring-success/30';
+      case 'A2': return 'ring-wc-orange/30';
+      case 'B1': return 'ring-wc-purple/30';
+      case 'B2': return 'ring-wc-pink/30';
+      default: return 'ring-success/30';
+    }
+  };
+
+  const getLevelBorderClass = () => {
+    switch (selectedLevel) {
+      case 'A1': return 'border-success/40';
+      case 'A2': return 'border-wc-orange/40';
+      case 'B1': return 'border-wc-purple/40';
+      case 'B2': return 'border-wc-pink/40';
+      default: return 'border-success/40';
+    }
+  };
+
   return (
     <AppLayout>
-      <div className="pb-6 min-h-screen" style={{ background: 'linear-gradient(180deg, hsl(var(--background)) 0%, hsl(260 60% 97%) 50%, hsl(var(--background)) 100%)' }}>
-        {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between px-4 pt-4 pb-2"
-        >
-          <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center border border-border/50 shadow-sm">
-            <span className="text-xs font-bold">{progressPercent}%</span>
+      <div className="pb-20 min-h-screen" style={{ background: 'linear-gradient(180deg, hsl(var(--background)) 0%, hsl(260 50% 96%) 40%, hsl(260 40% 94%) 70%, hsl(var(--background)) 100%)' }}>
+        {/* Header - compact */}
+        <div className="flex items-center justify-between px-3 pt-3 pb-1">
+          <div className="w-8 h-8 rounded-full bg-card flex items-center justify-center border border-border/40 shadow-sm">
+            <span className="text-[10px] font-bold">{progressPercent}%</span>
           </div>
-          <h1 className="text-lg font-black">الأكاديمية الشاملة</h1>
-          <button onClick={() => navigate('/')} className="w-10 h-10 rounded-full bg-card flex items-center justify-center border border-border/50 shadow-sm">
-            <ChevronRight size={18} />
+          <h1 className="text-sm font-black">الأكاديمية الشاملة</h1>
+          <button onClick={() => navigate('/')} className="w-8 h-8 rounded-full bg-card flex items-center justify-center border border-border/40 shadow-sm">
+            <ChevronRight size={14} />
           </button>
-        </motion.header>
-
-        {/* Progress bar under header */}
-        <div className="px-4 mb-4">
-          <Progress value={progressPercent} className="h-1.5" />
         </div>
 
-        {/* Hero Card */}
+        {/* Thin progress bar */}
+        <div className="px-3 mb-3">
+          <Progress value={progressPercent} className="h-1" />
+        </div>
+
+        {/* Hero Card - compact */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="mx-4 rounded-3xl p-6 text-primary-foreground shadow-lg overflow-hidden relative mb-6"
+          className="mx-3 rounded-2xl p-4 text-primary-foreground shadow-md overflow-hidden relative mb-4"
           style={{
-            background: 'linear-gradient(135deg, hsl(263 84% 55%) 0%, hsl(239 70% 60%) 60%, hsl(263 60% 70%) 100%)'
+            background: 'linear-gradient(135deg, hsl(263 84% 55%) 0%, hsl(239 70% 58%) 60%, hsl(263 55% 68%) 100%)'
           }}
         >
-          <div className="absolute top-[-30px] left-[-20px] w-36 h-36 rounded-full bg-white/10" />
-          <div className="absolute bottom-[-20px] right-[-10px] w-28 h-28 rounded-full bg-white/5" />
+          <div className="absolute top-[-20px] left-[-15px] w-24 h-24 rounded-full bg-white/10" />
+          <div className="absolute bottom-[-15px] right-[-8px] w-20 h-20 rounded-full bg-white/5" />
           <div className="relative z-10">
-            <span className="inline-block bg-white/20 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full mb-3">
+            <span className="inline-block bg-white/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-2">
               مستوى {selectedLevel}
             </span>
-            <h2 className="text-2xl font-black mb-2">رحلتك نحو الإتقان</h2>
-            <p className="text-sm text-primary-foreground/80 leading-relaxed">
+            <h2 className="text-lg font-black mb-1">رحلتك نحو الإتقان</h2>
+            <p className="text-[11px] text-primary-foreground/75 leading-relaxed">
               {totalStages} خطوة مدروسة بعناية لتنتقل من الصفر إلى التحدث بطلاقة وثقة.
             </p>
           </div>
         </motion.div>
 
-        {/* Level Selector */}
-        <div className="px-4 mb-4">
-          <h3 className="text-base font-bold mb-3 text-right">اختر مستواك</h3>
-          <div className="grid grid-cols-4 gap-2">
+        {/* Level Selector - tight */}
+        <div className="px-3 mb-3">
+          <h3 className="text-xs font-bold mb-2 text-right">اختر مستواك</h3>
+          <div className="grid grid-cols-4 gap-1.5">
             {LEVEL_ORDER.map((level) => {
               const config = LEVEL_CONFIG[level];
               const isActive = selectedLevel === level;
@@ -134,60 +142,48 @@ const LessonsHub: React.FC = () => {
               return (
                 <motion.button
                   key={level}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.93 }}
                   onClick={() => setSelectedLevel(level)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border-2 transition-all ${
                     isActive
-                      ? `${config.border} bg-card shadow-md`
-                      : 'border-transparent bg-card/60'
+                      ? `${config.border} bg-card shadow-sm`
+                      : 'border-transparent bg-card/50'
                   }`}
                 >
-                  <div className={`w-11 h-11 rounded-xl ${config.bg}/15 flex items-center justify-center`}>
-                    <IconComp size={22} className={config.color} />
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? config.bg + '/15' : 'bg-muted/30'}`}>
+                    <IconComp size={18} className={isActive ? config.color : 'text-muted-foreground'} />
                   </div>
-                  <span className={`text-sm font-black ${isActive ? config.color : 'text-foreground'}`}>{level}</span>
-                  <span className="text-[10px] text-muted-foreground">{config.label}</span>
+                  <span className={`text-xs font-black ${isActive ? config.color : 'text-foreground'}`}>{level}</span>
+                  <span className="text-[9px] text-muted-foreground leading-none">{config.label}</span>
                 </motion.button>
               );
             })}
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="px-4 mb-6">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-card/80 backdrop-blur rounded-2xl p-3 flex items-center justify-between border border-border/30">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Flag size={16} className="text-primary" />
+        {/* Stats Row - compact */}
+        <div className="px-3 mb-4">
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { icon: Flag, value: totalStages, label: 'مرحلة', color: 'text-primary', bg: 'bg-primary/10' },
+              { icon: BookOpen, value: totalLessons, label: 'درس', color: 'text-wc-purple', bg: 'bg-wc-purple/10' },
+              { icon: Zap, value: `${totalLessons * 3}+`, label: 'تحدي', color: 'text-wc-orange', bg: 'bg-wc-orange/10' },
+            ].map((stat, i) => (
+              <div key={i} className="bg-card/70 rounded-xl py-2 px-2.5 flex items-center gap-2 border border-border/20">
+                <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}>
+                  <stat.icon size={13} className={stat.color} />
+                </div>
+                <div className="text-right flex-1 min-w-0">
+                  <p className="text-sm font-black leading-none">{stat.value}</p>
+                  <p className="text-[9px] text-muted-foreground">{stat.label}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-base font-black">{totalStages}</p>
-                <p className="text-[10px] text-muted-foreground">مرحلة</p>
-              </div>
-            </div>
-            <div className="bg-card/80 backdrop-blur rounded-2xl p-3 flex items-center justify-between border border-border/30">
-              <div className="w-8 h-8 rounded-lg bg-wc-purple/10 flex items-center justify-center">
-                <BookOpen size={16} className="text-wc-purple" />
-              </div>
-              <div className="text-right">
-                <p className="text-base font-black">{totalLessons}</p>
-                <p className="text-[10px] text-muted-foreground">درس</p>
-              </div>
-            </div>
-            <div className="bg-card/80 backdrop-blur rounded-2xl p-3 flex items-center justify-between border border-border/30">
-              <div className="w-8 h-8 rounded-lg bg-wc-orange/10 flex items-center justify-center">
-                <Zap size={16} className="text-wc-orange" />
-              </div>
-              <div className="text-right">
-                <p className="text-base font-black">{totalLessons * 3}+</p>
-                <p className="text-[10px] text-muted-foreground">تحدي</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Zigzag Path Map */}
-        <div className="relative px-4">
+        {/* Zigzag Path */}
+        <div className="relative px-3">
           {activeUnits.map((unit, idx) => {
             const isLeft = idx % 2 === 0;
             const isCompleted = unit.unit_number < currentUnit;
@@ -195,114 +191,93 @@ const LessonsHub: React.FC = () => {
             const isLocked = unit.unit_number > currentUnit;
             const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
 
-            const stageColor = isCompleted
+            const circleColor = isCompleted
               ? 'bg-success'
               : isCurrent
                 ? levelConfig.bg
-                : 'bg-muted';
-
-            const ringColor = isCompleted
-              ? 'ring-success/30'
-              : isCurrent
-                ? `ring-${selectedLevel === 'A1' ? 'success' : selectedLevel === 'A2' ? 'wc-orange' : selectedLevel === 'B1' ? 'wc-purple' : 'wc-pink'}/30`
-                : 'ring-muted/20';
+                : 'bg-muted-foreground/20';
 
             return (
               <div key={unit.id} className="relative">
-                {/* Dotted path connector */}
+                {/* Dotted connector */}
                 {idx > 0 && (
-                  <svg
-                    className="absolute w-full"
-                    style={{ top: -40, height: 50, zIndex: 0 }}
-                    viewBox="0 0 300 50"
-                    preserveAspectRatio="none"
-                  >
-                    <path
-                      d={isLeft
-                        ? "M 220 0 C 220 25, 80 25, 80 50"
-                        : "M 80 0 C 80 25, 220 25, 220 50"
-                      }
-                      fill="none"
-                      stroke="hsl(260 50% 80%)"
-                      strokeWidth="3"
-                      strokeDasharray="6 6"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <div className="absolute w-full" style={{ top: -20, height: 28, zIndex: 0 }}>
+                    <svg width="100%" height="28" viewBox="0 0 300 28" preserveAspectRatio="none">
+                      <path
+                        d={isLeft
+                          ? "M 210 0 Q 150 14, 90 28"
+                          : "M 90 0 Q 150 14, 210 28"
+                        }
+                        fill="none"
+                        stroke="hsl(260 40% 82%)"
+                        strokeWidth="2.5"
+                        strokeDasharray="4 4"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
                 )}
 
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.04 }}
-                  className={`flex items-start gap-4 mb-8 ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
-                  style={{ position: 'relative', zIndex: 1 }}
+                  transition={{ delay: idx * 0.03 }}
+                  className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
                 >
-                  {/* Stage Icon Circle */}
-                  <motion.button
-                    whileTap={!isLocked ? { scale: 0.9 } : {}}
-                    onClick={() => {
-                      if (!isLocked) {
-                        navigate(`/lesson/${unit.id}/1`);
-                      }
-                    }}
-                    className="flex flex-col items-center gap-1 flex-shrink-0"
+                  {/* Circle + number */}
+                  <button
+                    onClick={() => !isLocked && navigate(`/lesson/${unit.id}/1`)}
+                    className="flex flex-col items-center gap-0.5 flex-shrink-0"
+                    disabled={isLocked}
                   >
-                    {/* Number badge */}
-                    <div className={`w-6 h-6 rounded-full ${isLocked ? 'bg-muted' : stageColor} text-primary-foreground flex items-center justify-center text-xs font-bold mb-1 shadow-sm`}>
+                    <span className={`text-[10px] font-black ${isLocked ? 'text-muted-foreground/40' : isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
                       {unit.unit_number}
-                    </div>
-                    {/* Main circle */}
-                    <div className={`relative w-[72px] h-[72px] rounded-full ${stageColor} flex items-center justify-center shadow-lg ring-4 ${ringColor} ring-offset-2 ring-offset-background transition-all ${
-                      isCurrent ? 'scale-110' : ''
-                    } ${isLocked ? 'opacity-50' : ''}`}>
+                    </span>
+                    <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
+                      isCompleted ? 'ring-success/20' : isCurrent ? getLevelRingClass() : 'ring-transparent'
+                    } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} ${isLocked ? 'opacity-40' : ''} transition-all`}>
                       {isLocked ? (
-                        <Lock size={28} className="text-primary-foreground/70" />
+                        <Lock size={20} className="text-primary-foreground/60" />
                       ) : (
-                        <IconComp size={28} className="text-primary-foreground" />
+                        <IconComp size={22} className="text-primary-foreground" />
                       )}
                     </div>
-                  </motion.button>
+                  </button>
 
-                  {/* Stage Info Card */}
-                  <motion.div
-                    whileTap={!isLocked ? { scale: 0.97 } : {}}
-                    onClick={() => {
-                      if (!isLocked) {
-                        navigate(`/lesson/${unit.id}/1`);
-                      }
-                    }}
-                    className={`flex-1 bg-card/90 backdrop-blur rounded-2xl p-4 border shadow-sm mt-4 ${
+                  {/* Info card */}
+                  <button
+                    onClick={() => !isLocked && navigate(`/lesson/${unit.id}/1`)}
+                    disabled={isLocked}
+                    className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
                       isCurrent
-                        ? `border-${selectedLevel === 'A1' ? 'success' : selectedLevel === 'A2' ? 'wc-orange' : selectedLevel === 'B1' ? 'wc-purple' : 'wc-pink'}/40`
+                        ? getLevelBorderClass()
                         : isCompleted
-                          ? 'border-success/30'
-                          : 'border-border/30'
-                    } ${isLocked ? 'opacity-60' : 'cursor-pointer'}`}
+                          ? 'border-success/20'
+                          : 'border-border/20'
+                    } ${isLocked ? 'opacity-40' : 'active:scale-[0.98] transition-transform'}`}
                   >
-                    <h4 className="font-bold text-sm mb-0.5 text-right">{unit.name_ar}</h4>
-                    <p className="text-xs text-primary font-semibold mb-2 text-right" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{unit.name}</p>
-                    <div className="flex items-center gap-3 justify-end text-[11px] text-muted-foreground">
-                      <div className="flex items-center gap-1">
+                    <h4 className="font-bold text-xs mb-0.5">{unit.name_ar}</h4>
+                    <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{unit.name}</p>
+                    <div className="flex items-center gap-2 justify-end text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-0.5">
                         <span>تحدي ذهبي</span>
-                        <Star size={12} className="text-wc-orange" />
+                        <Star size={10} className="text-wc-orange" />
                       </div>
                       <span>•</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5">
                         <span>{unit.total_lessons || 4} دروس</span>
-                        <BookOpen size={12} />
+                        <BookOpen size={10} />
                       </div>
                     </div>
-                  </motion.div>
+                  </button>
                 </motion.div>
               </div>
             );
           })}
 
-          {/* Empty state */}
           {activeUnits.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-sm">لا توجد مراحل لهذا المستوى بعد</p>
+            <div className="text-center py-10">
+              <p className="text-muted-foreground text-xs">لا توجد مراحل لهذا المستوى بعد</p>
             </div>
           )}
         </div>
