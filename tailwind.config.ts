@@ -77,6 +77,9 @@ export default {
           orange: "hsl(var(--wc-orange))",
           red: "hsl(var(--wc-red))",
           indigo: "hsl(var(--wc-indigo))",
+          emerald: "hsl(var(--wc-emerald))",
+          cyan: "hsl(var(--wc-cyan))",
+          gold: "hsl(var(--wc-gold))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
