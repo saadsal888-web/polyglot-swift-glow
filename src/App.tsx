@@ -37,6 +37,8 @@ import MasteredWords from "./pages/MasteredWords";
 
 import Flashcards from "./pages/Flashcards";
 import Leaderboard from "./pages/Leaderboard";
+import LessonsHub from "./pages/LessonsHub";
+import Lesson from "./pages/Lesson";
 import SpellingPractice from "./pages/SpellingPractice";
 import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
@@ -122,6 +124,8 @@ const AppContent = () => {
           <Route path="/mastered-words" element={<ProtectedRoute><MasteredWords /></ProtectedRoute>} />
           <Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+          <Route path="/lessons" element={<ProtectedRoute><LessonsHub /></ProtectedRoute>} />
+          <Route path="/lesson/:unitId/:lessonNumber" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
           <Route path="/spelling-practice" element={<ProtectedRoute><SpellingPractice /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
