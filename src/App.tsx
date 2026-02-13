@@ -86,9 +86,9 @@ const AppContent = () => {
 
   return (
     <>
-      {/* Global Trial Timer and Overlay */}
-      <TrialTimer />
-      <TimeUpOverlay />
+      {/* Global Trial Timer and Overlay - temporarily disabled */}
+      {/* <TrialTimer /> */}
+      {/* <TimeUpOverlay /> */}
       
       {/* Global Celebration Effect */}
       <CelebrationEffect isActive={showCelebration} onComplete={resetCelebration} />
