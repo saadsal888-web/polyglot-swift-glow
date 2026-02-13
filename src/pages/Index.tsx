@@ -141,7 +141,7 @@ const Index: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => navigate('/words')}
+          onClick={() => navigate('/lessons')}
           className="mx-4 rounded-3xl p-5 text-primary-foreground shadow-lg cursor-pointer overflow-hidden relative"
           style={{
             background: 'linear-gradient(135deg, hsl(263 84% 50%) 0%, hsl(239 84% 56%) 100%)'
