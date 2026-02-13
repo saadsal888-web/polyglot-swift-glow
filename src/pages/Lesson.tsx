@@ -10,20 +10,16 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import type { DbWord } from '@/hooks/useWords';
 
 // Types
 interface Exercise {
   id: string;
-  type: 'word_translate' | 'word_reverse' | 'word_in_sentence' | 'sentence_translate' | 'sentence_reverse';
+  type: 'drill' | 'word_translate' | 'word_reverse' | 'word_in_sentence';
   question: string;
-  questionAr?: string;
   correctAnswer: string;
   options: string[];
-  word: DbWord;
 }
 
-// Combo messages
 const COMBO_MESSAGES: Record<number, string> = {
   3: 'ممتاز! 🎯',
   5: 'مشتعل! 🔥',
@@ -31,92 +27,19 @@ const COMBO_MESSAGES: Record<number, string> = {
   10: 'أسطوري! 🏆',
 };
 
-// Generate semantically close options
-function generateOptions(correctAnswer: string, allWords: DbWord[], field: 'word_ar' | 'word_en', currentWord: DbWord): string[] {
-  const sameCategory = allWords.filter(
-    w => w.id !== currentWord.id && w.category === currentWord.category && w[field] !== correctAnswer
-  );
-  const sameDifficulty = allWords.filter(
-    w => w.id !== currentWord.id && w.difficulty === currentWord.difficulty && w[field] !== correctAnswer
-  );
-  const pool = sameCategory.length >= 2 ? sameCategory : sameDifficulty;
-  
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  const wrongOptions = shuffled.slice(0, 2).map(w => w[field]);
-  
-  // Ensure we have exactly 2 wrong options
-  while (wrongOptions.length < 2) {
-    const fallback = allWords.find(w => w.id !== currentWord.id && w[field] !== correctAnswer && !wrongOptions.includes(w[field]));
-    if (fallback) wrongOptions.push(fallback[field]);
-    else break;
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-
-  const options = [correctAnswer, ...wrongOptions];
-  return options.sort(() => Math.random() - 0.5);
-}
-
-// Generate exercises for a set of words
-function generateExercises(words: DbWord[], allWords: DbWord[]): Exercise[] {
-  const exercises: Exercise[] = [];
-
-  words.forEach((word, idx) => {
-    // 1. Translate EN → AR
-    exercises.push({
-      id: `${word.id}-translate`,
-      type: 'word_translate',
-      question: `ما ترجمة "${word.word_en}"؟`,
-      correctAnswer: word.word_ar,
-      options: generateOptions(word.word_ar, allWords, 'word_ar', word),
-      word,
-    });
-
-    // 2. Reverse translate AR → EN
-    exercises.push({
-      id: `${word.id}-reverse`,
-      type: 'word_reverse',
-      question: `ما ترجمة "${word.word_ar}"؟`,
-      correctAnswer: word.word_en,
-      options: generateOptions(word.word_en, allWords, 'word_en', word),
-      word,
-    });
-
-    // 3. Word in sentence context
-    if (word.example_sentence) {
-      const blanked = word.example_sentence.replace(
-        new RegExp(`\\b${word.word_en}\\b`, 'i'),
-        '______'
-      );
-      exercises.push({
-        id: `${word.id}-context`,
-        type: 'word_in_sentence',
-        question: `أكمل الجملة:\n"${blanked}"`,
-        correctAnswer: word.word_en,
-        options: generateOptions(word.word_en, allWords, 'word_en', word),
-        word,
-      });
-    }
-
-    // 4. Sentence translate (if example exists)
-    if (word.example_sentence) {
-      exercises.push({
-        id: `${word.id}-sentence`,
-        type: 'sentence_translate',
-        question: `ما معنى الجملة:\n"${word.example_sentence}"؟`,
-        correctAnswer: word.word_ar,
-        options: generateOptions(word.word_ar, allWords, 'word_ar', word),
-        word,
-      });
-    }
-  });
-
-  // Shuffle exercises
-  return exercises.sort(() => Math.random() - 0.5);
+  return a;
 }
 
 const Lesson: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { unitId, lessonNumber } = useParams<{ unitId: string; lessonNumber: string }>();
+  const { moduleId, lessonNumber } = useParams<{ moduleId: string; lessonNumber: string }>();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
 
@@ -130,27 +53,87 @@ const Lesson: React.FC = () => {
   const [correctCount, setCorrectCount] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
   
-  // Speed challenge
   const [isSpeedRound, setIsSpeedRound] = useState(false);
   const [timeLeft, setTimeLeft] = useState(5);
   const [speedTimerActive, setSpeedTimerActive] = useState(false);
 
-  // Fetch unit info
-  const { data: unit } = useQuery({
-    queryKey: ['unit', unitId],
+  const lessonNum = parseInt(lessonNumber || '1');
+
+  // Fetch module info
+  const { data: module } = useQuery({
+    queryKey: ['curriculum-module', moduleId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('units')
+        .from('curriculum_modules')
         .select('*')
-        .eq('id', unitId!)
+        .eq('id', moduleId!)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!unitId,
+    enabled: !!moduleId,
   });
 
-  // Fetch user progress (must be before conditional returns)
+  // Fetch the specific lesson for this module + lesson number
+  const { data: lesson } = useQuery({
+    queryKey: ['curriculum-lesson', moduleId, lessonNum],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curriculum_lessons')
+        .select('*')
+        .eq('module_id', moduleId!)
+        .order('sort_order')
+      if (error) throw error;
+      // Get the lesson by index (lessonNum is 1-based)
+      return data?.[lessonNum - 1] || null;
+    },
+    enabled: !!moduleId,
+  });
+
+  // Fetch drills, vocab, phrases for this lesson
+  const { data: drills } = useQuery({
+    queryKey: ['curriculum-drills', lesson?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curriculum_drills')
+        .select('*')
+        .eq('lesson_id', lesson!.id)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!lesson?.id,
+  });
+
+  const { data: vocab } = useQuery({
+    queryKey: ['curriculum-vocab', lesson?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curriculum_vocab')
+        .select('*')
+        .eq('lesson_id', lesson!.id)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!lesson?.id,
+  });
+
+  const { data: phrases } = useQuery({
+    queryKey: ['curriculum-phrases', lesson?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curriculum_phrases')
+        .select('*')
+        .eq('lesson_id', lesson!.id)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!lesson?.id,
+  });
+
+  // Fetch user progress
   const { data: userProgress } = useQuery({
     queryKey: ['user-progress', user?.id],
     queryFn: async () => {
@@ -165,33 +148,68 @@ const Lesson: React.FC = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch words for this lesson
-  const { data: allWords } = useQuery({
-    queryKey: ['all-words-for-exercises', unit?.difficulty],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('words')
-        .select('*')
-        .eq('difficulty', unit?.difficulty || 'A1');
-      if (error) throw error;
-      return data as DbWord[];
-    },
-    enabled: !!unit,
-  });
-
-  // Select 8 words for this lesson based on lesson number
-  const lessonWords = useMemo(() => {
-    if (!allWords) return [];
-    const lessonNum = parseInt(lessonNumber || '1');
-    const startIdx = (lessonNum - 1) * 8;
-    return allWords.slice(startIdx, startIdx + 8);
-  }, [allWords, lessonNumber]);
-
-  // Generate exercises
+  // Build exercises from curriculum data
   const exercises = useMemo(() => {
-    if (!lessonWords.length || !allWords?.length) return [];
-    return generateExercises(lessonWords, allWords);
-  }, [lessonWords, allWords]);
+    const result: Exercise[] = [];
+
+    // 1. Add drills (ready-made questions from DB)
+    if (drills?.length) {
+      drills.forEach(drill => {
+        const opts = drill.options as string[];
+        result.push({
+          id: drill.id,
+          type: 'drill',
+          question: drill.question,
+          correctAnswer: opts[drill.correct_index],
+          options: shuffleArray(opts),
+        });
+      });
+    }
+
+    // 2. Generate translation exercises from vocab
+    if (vocab?.length) {
+      const allTranslations = vocab.map(v => v.translation);
+      const allWords = vocab.map(v => v.word);
+
+      vocab.forEach(v => {
+        // EN -> AR
+        const wrongAr = shuffleArray(allTranslations.filter(t => t !== v.translation)).slice(0, 2);
+        result.push({
+          id: `${v.id}-translate`,
+          type: 'word_translate',
+          question: `ما ترجمة "${v.word}"؟`,
+          correctAnswer: v.translation,
+          options: shuffleArray([v.translation, ...wrongAr]),
+        });
+
+        // AR -> EN
+        const wrongEn = shuffleArray(allWords.filter(w => w !== v.word)).slice(0, 2);
+        result.push({
+          id: `${v.id}-reverse`,
+          type: 'word_reverse',
+          question: `ما ترجمة "${v.translation}"؟`,
+          correctAnswer: v.word,
+          options: shuffleArray([v.word, ...wrongEn]),
+        });
+
+        // Context sentence
+        if (v.example) {
+          const blanked = v.example.replace(new RegExp(`\\b${v.word}\\b`, 'i'), '______');
+          if (blanked !== v.example) {
+            result.push({
+              id: `${v.id}-context`,
+              type: 'word_in_sentence',
+              question: `أكمل الجملة:\n"${blanked}"`,
+              correctAnswer: v.word,
+              options: shuffleArray([v.word, ...wrongEn]),
+            });
+          }
+        }
+      });
+    }
+
+    return shuffleArray(result);
+  }, [drills, vocab]);
 
   const currentExercise = exercises[currentIndex];
   const progress = exercises.length > 0 ? ((currentIndex + 1) / exercises.length) * 100 : 0;
@@ -207,7 +225,6 @@ const Lesson: React.FC = () => {
     return () => clearTimeout(timer);
   }, [timeLeft, speedTimerActive, isSpeedRound]);
 
-  // Check if this should be a speed round
   useEffect(() => {
     if (currentIndex >= 5 && (currentIndex - 5) % 3 === 0) {
       setIsSpeedRound(true);
@@ -233,19 +250,16 @@ const Lesson: React.FC = () => {
       const newCombo = combo + 1;
       setCombo(newCombo);
 
-      // Gems calculation
       let gemsEarned = 2;
       if (newCombo >= 10) gemsEarned += 2;
       else if (newCombo >= 5) gemsEarned += 1;
       
-      // Speed bonus
       if (isSpeedRound && timeLeft > 3) gemsEarned += 3;
       else if (isSpeedRound && timeLeft > 1.5) gemsEarned += 2;
       else if (isSpeedRound) gemsEarned += 1;
 
       setGems(g => g + gemsEarned);
 
-      // Show combo message
       if (COMBO_MESSAGES[newCombo]) {
         toast.success(COMBO_MESSAGES[newCombo], { duration: 1500 });
       }
@@ -264,12 +278,9 @@ const Lesson: React.FC = () => {
     }
 
     if (currentIndex + 1 >= exercises.length) {
-      // Lesson complete
       setShowResults(true);
       
-      // Update progress
       if (user?.id) {
-        const lessonNum = parseInt(lessonNumber || '1');
         await supabase
           .from('user_progress')
           .update({
@@ -289,8 +300,7 @@ const Lesson: React.FC = () => {
     setCurrentIndex(i => i + 1);
     setSelectedAnswer(null);
     setIsCorrect(null);
-  }, [currentIndex, exercises.length, hearts, isPremium, navigate, user?.id, gems, lessonNumber]);
-
+  }, [currentIndex, exercises.length, hearts, isPremium, navigate, user?.id, gems, lessonNum]);
 
   // Results screen
   if (showResults) {
@@ -362,17 +372,14 @@ const Lesson: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-3">
-              {/* Hearts */}
               <div className="flex items-center gap-1 bg-destructive/10 px-2 py-1 rounded-full">
                 <Heart size={12} className="text-destructive fill-destructive" />
                 <span className="text-xs font-bold text-destructive">{isPremium ? '∞' : hearts}</span>
               </div>
-              {/* Gems */}
               <div className="flex items-center gap-1 bg-accent/10 px-2 py-1 rounded-full">
                 <Gem size={12} className="text-accent" />
                 <span className="text-xs font-bold text-accent">{gems}</span>
               </div>
-              {/* Combo */}
               {combo >= 3 && (
                 <motion.div
                   initial={{ scale: 0 }}
@@ -386,10 +393,9 @@ const Lesson: React.FC = () => {
             </div>
           </div>
 
-          {/* Progress */}
           <Progress value={progress} className="h-2" />
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>{unit?.name_ar} - درس {lessonNumber}</span>
+            <span>{module?.title_ar} - درس {lessonNumber}</span>
             <span>{currentIndex + 1}/{exercises.length}</span>
           </div>
         </div>
@@ -423,11 +429,10 @@ const Lesson: React.FC = () => {
             className="bg-card/80 backdrop-blur rounded-2xl border border-border/50 p-5 mb-4"
           >
             <p className="text-xs text-muted-foreground mb-2">
+              {currentExercise.type === 'drill' && 'اختر الإجابة الصحيحة'}
               {currentExercise.type === 'word_translate' && 'ترجم الكلمة'}
               {currentExercise.type === 'word_reverse' && 'ترجم الكلمة'}
               {currentExercise.type === 'word_in_sentence' && 'أكمل الفراغ'}
-              {currentExercise.type === 'sentence_translate' && 'ترجم الجملة'}
-              {currentExercise.type === 'sentence_reverse' && 'ترجم الجملة'}
             </p>
             <p className="text-base font-bold leading-relaxed whitespace-pre-line">
               {currentExercise.question}

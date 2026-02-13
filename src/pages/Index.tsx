@@ -42,8 +42,22 @@ const Index: React.FC = () => {
     enabled: !!user?.id,
   });
 
+  // Fetch total modules count for progress calculation
+  const { data: modulesCount } = useQuery({
+    queryKey: ['curriculum-modules-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('curriculum_modules')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   const totalXp = profile?.total_xp || 0;
   const streak = userProgress?.streak_days || 0;
+  const currentUnit = userProgress?.current_unit || 1;
+  const progressPercent = modulesCount ? Math.round(((currentUnit - 1) / modulesCount) * 100) : 0;
 
   return (
     <AppLayout>
@@ -132,8 +146,8 @@ const Index: React.FC = () => {
               </button>
             </div>
             <h2 className="text-lg font-bold mb-1">رحلتك التعليمية</h2>
-            <p className="text-xs text-primary-foreground/80 mb-3">تابع من حيث توقفت</p>
-            <Progress value={0} className="h-2 bg-white/20" />
+            <p className="text-xs text-primary-foreground/80 mb-3">المرحلة {currentUnit} من {modulesCount || '...'} — تابع من حيث توقفت</p>
+            <Progress value={progressPercent} className="h-2 bg-white/20" />
           </div>
         </motion.div>
 

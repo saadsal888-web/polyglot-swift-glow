@@ -269,6 +269,321 @@ export type Database = {
         }
         Relationships: []
       }
+      curriculum_dialogues: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          id: string
+          lesson_id: string
+          line_text: string
+          sort_order: number | null
+          speaker: string
+          translation: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          id: string
+          lesson_id: string
+          line_text: string
+          sort_order?: number | null
+          speaker: string
+          translation: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          line_text?: string
+          sort_order?: number | null
+          speaker?: string
+          translation?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_dialogues_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_drills: {
+        Row: {
+          correct_index: number
+          created_at: string
+          id: string
+          lesson_id: string
+          options: Json
+          question: string
+          sort_order: number | null
+        }
+        Insert: {
+          correct_index: number
+          created_at?: string
+          id: string
+          lesson_id: string
+          options: Json
+          question: string
+          sort_order?: number | null
+        }
+        Update: {
+          correct_index?: number
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          options?: Json
+          question?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_drills_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_lessons: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          intro_text: string | null
+          module_id: string
+          sort_order: number | null
+          subtitle: string | null
+          title_ar: string
+          title_en: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id: string
+          intro_text?: string | null
+          module_id: string
+          sort_order?: number | null
+          subtitle?: string | null
+          title_ar: string
+          title_en: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          intro_text?: string | null
+          module_id?: string
+          sort_order?: number | null
+          subtitle?: string | null
+          title_ar?: string
+          title_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_modules: {
+        Row: {
+          created_at: string
+          description_text: string | null
+          icon: string | null
+          id: string
+          level_band: string
+          stage_number: number
+          title_ar: string
+          title_en: string
+        }
+        Insert: {
+          created_at?: string
+          description_text?: string | null
+          icon?: string | null
+          id: string
+          level_band: string
+          stage_number: number
+          title_ar: string
+          title_en: string
+        }
+        Update: {
+          created_at?: string
+          description_text?: string | null
+          icon?: string | null
+          id?: string
+          level_band?: string
+          stage_number?: number
+          title_ar?: string
+          title_en?: string
+        }
+        Relationships: []
+      }
+      curriculum_phrases: {
+        Row: {
+          audio_url: string | null
+          context_text: string | null
+          created_at: string
+          id: string
+          lesson_id: string
+          phrase: string
+          sort_order: number | null
+          translation: string
+        }
+        Insert: {
+          audio_url?: string | null
+          context_text?: string | null
+          created_at?: string
+          id: string
+          lesson_id: string
+          phrase: string
+          sort_order?: number | null
+          translation: string
+        }
+        Update: {
+          audio_url?: string | null
+          context_text?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          phrase?: string
+          sort_order?: number | null
+          translation?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_phrases_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_tips: {
+        Row: {
+          body: string
+          created_at: string
+          icon: string | null
+          id: string
+          lesson_id: string
+          sort_order: number | null
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          icon?: string | null
+          id: string
+          lesson_id: string
+          sort_order?: number | null
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          lesson_id?: string
+          sort_order?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_tips_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      curriculum_vocab: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          example: string | null
+          id: string
+          lesson_id: string
+          sort_order: number | null
+          translation: string
+          word: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          example?: string | null
+          id: string
+          lesson_id: string
+          sort_order?: number | null
+          translation: string
+          word: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          example?: string | null
+          id?: string
+          lesson_id?: string
+          sort_order?: number | null
+          translation?: string
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curriculum_vocab_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leaderboard: {
+        Row: {
+          created_at: string | null
+          display_name: string
+          is_bot: boolean
+          last_activity: string | null
+          lessons_completed: number
+          level: string
+          streak_days: number
+          total_gems: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name: string
+          is_bot?: boolean
+          last_activity?: string | null
+          lessons_completed?: number
+          level?: string
+          streak_days?: number
+          total_gems?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string
+          is_bot?: boolean
+          last_activity?: string | null
+          lessons_completed?: number
+          level?: string
+          streak_days?: number
+          total_gems?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       learning_stories: {
         Row: {
           audio_url: string | null

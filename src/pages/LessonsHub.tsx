@@ -23,14 +23,14 @@ const LessonsHub: React.FC = () => {
   const { user } = useAuth();
   const [selectedLevel, setSelectedLevel] = useState<string>('A1');
 
-  const { data: units } = useQuery({
-    queryKey: ['units'],
+  // Fetch curriculum modules
+  const { data: modules } = useQuery({
+    queryKey: ['curriculum-modules'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('units')
+        .from('curriculum_modules')
         .select('*')
-        .eq('is_active', true)
-        .order('unit_number');
+        .order('stage_number');
       if (error) throw error;
       return data;
     },
@@ -52,22 +52,23 @@ const LessonsHub: React.FC = () => {
 
   const currentUnit = userProgress?.current_unit || 1;
 
-  const unitsByLevel = useMemo(() => {
-    if (!units) return {};
-    const grouped: Record<string, typeof units> = {};
-    units.forEach(u => {
-      const level = u.difficulty || 'A1';
+  // Group modules by level_band (lowercase in DB -> uppercase for display)
+  const modulesByLevel = useMemo(() => {
+    if (!modules) return {};
+    const grouped: Record<string, typeof modules> = {};
+    modules.forEach(m => {
+      const level = m.level_band.toUpperCase();
       if (!grouped[level]) grouped[level] = [];
-      grouped[level].push(u);
+      grouped[level].push(m);
     });
     return grouped;
-  }, [units]);
+  }, [modules]);
 
-  const activeUnits = unitsByLevel[selectedLevel] || [];
+  const activeModules = modulesByLevel[selectedLevel] || [];
   const levelConfig = LEVEL_CONFIG[selectedLevel] || LEVEL_CONFIG.A1;
-  const totalStages = activeUnits.length;
-  const totalLessons = activeUnits.reduce((sum, u) => sum + (u.total_lessons || 4), 0);
-  const completedStages = activeUnits.filter(u => u.unit_number < currentUnit).length;
+  const totalStages = activeModules.length;
+  const totalLessons = totalStages * 4; // Each module has 4 lessons
+  const completedStages = activeModules.filter(m => m.stage_number < currentUnit).length;
   const progressPercent = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
 
   const getLevelRingClass = () => {
@@ -93,7 +94,7 @@ const LessonsHub: React.FC = () => {
   return (
     <AppLayout>
       <div className="pb-20 min-h-screen" style={{ background: 'linear-gradient(180deg, hsl(var(--background)) 0%, hsl(260 50% 96%) 40%, hsl(260 40% 94%) 70%, hsl(var(--background)) 100%)' }}>
-        {/* Header - compact */}
+        {/* Header */}
         <div className="flex items-center justify-between px-3 pt-3 pb-1">
           <div className="w-8 h-8 rounded-full bg-card flex items-center justify-center border border-border/40 shadow-sm">
             <span className="text-[10px] font-bold">{progressPercent}%</span>
@@ -104,12 +105,11 @@ const LessonsHub: React.FC = () => {
           </button>
         </div>
 
-        {/* Thin progress bar */}
         <div className="px-3 mb-3">
           <Progress value={progressPercent} className="h-1" />
         </div>
 
-        {/* Hero Card - compact */}
+        {/* Hero Card */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,7 +131,7 @@ const LessonsHub: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Level Selector - tight */}
+        {/* Level Selector */}
         <div className="px-3 mb-3">
           <h3 className="text-xs font-bold mb-2 text-right">اختر مستواك</h3>
           <div className="grid grid-cols-4 gap-1.5">
@@ -161,7 +161,7 @@ const LessonsHub: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Row - compact */}
+        {/* Stats Row */}
         <div className="px-3 mb-4">
           <div className="grid grid-cols-3 gap-1.5">
             {[
@@ -184,11 +184,11 @@ const LessonsHub: React.FC = () => {
 
         {/* Zigzag Path */}
         <div className="relative px-3">
-          {activeUnits.map((unit, idx) => {
+          {activeModules.map((mod, idx) => {
             const isLeft = idx % 2 === 0;
-            const isCompleted = unit.unit_number < currentUnit;
-            const isCurrent = unit.unit_number === currentUnit;
-            const isLocked = unit.unit_number > currentUnit;
+            const isCompleted = mod.stage_number < currentUnit;
+            const isCurrent = mod.stage_number === currentUnit;
+            const isLocked = mod.stage_number > currentUnit;
             const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
 
             const circleColor = isCompleted
@@ -198,8 +198,7 @@ const LessonsHub: React.FC = () => {
                 : 'bg-muted-foreground/20';
 
             return (
-              <div key={unit.id} className="relative">
-                {/* Dotted connector */}
+              <div key={mod.id} className="relative">
                 {idx > 0 && (
                   <div className="absolute w-full" style={{ top: -20, height: 28, zIndex: 0 }}>
                     <svg width="100%" height="28" viewBox="0 0 300 28" preserveAspectRatio="none">
@@ -224,14 +223,13 @@ const LessonsHub: React.FC = () => {
                   transition={{ delay: idx * 0.03 }}
                   className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
                 >
-                  {/* Circle + number */}
                   <button
-                    onClick={() => !isLocked && navigate(`/lesson/${unit.id}/1`)}
+                    onClick={() => !isLocked && navigate(`/lesson/${mod.id}/1`)}
                     className="flex flex-col items-center gap-0.5 flex-shrink-0"
                     disabled={isLocked}
                   >
                     <span className={`text-[10px] font-black ${isLocked ? 'text-muted-foreground/40' : isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
-                      {unit.unit_number}
+                      {mod.stage_number}
                     </span>
                     <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
                       isCompleted ? 'ring-success/20' : isCurrent ? getLevelRingClass() : 'ring-transparent'
@@ -244,9 +242,8 @@ const LessonsHub: React.FC = () => {
                     </div>
                   </button>
 
-                  {/* Info card */}
                   <button
-                    onClick={() => !isLocked && navigate(`/lesson/${unit.id}/1`)}
+                    onClick={() => !isLocked && navigate(`/lesson/${mod.id}/1`)}
                     disabled={isLocked}
                     className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
                       isCurrent
@@ -256,8 +253,8 @@ const LessonsHub: React.FC = () => {
                           : 'border-border/20'
                     } ${isLocked ? 'opacity-40' : 'active:scale-[0.98] transition-transform'}`}
                   >
-                    <h4 className="font-bold text-xs mb-0.5">{unit.name_ar}</h4>
-                    <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{unit.name}</p>
+                    <h4 className="font-bold text-xs mb-0.5">{mod.title_ar}</h4>
+                    <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{mod.title_en}</p>
                     <div className="flex items-center gap-2 justify-end text-[10px] text-muted-foreground">
                       <div className="flex items-center gap-0.5">
                         <span>تحدي ذهبي</span>
@@ -265,7 +262,7 @@ const LessonsHub: React.FC = () => {
                       </div>
                       <span>•</span>
                       <div className="flex items-center gap-0.5">
-                        <span>{unit.total_lessons || 4} دروس</span>
+                        <span>4 دروس</span>
                         <BookOpen size={10} />
                       </div>
                     </div>
@@ -275,7 +272,7 @@ const LessonsHub: React.FC = () => {
             );
           })}
 
-          {activeUnits.length === 0 && (
+          {activeModules.length === 0 && (
             <div className="text-center py-10">
               <p className="text-muted-foreground text-xs">لا توجد مراحل لهذا المستوى بعد</p>
             </div>
