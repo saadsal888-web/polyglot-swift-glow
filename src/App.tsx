@@ -73,7 +73,7 @@ const AppContent = () => {
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/lessons" element={<ProtectedRoute><LessonsHub /></ProtectedRoute>} />
-          <Route path="/lesson/:unitId/:lessonNumber" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
+          <Route path="/lesson/:moduleId/:lessonNumber" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
           <Route path="/delete-account" element={<ProtectedRoute><DeleteAccount /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
