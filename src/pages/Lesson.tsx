@@ -281,18 +281,41 @@ const Lesson: React.FC = () => {
       setShowResults(true);
       
       if (user?.id) {
+        const newTotalXp = (userProgress?.total_xp || 0) + gems;
+        
         await supabase
           .from('user_progress')
           .update({
             current_lesson: lessonNum + 1,
-            total_xp: (userProgress?.total_xp || 0) + gems,
+            total_xp: newTotalXp,
             daily_completed: (userProgress?.daily_completed || 0) + 1,
             last_activity_date: new Date().toISOString().split('T')[0],
           })
           .eq('user_id', user.id);
 
+        // Sync to leaderboard
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, username')
+          .eq('id', user.id)
+          .single();
+
+        const displayName = profile?.full_name || profile?.username || user.email?.split('@')[0] || 'متعلم';
+
+        await supabase
+          .from('leaderboard')
+          .upsert({
+            user_id: user.id,
+            display_name: displayName,
+            total_gems: newTotalXp,
+            lessons_completed: (userProgress?.daily_completed || 0) + 1,
+            last_activity: new Date().toISOString(),
+          }, { onConflict: 'user_id' });
+
         queryClient.invalidateQueries({ queryKey: ['user-progress'] });
         queryClient.invalidateQueries({ queryKey: ['profile'] });
+        queryClient.invalidateQueries({ queryKey: ['leaderboard-top50'] });
+        queryClient.invalidateQueries({ queryKey: ['leaderboard-me'] });
       }
       return;
     }

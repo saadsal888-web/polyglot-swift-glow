@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Gem, User, UserPlus, Crown, Play, ChevronLeft } from 'lucide-react';
+import { Heart, Gem, User, UserPlus, Crown, Play, ChevronLeft, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -149,6 +149,25 @@ const Index: React.FC = () => {
             <p className="text-xs text-primary-foreground/80 mb-3">المرحلة {currentUnit} من {modulesCount || '...'} — تابع من حيث توقفت</p>
             <Progress value={progressPercent} className="h-2 bg-white/20" />
           </div>
+        </motion.div>
+
+        {/* Leaderboard Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/leaderboard')}
+          className="mx-4 flex items-center gap-3 bg-card/80 backdrop-blur rounded-2xl px-4 py-3 border border-border/50 shadow-sm cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+            <Trophy size={20} className="text-accent" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm">لوحة المتصدرين</p>
+            <p className="text-xs text-muted-foreground">تنافس مع المتعلمين الآخرين</p>
+          </div>
+          <ChevronLeft size={16} className="text-muted-foreground" />
         </motion.div>
 
         {/* Streak Mini Card */}
