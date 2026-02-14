@@ -36,6 +36,22 @@ const LessonsHub: React.FC = () => {
     },
   });
 
+  // Fetch lesson counts per module
+  const { data: lessonCounts } = useQuery({
+    queryKey: ['lesson-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('curriculum_lessons')
+        .select('module_id');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      data.forEach(l => {
+        counts[l.module_id] = (counts[l.module_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
   const { data: userProgress } = useQuery({
     queryKey: ['user-progress', user?.id],
     queryFn: async () => {
@@ -67,7 +83,10 @@ const LessonsHub: React.FC = () => {
   const activeModules = modulesByLevel[selectedLevel] || [];
   const levelConfig = LEVEL_CONFIG[selectedLevel] || LEVEL_CONFIG.A1;
   const totalStages = activeModules.length;
-  const totalLessons = totalStages * 4; // Each module has 4 lessons
+  const totalLessons = useMemo(() => {
+    if (!lessonCounts || !activeModules.length) return 0;
+    return activeModules.reduce((sum, m) => sum + (lessonCounts[m.id] || 0), 0);
+  }, [lessonCounts, activeModules]);
   const completedStages = activeModules.filter(m => m.stage_number < currentUnit).length;
   const progressPercent = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
 
@@ -227,7 +246,7 @@ const LessonsHub: React.FC = () => {
                     className="flex flex-col items-center gap-0.5 flex-shrink-0"
                   >
                     <span className={`text-[10px] font-black ${isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
-                      {mod.stage_number}
+                      {idx + 1}
                     </span>
                     <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
                       isCompleted ? 'ring-success/20' : isCurrent ? getLevelRingClass() : 'ring-transparent'
@@ -255,7 +274,7 @@ const LessonsHub: React.FC = () => {
                       </div>
                       <span>•</span>
                       <div className="flex items-center gap-0.5">
-                        <span>4 دروس</span>
+                        <span>{lessonCounts?.[mod.id] || 0} دروس</span>
                         <BookOpen size={10} />
                       </div>
                     </div>
