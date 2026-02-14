@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronRight, Star, BookOpen, Zap, Flame, Crown, Flag } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -180,116 +180,127 @@ const LessonsHub: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="px-3 mb-4">
-          <div className="grid grid-cols-3 gap-1.5">
-            {[
-              { icon: Flag, value: totalStages, label: 'مرحلة', color: 'text-primary', bg: 'bg-primary/10' },
-              { icon: BookOpen, value: totalLessons, label: 'درس', color: 'text-wc-purple', bg: 'bg-wc-purple/10' },
-              { icon: Zap, value: `${totalLessons * 3}+`, label: 'تحدي', color: 'text-wc-orange', bg: 'bg-wc-orange/10' },
-            ].map((stat, i) => (
-              <div key={i} className="bg-card/70 rounded-xl py-2 px-2.5 flex items-center gap-2 border border-border/20">
-                <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}>
-                  <stat.icon size={13} className={stat.color} />
-                </div>
-                <div className="text-right flex-1 min-w-0">
-                  <p className="text-sm font-black leading-none">{stat.value}</p>
-                  <p className="text-[9px] text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Zigzag Path */}
-        <div className="relative px-3">
-          {activeModules.map((mod, idx) => {
-            const isLeft = idx % 2 === 0;
-            const isCompleted = mod.stage_number < currentUnit;
-            const isCurrent = mod.stage_number === currentUnit;
-            const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
-
-            const circleColor = isCompleted
-              ? 'bg-success'
-              : isCurrent
-                ? levelConfig.bg
-                : levelConfig.bg + '/60';
-
-            return (
-              <div key={mod.id} className="relative">
-                {idx > 0 && (
-                  <div className="absolute w-full" style={{ top: -20, height: 28, zIndex: 0 }}>
-                    <svg width="100%" height="28" viewBox="0 0 300 28" preserveAspectRatio="none">
-                      <path
-                        d={isLeft
-                          ? "M 210 0 Q 150 14, 90 28"
-                          : "M 90 0 Q 150 14, 210 28"
-                        }
-                        fill="none"
-                        stroke="hsl(260 40% 82%)"
-                        strokeWidth="2.5"
-                        strokeDasharray="4 4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
+        {/* Stats Row + Zigzag Path — animated on level change */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selectedLevel}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+          >
+            {/* Stats Row */}
+            <div className="px-3 mb-4">
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { icon: Flag, value: totalStages, label: 'مرحلة', color: 'text-primary', bg: 'bg-primary/10' },
+                  { icon: BookOpen, value: totalLessons, label: 'درس', color: 'text-wc-purple', bg: 'bg-wc-purple/10' },
+                  { icon: Zap, value: `${totalLessons * 3}+`, label: 'تحدي', color: 'text-wc-orange', bg: 'bg-wc-orange/10' },
+                ].map((stat, i) => (
+                  <div key={i} className="bg-card/70 rounded-xl py-2 px-2.5 flex items-center gap-2 border border-border/20">
+                    <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}>
+                      <stat.icon size={13} className={stat.color} />
+                    </div>
+                    <div className="text-right flex-1 min-w-0">
+                      <p className="text-sm font-black leading-none">{stat.value}</p>
+                      <p className="text-[9px] text-muted-foreground">{stat.label}</p>
+                    </div>
                   </div>
-                )}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.03 }}
-                  className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
-                >
-                  <button
-                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
-                    className="flex flex-col items-center gap-0.5 flex-shrink-0"
-                  >
-                    <span className={`text-[10px] font-black ${isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
-                      {idx + 1}
-                    </span>
-                    <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
-                      isCompleted ? 'ring-success/20' : isCurrent ? getLevelRingClass() : 'ring-transparent'
-                    } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} transition-all`}>
-                      <IconComp size={22} className="text-primary-foreground" />
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
-                    className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
-                      isCurrent
-                        ? getLevelBorderClass()
-                        : isCompleted
-                          ? 'border-success/20'
-                          : 'border-border/20'
-                    } active:scale-[0.98] transition-transform`}
-                  >
-                    <h4 className="font-bold text-xs mb-0.5">{mod.title_ar}</h4>
-                    <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{mod.title_en}</p>
-                    <div className="flex items-center gap-2 justify-end text-[10px] text-muted-foreground">
-                      <div className="flex items-center gap-0.5">
-                        <span>تحدي ذهبي</span>
-                        <Star size={10} className="text-wc-orange" />
-                      </div>
-                      <span>•</span>
-                      <div className="flex items-center gap-0.5">
-                        <span>{lessonCounts?.[mod.id] || 0} دروس</span>
-                        <BookOpen size={10} />
-                      </div>
-                    </div>
-                  </button>
-                </motion.div>
+                ))}
               </div>
-            );
-          })}
-
-          {activeModules.length === 0 && (
-            <div className="text-center py-10">
-              <p className="text-muted-foreground text-xs">لا توجد مراحل لهذا المستوى بعد</p>
             </div>
-          )}
-        </div>
+
+            {/* Zigzag Path */}
+            <div className="relative px-3">
+              {activeModules.map((mod, idx) => {
+                const isLeft = idx % 2 === 0;
+                const isCompleted = mod.stage_number < currentUnit;
+                const isCurrent = mod.stage_number === currentUnit;
+                const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
+
+                const circleColor = isCompleted
+                  ? 'bg-success'
+                  : isCurrent
+                    ? levelConfig.bg
+                    : levelConfig.bg + '/60';
+
+                return (
+                  <div key={mod.id} className="relative">
+                    {idx > 0 && (
+                      <div className="absolute w-full" style={{ top: -20, height: 28, zIndex: 0 }}>
+                        <svg width="100%" height="28" viewBox="0 0 300 28" preserveAspectRatio="none">
+                          <path
+                            d={isLeft
+                              ? "M 210 0 Q 150 14, 90 28"
+                              : "M 90 0 Q 150 14, 210 28"
+                            }
+                            fill="none"
+                            stroke="hsl(260 40% 82%)"
+                            strokeWidth="2.5"
+                            strokeDasharray="4 4"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </div>
+                    )}
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.03 }}
+                      className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
+                    >
+                      <button
+                        onClick={() => navigate(`/lesson/${mod.id}/1`)}
+                        className="flex flex-col items-center gap-0.5 flex-shrink-0"
+                      >
+                        <span className={`text-[10px] font-black ${isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
+                          {idx + 1}
+                        </span>
+                        <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
+                          isCompleted ? 'ring-success/20' : isCurrent ? getLevelRingClass() : 'ring-transparent'
+                        } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} transition-all`}>
+                          <IconComp size={22} className="text-primary-foreground" />
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => navigate(`/lesson/${mod.id}/1`)}
+                        className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
+                          isCurrent
+                            ? getLevelBorderClass()
+                            : isCompleted
+                              ? 'border-success/20'
+                              : 'border-border/20'
+                        } active:scale-[0.98] transition-transform`}
+                      >
+                        <h4 className="font-bold text-xs mb-0.5">{mod.title_ar}</h4>
+                        <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{mod.title_en}</p>
+                        <div className="flex items-center gap-2 justify-end text-[10px] text-muted-foreground">
+                          <div className="flex items-center gap-0.5">
+                            <span>تحدي ذهبي</span>
+                            <Star size={10} className="text-wc-orange" />
+                          </div>
+                          <span>•</span>
+                          <div className="flex items-center gap-0.5">
+                            <span>{lessonCounts?.[mod.id] || 0} دروس</span>
+                            <BookOpen size={10} />
+                          </div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  </div>
+                );
+              })}
+
+              {activeModules.length === 0 && (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground text-xs">لا توجد مراحل لهذا المستوى بعد</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </AppLayout>
   );
