@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { ChevronRight, Star, BookOpen, Zap, Flame, Crown, Flag } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -8,22 +8,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 
-const LEVEL_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
-  A1: { label: 'مبتدئ', icon: Flame, color: 'text-success', bg: 'bg-success', border: 'border-success' },
-  A2: { label: 'فوق المبتدئ', icon: Flame, color: 'text-wc-orange', bg: 'bg-wc-orange', border: 'border-wc-orange' },
-  B1: { label: 'متوسط', icon: Zap, color: 'text-wc-purple', bg: 'bg-wc-purple', border: 'border-wc-purple' },
-  B2: { label: 'فوق المتوسط', icon: Crown, color: 'text-wc-pink', bg: 'bg-wc-pink', border: 'border-wc-pink' },
-};
-
-const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2'];
 const STAGE_ICONS = [Star, BookOpen, Zap, Flag, Crown, Flame];
+
+const LEVEL_COLORS: Record<string, { color: string; bg: string; border: string; ring: string }> = {
+  a1: { color: 'text-success', bg: 'bg-success', border: 'border-success/40', ring: 'ring-success/30' },
+  a2: { color: 'text-wc-orange', bg: 'bg-wc-orange', border: 'border-wc-orange/40', ring: 'ring-wc-orange/30' },
+  b1: { color: 'text-wc-purple', bg: 'bg-wc-purple', border: 'border-wc-purple/40', ring: 'ring-wc-purple/30' },
+  b2: { color: 'text-wc-pink', bg: 'bg-wc-pink', border: 'border-wc-pink/40', ring: 'ring-wc-pink/30' },
+};
 
 const LessonsHub: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [selectedLevel, setSelectedLevel] = useState<string>('A1');
 
-  // Fetch curriculum modules
   const { data: modules } = useQuery({
     queryKey: ['curriculum-modules'],
     queryFn: async () => {
@@ -36,7 +33,6 @@ const LessonsHub: React.FC = () => {
     },
   });
 
-  // Fetch lesson counts per module
   const { data: lessonCounts } = useQuery({
     queryKey: ['lesson-counts'],
     queryFn: async () => {
@@ -67,48 +63,14 @@ const LessonsHub: React.FC = () => {
   });
 
   const currentUnit = userProgress?.current_unit || 1;
-
-  // Group modules by level_band (lowercase in DB -> uppercase for display)
-  const modulesByLevel = useMemo(() => {
-    if (!modules) return {};
-    const grouped: Record<string, typeof modules> = {};
-    modules.forEach(m => {
-      const level = m.level_band.toUpperCase();
-      if (!grouped[level]) grouped[level] = [];
-      grouped[level].push(m);
-    });
-    return grouped;
-  }, [modules]);
-
-  const activeModules = modulesByLevel[selectedLevel] || [];
-  const levelConfig = LEVEL_CONFIG[selectedLevel] || LEVEL_CONFIG.A1;
-  const totalStages = activeModules.length;
+  const allModules = modules || [];
+  const totalStages = allModules.length;
   const totalLessons = useMemo(() => {
-    if (!lessonCounts || !activeModules.length) return 0;
-    return activeModules.reduce((sum, m) => sum + (lessonCounts[m.id] || 0), 0);
-  }, [lessonCounts, activeModules]);
-  const completedStages = activeModules.filter(m => m.stage_number < currentUnit).length;
+    if (!lessonCounts || !allModules.length) return 0;
+    return allModules.reduce((sum, m) => sum + (lessonCounts[m.id] || 0), 0);
+  }, [lessonCounts, allModules]);
+  const completedStages = allModules.filter(m => m.stage_number < currentUnit).length;
   const progressPercent = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
-
-  const getLevelRingClass = () => {
-    switch (selectedLevel) {
-      case 'A1': return 'ring-success/30';
-      case 'A2': return 'ring-wc-orange/30';
-      case 'B1': return 'ring-wc-purple/30';
-      case 'B2': return 'ring-wc-pink/30';
-      default: return 'ring-success/30';
-    }
-  };
-
-  const getLevelBorderClass = () => {
-    switch (selectedLevel) {
-      case 'A1': return 'border-success/40';
-      case 'A2': return 'border-wc-orange/40';
-      case 'B1': return 'border-wc-purple/40';
-      case 'B2': return 'border-wc-pink/40';
-      default: return 'border-success/40';
-    }
-  };
 
   return (
     <AppLayout>
@@ -140,9 +102,6 @@ const LessonsHub: React.FC = () => {
           <div className="absolute top-[-20px] left-[-15px] w-24 h-24 rounded-full bg-white/10" />
           <div className="absolute bottom-[-15px] right-[-8px] w-20 h-20 rounded-full bg-white/5" />
           <div className="relative z-10">
-            <span className="inline-block bg-white/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full mb-2">
-              مستوى {selectedLevel}
-            </span>
             <h2 className="text-lg font-black mb-1">رحلتك نحو الإتقان</h2>
             <p className="text-[11px] text-primary-foreground/75 leading-relaxed">
               {totalStages} خطوة مدروسة بعناية لتنتقل من الصفر إلى التحدث بطلاقة وثقة.
@@ -150,157 +109,116 @@ const LessonsHub: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Level Selector */}
-        <div className="px-3 mb-3">
-          <h3 className="text-xs font-bold mb-2 text-right">اختر مستواك</h3>
-          <div className="grid grid-cols-4 gap-1.5">
-            {LEVEL_ORDER.map((level) => {
-              const config = LEVEL_CONFIG[level];
-              const isActive = selectedLevel === level;
-              const IconComp = config.icon;
-              return (
-                <motion.button
-                  key={level}
-                  whileTap={{ scale: 0.93 }}
-                  onClick={() => setSelectedLevel(level)}
-                  className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border-2 transition-all ${
-                    isActive
-                      ? `${config.border} bg-card shadow-sm`
-                      : 'border-transparent bg-card/50'
-                  }`}
-                >
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isActive ? config.bg + '/15' : 'bg-muted/30'}`}>
-                    <IconComp size={18} className={isActive ? config.color : 'text-muted-foreground'} />
-                  </div>
-                  <span className={`text-xs font-black ${isActive ? config.color : 'text-foreground'}`}>{level}</span>
-                  <span className="text-[9px] text-muted-foreground leading-none">{config.label}</span>
-                </motion.button>
-              );
-            })}
+        {/* Stats Row */}
+        <div className="px-3 mb-4">
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { icon: Flag, value: totalStages, label: 'مرحلة', color: 'text-primary', bg: 'bg-primary/10' },
+              { icon: BookOpen, value: totalLessons, label: 'درس', color: 'text-wc-purple', bg: 'bg-wc-purple/10' },
+              { icon: Zap, value: `${totalLessons * 3}+`, label: 'تحدي', color: 'text-wc-orange', bg: 'bg-wc-orange/10' },
+            ].map((stat, i) => (
+              <div key={i} className="bg-card/70 rounded-xl py-2 px-2.5 flex items-center gap-2 border border-border/20">
+                <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}>
+                  <stat.icon size={13} className={stat.color} />
+                </div>
+                <div className="text-right flex-1 min-w-0">
+                  <p className="text-sm font-black leading-none">{stat.value}</p>
+                  <p className="text-[9px] text-muted-foreground">{stat.label}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Stats Row + Zigzag Path — animated on level change */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedLevel}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-          >
-            {/* Stats Row */}
-            <div className="px-3 mb-4">
-              <div className="grid grid-cols-3 gap-1.5">
-                {[
-                  { icon: Flag, value: totalStages, label: 'مرحلة', color: 'text-primary', bg: 'bg-primary/10' },
-                  { icon: BookOpen, value: totalLessons, label: 'درس', color: 'text-wc-purple', bg: 'bg-wc-purple/10' },
-                  { icon: Zap, value: `${totalLessons * 3}+`, label: 'تحدي', color: 'text-wc-orange', bg: 'bg-wc-orange/10' },
-                ].map((stat, i) => (
-                  <div key={i} className="bg-card/70 rounded-xl py-2 px-2.5 flex items-center gap-2 border border-border/20">
-                    <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}>
-                      <stat.icon size={13} className={stat.color} />
-                    </div>
-                    <div className="text-right flex-1 min-w-0">
-                      <p className="text-sm font-black leading-none">{stat.value}</p>
-                      <p className="text-[9px] text-muted-foreground">{stat.label}</p>
-                    </div>
+        {/* Zigzag Path — all modules */}
+        <div className="relative px-3">
+          {allModules.map((mod, idx) => {
+            const isLeft = idx % 2 === 0;
+            const isCompleted = mod.stage_number < currentUnit;
+            const isCurrent = mod.stage_number === currentUnit;
+            const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
+            const levelColors = LEVEL_COLORS[mod.level_band] || LEVEL_COLORS.a1;
+
+            const circleColor = isCompleted
+              ? 'bg-success'
+              : isCurrent
+                ? levelColors.bg
+                : levelColors.bg + '/60';
+
+            return (
+              <div key={mod.id} className="relative">
+                {idx > 0 && (
+                  <div className="absolute w-full" style={{ top: -20, height: 28, zIndex: 0 }}>
+                    <svg width="100%" height="28" viewBox="0 0 300 28" preserveAspectRatio="none">
+                      <path
+                        d={isLeft
+                          ? "M 210 0 Q 150 14, 90 28"
+                          : "M 90 0 Q 150 14, 210 28"
+                        }
+                        fill="none"
+                        stroke="hsl(260 40% 82%)"
+                        strokeWidth="2.5"
+                        strokeDasharray="4 4"
+                        strokeLinecap="round"
+                      />
+                    </svg>
                   </div>
-                ))}
-              </div>
-            </div>
+                )}
 
-            {/* Zigzag Path */}
-            <div className="relative px-3">
-              {activeModules.map((mod, idx) => {
-                const isLeft = idx % 2 === 0;
-                const isCompleted = mod.stage_number < currentUnit;
-                const isCurrent = mod.stage_number === currentUnit;
-                const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03 }}
+                  className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
+                >
+                  <button
+                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
+                    className="flex flex-col items-center gap-0.5 flex-shrink-0"
+                  >
+                    <span className={`text-[10px] font-black ${isCurrent ? levelColors.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
+                      {idx + 1}
+                    </span>
+                    <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
+                      isCompleted ? 'ring-success/20' : isCurrent ? levelColors.ring : 'ring-transparent'
+                    } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} transition-all`}>
+                      <IconComp size={22} className="text-primary-foreground" />
+                    </div>
+                  </button>
 
-                const circleColor = isCompleted
-                  ? 'bg-success'
-                  : isCurrent
-                    ? levelConfig.bg
-                    : levelConfig.bg + '/60';
-
-                return (
-                  <div key={mod.id} className="relative">
-                    {idx > 0 && (
-                      <div className="absolute w-full" style={{ top: -20, height: 28, zIndex: 0 }}>
-                        <svg width="100%" height="28" viewBox="0 0 300 28" preserveAspectRatio="none">
-                          <path
-                            d={isLeft
-                              ? "M 210 0 Q 150 14, 90 28"
-                              : "M 90 0 Q 150 14, 210 28"
-                            }
-                            fill="none"
-                            stroke="hsl(260 40% 82%)"
-                            strokeWidth="2.5"
-                            strokeDasharray="4 4"
-                            strokeLinecap="round"
-                          />
-                        </svg>
+                  <button
+                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
+                    className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
+                      isCurrent
+                        ? levelColors.border
+                        : isCompleted
+                          ? 'border-success/20'
+                          : 'border-border/20'
+                    } active:scale-[0.98] transition-transform`}
+                  >
+                    <h4 className="font-bold text-xs mb-0.5">{mod.title_ar}</h4>
+                    <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{mod.title_en}</p>
+                    <div className="flex items-center gap-2 justify-end text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-0.5">
+                        <span>{mod.level_band.toUpperCase()}</span>
                       </div>
-                    )}
+                      <span>•</span>
+                      <div className="flex items-center gap-0.5">
+                        <span>{lessonCounts?.[mod.id] || 0} دروس</span>
+                        <BookOpen size={10} />
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
+              </div>
+            );
+          })}
 
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.03 }}
-                      className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
-                    >
-                      <button
-                        onClick={() => navigate(`/lesson/${mod.id}/1`)}
-                        className="flex flex-col items-center gap-0.5 flex-shrink-0"
-                      >
-                        <span className={`text-[10px] font-black ${isCurrent ? levelConfig.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
-                          {idx + 1}
-                        </span>
-                        <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
-                          isCompleted ? 'ring-success/20' : isCurrent ? getLevelRingClass() : 'ring-transparent'
-                        } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} transition-all`}>
-                          <IconComp size={22} className="text-primary-foreground" />
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => navigate(`/lesson/${mod.id}/1`)}
-                        className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
-                          isCurrent
-                            ? getLevelBorderClass()
-                            : isCompleted
-                              ? 'border-success/20'
-                              : 'border-border/20'
-                        } active:scale-[0.98] transition-transform`}
-                      >
-                        <h4 className="font-bold text-xs mb-0.5">{mod.title_ar}</h4>
-                        <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{mod.title_en}</p>
-                        <div className="flex items-center gap-2 justify-end text-[10px] text-muted-foreground">
-                          <div className="flex items-center gap-0.5">
-                            <span>تحدي ذهبي</span>
-                            <Star size={10} className="text-wc-orange" />
-                          </div>
-                          <span>•</span>
-                          <div className="flex items-center gap-0.5">
-                            <span>{lessonCounts?.[mod.id] || 0} دروس</span>
-                            <BookOpen size={10} />
-                          </div>
-                        </div>
-                      </button>
-                    </motion.div>
-                  </div>
-                );
-              })}
-
-              {activeModules.length === 0 && (
-                <div className="text-center py-10">
-                  <p className="text-muted-foreground text-xs">لا توجد مراحل لهذا المستوى بعد</p>
-                </div>
-              )}
+          {allModules.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground text-xs">لا توجد مراحل بعد</p>
             </div>
-          </motion.div>
-        </AnimatePresence>
+          )}
+        </div>
       </div>
     </AppLayout>
   );
