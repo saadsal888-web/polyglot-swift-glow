@@ -16,6 +16,7 @@ import LessonsHub from "./pages/LessonsHub";
 import Lesson from "./pages/Lesson";
 import Subscription from "./pages/Subscription";
 import Leaderboard from "./pages/Leaderboard";
+import Badges from "./pages/Badges";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import DeleteAccount from "./pages/DeleteAccount";
@@ -76,6 +77,7 @@ const AppContent = () => {
           <Route path="/lessons" element={<ProtectedRoute><LessonsHub /></ProtectedRoute>} />
           <Route path="/lesson/:moduleId/:lessonNumber" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+          <Route path="/badges" element={<ProtectedRoute><Badges /></ProtectedRoute>} />
           <Route path="/delete-account" element={<ProtectedRoute><DeleteAccount /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

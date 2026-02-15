@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { ChevronRight, Volume2, Clock, Zap, Heart, Gem } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { ChevronRight, Volume2, Zap, Heart, Gem } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { useCheckAndAwardBadges } from '@/hooks/useBadges';
 
 // Types
 interface Exercise {
@@ -42,6 +43,7 @@ const Lesson: React.FC = () => {
   const { moduleId, lessonNumber } = useParams<{ moduleId: string; lessonNumber: string }>();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
+  const checkAndAwardBadges = useCheckAndAwardBadges();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -52,10 +54,6 @@ const Lesson: React.FC = () => {
   const [showResults, setShowResults] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [totalAnswered, setTotalAnswered] = useState(0);
-  
-  const [isSpeedRound, setIsSpeedRound] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(5);
-  const [speedTimerActive, setSpeedTimerActive] = useState(false);
 
   const lessonNum = parseInt(lessonNumber || '1');
 
@@ -74,7 +72,7 @@ const Lesson: React.FC = () => {
     enabled: !!moduleId,
   });
 
-  // Fetch the specific lesson for this module + lesson number
+  // Fetch the specific lesson
   const { data: lesson } = useQuery({
     queryKey: ['curriculum-lesson', moduleId, lessonNum],
     queryFn: async () => {
@@ -84,13 +82,12 @@ const Lesson: React.FC = () => {
         .eq('module_id', moduleId!)
         .order('sort_order')
       if (error) throw error;
-      // Get the lesson by index (lessonNum is 1-based)
       return data?.[lessonNum - 1] || null;
     },
     enabled: !!moduleId,
   });
 
-  // Fetch drills, vocab, phrases for this lesson
+  // Fetch drills, vocab, phrases
   const { data: drills } = useQuery({
     queryKey: ['curriculum-drills', lesson?.id],
     queryFn: async () => {
@@ -119,20 +116,6 @@ const Lesson: React.FC = () => {
     enabled: !!lesson?.id,
   });
 
-  const { data: phrases } = useQuery({
-    queryKey: ['curriculum-phrases', lesson?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('curriculum_phrases')
-        .select('*')
-        .eq('lesson_id', lesson!.id)
-        .order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!lesson?.id,
-  });
-
   // Fetch user progress
   const { data: userProgress } = useQuery({
     queryKey: ['user-progress', user?.id],
@@ -148,11 +131,10 @@ const Lesson: React.FC = () => {
     enabled: !!user?.id,
   });
 
-  // Build exercises from curriculum data
+  // Build exercises
   const exercises = useMemo(() => {
     const result: Exercise[] = [];
 
-    // 1. Add drills (ready-made questions from DB)
     if (drills?.length) {
       drills.forEach(drill => {
         const opts = drill.options as string[];
@@ -166,13 +148,11 @@ const Lesson: React.FC = () => {
       });
     }
 
-    // 2. Generate translation exercises from vocab
     if (vocab?.length) {
       const allTranslations = vocab.map(v => v.translation);
       const allWords = vocab.map(v => v.word);
 
       vocab.forEach(v => {
-        // EN -> AR
         const wrongAr = shuffleArray(allTranslations.filter(t => t !== v.translation)).slice(0, 2);
         result.push({
           id: `${v.id}-translate`,
@@ -182,7 +162,6 @@ const Lesson: React.FC = () => {
           options: shuffleArray([v.translation, ...wrongAr]),
         });
 
-        // AR -> EN
         const wrongEn = shuffleArray(allWords.filter(w => w !== v.word)).slice(0, 2);
         result.push({
           id: `${v.id}-reverse`,
@@ -192,7 +171,6 @@ const Lesson: React.FC = () => {
           options: shuffleArray([v.word, ...wrongEn]),
         });
 
-        // Context sentence
         if (v.example) {
           const blanked = v.example.replace(new RegExp(`\\b${v.word}\\b`, 'i'), '______');
           if (blanked !== v.example) {
@@ -214,32 +192,9 @@ const Lesson: React.FC = () => {
   const currentExercise = exercises[currentIndex];
   const progress = exercises.length > 0 ? ((currentIndex + 1) / exercises.length) * 100 : 0;
 
-  // Speed challenge timer
-  useEffect(() => {
-    if (!speedTimerActive || !isSpeedRound) return;
-    if (timeLeft <= 0) {
-      handleAnswer('__timeout__');
-      return;
-    }
-    const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, speedTimerActive, isSpeedRound]);
-
-  useEffect(() => {
-    if (currentIndex >= 5 && (currentIndex - 5) % 3 === 0) {
-      setIsSpeedRound(true);
-      setTimeLeft(5);
-      setSpeedTimerActive(true);
-    } else {
-      setIsSpeedRound(false);
-      setSpeedTimerActive(false);
-    }
-  }, [currentIndex]);
-
   const handleAnswer = useCallback((answer: string) => {
     if (selectedAnswer !== null) return;
     
-    setSpeedTimerActive(false);
     setSelectedAnswer(answer);
     const correct = answer === currentExercise?.correctAnswer;
     setIsCorrect(correct);
@@ -253,10 +208,6 @@ const Lesson: React.FC = () => {
       let gemsEarned = 2;
       if (newCombo >= 10) gemsEarned += 2;
       else if (newCombo >= 5) gemsEarned += 1;
-      
-      if (isSpeedRound && timeLeft > 3) gemsEarned += 3;
-      else if (isSpeedRound && timeLeft > 1.5) gemsEarned += 2;
-      else if (isSpeedRound) gemsEarned += 1;
 
       setGems(g => g + gemsEarned);
 
@@ -269,7 +220,7 @@ const Lesson: React.FC = () => {
         setHearts(h => Math.max(0, h - 1));
       }
     }
-  }, [selectedAnswer, currentExercise, combo, isPremium, isSpeedRound, timeLeft]);
+  }, [selectedAnswer, currentExercise, combo, isPremium]);
 
   const handleNext = useCallback(async () => {
     if (hearts <= 0 && !isPremium) {
@@ -282,13 +233,14 @@ const Lesson: React.FC = () => {
       
       if (user?.id) {
         const newTotalXp = (userProgress?.total_xp || 0) + gems;
+        const newLessonsCompleted = (userProgress?.daily_completed || 0) + 1;
         
         await supabase
           .from('user_progress')
           .update({
             current_lesson: lessonNum + 1,
             total_xp: newTotalXp,
-            daily_completed: (userProgress?.daily_completed || 0) + 1,
+            daily_completed: newLessonsCompleted,
             last_activity_date: new Date().toISOString().split('T')[0],
           })
           .eq('user_id', user.id);
@@ -308,9 +260,16 @@ const Lesson: React.FC = () => {
             user_id: user.id,
             display_name: displayName,
             total_gems: newTotalXp,
-            lessons_completed: (userProgress?.daily_completed || 0) + 1,
+            lessons_completed: newLessonsCompleted,
             last_activity: new Date().toISOString(),
           }, { onConflict: 'user_id' });
+
+        // Check and award new badges
+        checkAndAwardBadges.mutate({
+          xp: newTotalXp,
+          streak: userProgress?.streak_days || 0,
+          lessonsCompleted: newLessonsCompleted,
+        });
 
         queryClient.invalidateQueries({ queryKey: ['user-progress'] });
         queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -323,7 +282,7 @@ const Lesson: React.FC = () => {
     setCurrentIndex(i => i + 1);
     setSelectedAnswer(null);
     setIsCorrect(null);
-  }, [currentIndex, exercises.length, hearts, isPremium, navigate, user?.id, gems, lessonNum]);
+  }, [currentIndex, exercises.length, hearts, isPremium, navigate, user?.id, gems, lessonNum, checkAndAwardBadges]);
 
   // Results screen
   if (showResults) {
@@ -422,26 +381,6 @@ const Lesson: React.FC = () => {
             <span>{currentIndex + 1}/{exercises.length}</span>
           </div>
         </div>
-
-        {/* Speed Challenge Banner */}
-        <AnimatePresence>
-          {isSpeedRound && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mx-4 mb-2"
-            >
-              <div className="bg-gradient-to-l from-wc-orange to-amber-500 rounded-xl px-4 py-2 flex items-center justify-between text-primary-foreground">
-                <span className="font-bold text-2xl tabular-nums">{timeLeft}s</span>
-                <div className="flex items-center gap-2">
-                  <Clock size={16} />
-                  <span className="text-sm font-bold">⚡ تحدي السرعة!</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Question */}
         <div className="flex-1 px-4 flex flex-col">
