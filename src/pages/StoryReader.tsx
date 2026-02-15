@@ -1,72 +1,65 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Drawer, DrawerContent, DrawerClose } from '@/components/ui/drawer';
-import { ArrowRight, Play, Pause, BookOpen, Volume2, CheckCircle2, XCircle, Trophy, X } from 'lucide-react';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import { ArrowRight, Play, Pause, BookOpen, Volume2, CheckCircle2, XCircle, Trophy, Plus, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
 
-interface VocabWord {
-  id: string;
+interface WordInfo {
   word_en: string;
   meaning_ar: string;
-  part_of_speech_ar: string | null;
+  pronunciation: string | null;
+  isVocab: boolean;
 }
 
-const HighlightedText = ({
+// Split paragraph text into clickable word tokens
+const WordTokens = ({
   text,
-  vocabWords,
+  vocabMap,
   onWordClick,
 }: {
   text: string;
-  vocabWords: VocabWord[];
-  onWordClick: (word: VocabWord) => void;
+  vocabMap: Map<string, WordInfo>;
+  onWordClick: (word: string) => void;
 }) => {
-  const parts = useMemo(() => {
-    if (!vocabWords.length) return [{ text, isVocab: false as const }];
-
-    // Build a regex that matches any vocab word (case-insensitive, word boundary)
-    const escaped = vocabWords.map(w => w.word_en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const regex = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
-
-    const result: { text: string; isVocab: boolean; word?: VocabWord }[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        result.push({ text: text.slice(lastIndex, match.index), isVocab: false });
-      }
-      const matched = match[0];
-      const vocabWord = vocabWords.find(w => w.word_en.toLowerCase() === matched.toLowerCase());
-      result.push({ text: matched, isVocab: true, word: vocabWord });
-      lastIndex = regex.lastIndex;
-    }
-    if (lastIndex < text.length) {
-      result.push({ text: text.slice(lastIndex), isVocab: false });
-    }
-    return result;
-  }, [text, vocabWords]);
+  // Split by spaces but keep punctuation attached
+  const tokens = text.split(/(\s+)/);
 
   return (
     <span>
-      {parts.map((part, i) =>
-        part.isVocab && part.word ? (
+      {tokens.map((token, i) => {
+        if (/^\s+$/.test(token)) return <span key={i}>{token}</span>;
+        
+        // Strip punctuation for matching
+        const cleanWord = token.replace(/[^a-zA-Z']/g, '').toLowerCase();
+        const isVocab = vocabMap.has(cleanWord);
+        
+        // Skip very short tokens (articles, etc. still clickable but styled differently)
+        const isClickable = cleanWord.length > 0;
+        
+        if (!isClickable) return <span key={i}>{token}</span>;
+
+        return (
           <button
             key={i}
-            onClick={() => onWordClick(part.word!)}
-            className="font-bold text-primary underline underline-offset-4 decoration-primary/40 decoration-2 hover:decoration-primary transition-colors cursor-pointer"
+            onClick={() => onWordClick(token)}
+            className={`inline cursor-pointer transition-colors rounded-sm px-0.5 -mx-0.5 ${
+              isVocab
+                ? 'font-bold text-primary underline underline-offset-4 decoration-primary/40 decoration-2 hover:decoration-primary hover:bg-primary/10'
+                : 'hover:bg-primary/10 hover:text-primary'
+            }`}
           >
-            {part.text}
+            {token}
           </button>
-        ) : (
-          <span key={i}>{part.text}</span>
-        )
-      )}
+        );
+      })}
     </span>
   );
 };
@@ -74,6 +67,7 @@ const HighlightedText = ({
 const StoryReader = () => {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -81,9 +75,14 @@ const StoryReader = () => {
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
-  const [selectedWord, setSelectedWord] = useState<VocabWord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedWordInfo, setSelectedWordInfo] = useState<WordInfo | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedWords, setSavedWords] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Cache translations
+  const translationCache = useRef<Map<string, WordInfo>>(new Map());
 
   const { data: story, isLoading: storyLoading } = useQuery({
     queryKey: ['story', storyId],
@@ -141,6 +140,20 @@ const StoryReader = () => {
     enabled: !!storyId,
   });
 
+  // Build vocab lookup map
+  const vocabMap = useMemo(() => {
+    const map = new Map<string, WordInfo>();
+    vocabulary?.forEach(v => {
+      map.set(v.word_en.toLowerCase(), {
+        word_en: v.word_en,
+        meaning_ar: v.meaning_ar,
+        pronunciation: v.part_of_speech_ar,
+        isVocab: true,
+      });
+    });
+    return map;
+  }, [vocabulary]);
+
   const toggleAudio = () => {
     if (!story?.audio_url) return;
     if (!audioRef.current) {
@@ -155,9 +168,109 @@ const StoryReader = () => {
     setIsPlaying(!isPlaying);
   };
 
-  const handleWordClick = (word: VocabWord) => {
-    setSelectedWord(word);
+  const handleWordClick = useCallback(async (rawWord: string) => {
+    const cleanWord = rawWord.replace(/[^a-zA-Z']/g, '');
+    if (!cleanWord) return;
+    const lowerWord = cleanWord.toLowerCase();
+
+    // Check vocab first
+    const vocabInfo = vocabMap.get(lowerWord);
+    if (vocabInfo) {
+      setSelectedWordInfo(vocabInfo);
+      setDrawerOpen(true);
+      return;
+    }
+
+    // Check cache
+    const cached = translationCache.current.get(lowerWord);
+    if (cached) {
+      setSelectedWordInfo(cached);
+      setDrawerOpen(true);
+      return;
+    }
+
+    // Translate via edge function
+    setSelectedWordInfo({ word_en: cleanWord, meaning_ar: '', pronunciation: null, isVocab: false });
     setDrawerOpen(true);
+    setIsTranslating(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-word', {
+        body: { word: cleanWord },
+      });
+
+      if (error) throw error;
+
+      const info: WordInfo = {
+        word_en: cleanWord,
+        meaning_ar: data.meaning_ar || 'غير متوفر',
+        pronunciation: data.pronunciation || null,
+        isVocab: false,
+      };
+      translationCache.current.set(lowerWord, info);
+      setSelectedWordInfo(info);
+    } catch (err) {
+      console.error('Translation failed:', err);
+      setSelectedWordInfo(prev => prev ? { ...prev, meaning_ar: 'حدث خطأ في الترجمة' } : null);
+    } finally {
+      setIsTranslating(false);
+    }
+  }, [vocabMap]);
+
+  const handleSaveWord = async () => {
+    if (!selectedWordInfo || !user) return;
+    setIsSaving(true);
+
+    try {
+      // Get or create default "كلماتي" list
+      let { data: lists } = await supabase
+        .from('user_lists')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', 'كلماتي')
+        .limit(1);
+
+      let listId: string;
+
+      if (lists && lists.length > 0) {
+        listId = lists[0].id;
+      } else {
+        const { data: newList, error } = await supabase
+          .from('user_lists')
+          .insert({ user_id: user.id, name: 'كلماتي', description: 'كلمات محفوظة من القصص' })
+          .select('id')
+          .single();
+        if (error) throw error;
+        listId = newList.id;
+      }
+
+      // Save word to list
+      const { error: insertError } = await supabase
+        .from('user_list_items')
+        .insert({
+          user_id: user.id,
+          list_id: listId,
+          word_en: selectedWordInfo.word_en,
+          word_ar: selectedWordInfo.meaning_ar,
+          pronunciation: selectedWordInfo.pronunciation,
+        });
+
+      if (insertError) {
+        if (insertError.message.includes('duplicate') || insertError.message.includes('unique')) {
+          toast({ title: 'الكلمة موجودة بالفعل في قائمتك', variant: 'default' });
+        } else {
+          throw insertError;
+        }
+      } else {
+        setSavedWords(prev => new Set(prev).add(selectedWordInfo.word_en.toLowerCase()));
+        toast({ title: 'تم حفظ الكلمة ✅' });
+      }
+    } catch (err) {
+      console.error('Save word failed:', err);
+      toast({ title: 'حدث خطأ في حفظ الكلمة', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAnswer = (answer: string) => {
@@ -205,6 +318,7 @@ const StoryReader = () => {
   }
 
   const currentQ = questions?.[currentQuestion];
+  const isWordSaved = selectedWordInfo ? savedWords.has(selectedWordInfo.word_en.toLowerCase()) : false;
 
   return (
     <AppLayout>
@@ -240,7 +354,7 @@ const StoryReader = () => {
           </motion.div>
         )}
 
-        {/* Paragraphs with highlighted vocab */}
+        {/* Paragraphs - all words clickable */}
         <motion.div
           className="space-y-4"
           initial={{ opacity: 0, y: 20 }}
@@ -261,9 +375,9 @@ const StoryReader = () => {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 + i * 0.1 }}
                 >
-                  <HighlightedText
+                  <WordTokens
                     text={p.text}
-                    vocabWords={vocabulary || []}
+                    vocabMap={vocabMap}
                     onWordClick={handleWordClick}
                   />
                 </motion.p>
@@ -293,7 +407,7 @@ const StoryReader = () => {
                 >
                   <Card
                     className="p-3 bg-card/80 backdrop-blur-sm border-border/50 text-center space-y-1 cursor-pointer hover:bg-secondary/50 transition-colors active:scale-95"
-                    onClick={() => handleWordClick(word)}
+                    onClick={() => handleWordClick(word.word_en)}
                   >
                     <p className="font-bold text-primary text-sm" dir="ltr">{word.word_en}</p>
                     <p className="text-foreground text-sm">{word.meaning_ar}</p>
@@ -402,12 +516,12 @@ const StoryReader = () => {
 
       {/* Word Detail Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="max-h-[60vh]">
+        <DrawerContent className="max-h-[55vh]">
           <div className="px-6 pt-4 pb-8 space-y-5" dir="rtl">
             {/* Handle bar */}
             <div className="w-10 h-1 bg-border rounded-full mx-auto -mt-1" />
             
-            {selectedWord && (
+            {selectedWordInfo && (
               <>
                 {/* Word header */}
                 <div className="flex items-start justify-between">
@@ -417,11 +531,11 @@ const StoryReader = () => {
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold text-foreground" dir="ltr">
-                        {selectedWord.word_en}
+                        {selectedWordInfo.word_en}
                       </h3>
-                      {selectedWord.part_of_speech_ar && (
+                      {selectedWordInfo.pronunciation && (
                         <p className="text-sm text-muted-foreground" dir="ltr">
-                          /{selectedWord.part_of_speech_ar}/
+                          /{selectedWordInfo.pronunciation}/
                         </p>
                       )}
                     </div>
@@ -434,10 +548,45 @@ const StoryReader = () => {
                 {/* Translation */}
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">الترجمة</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {selectedWord.meaning_ar}
-                  </p>
+                  {isTranslating ? (
+                    <div className="flex items-center gap-2 py-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">جاري الترجمة...</span>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-bold text-primary">
+                      {selectedWordInfo.meaning_ar}
+                    </p>
+                  )}
                 </div>
+
+                {/* Action Buttons */}
+                {!isTranslating && selectedWordInfo.meaning_ar && selectedWordInfo.meaning_ar !== 'حدث خطأ في الترجمة' && (
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      onClick={handleSaveWord}
+                      disabled={isSaving || isWordSaved}
+                      className="flex-1 gap-2 rounded-xl h-12 bg-accent hover:bg-accent/90 text-accent-foreground"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : isWordSaved ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        <Plus className="w-5 h-5" />
+                      )}
+                      {isWordSaved ? 'تم الحفظ' : 'أتعلمها'}
+                    </Button>
+                    <Button
+                      onClick={() => setDrawerOpen(false)}
+                      variant="outline"
+                      className="flex-1 gap-2 rounded-xl h-12"
+                    >
+                      <Check className="w-5 h-5" />
+                      أعرفها
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>
