@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,8 +6,70 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowRight, Play, Pause, BookOpen, Volume2, CheckCircle2, XCircle, Trophy } from 'lucide-react';
+import { Drawer, DrawerContent, DrawerClose } from '@/components/ui/drawer';
+import { ArrowRight, Play, Pause, BookOpen, Volume2, CheckCircle2, XCircle, Trophy, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface VocabWord {
+  id: string;
+  word_en: string;
+  meaning_ar: string;
+  part_of_speech_ar: string | null;
+}
+
+const HighlightedText = ({
+  text,
+  vocabWords,
+  onWordClick,
+}: {
+  text: string;
+  vocabWords: VocabWord[];
+  onWordClick: (word: VocabWord) => void;
+}) => {
+  const parts = useMemo(() => {
+    if (!vocabWords.length) return [{ text, isVocab: false as const }];
+
+    // Build a regex that matches any vocab word (case-insensitive, word boundary)
+    const escaped = vocabWords.map(w => w.word_en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const regex = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+
+    const result: { text: string; isVocab: boolean; word?: VocabWord }[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        result.push({ text: text.slice(lastIndex, match.index), isVocab: false });
+      }
+      const matched = match[0];
+      const vocabWord = vocabWords.find(w => w.word_en.toLowerCase() === matched.toLowerCase());
+      result.push({ text: matched, isVocab: true, word: vocabWord });
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      result.push({ text: text.slice(lastIndex), isVocab: false });
+    }
+    return result;
+  }, [text, vocabWords]);
+
+  return (
+    <span>
+      {parts.map((part, i) =>
+        part.isVocab && part.word ? (
+          <button
+            key={i}
+            onClick={() => onWordClick(part.word!)}
+            className="font-bold text-primary underline underline-offset-4 decoration-primary/40 decoration-2 hover:decoration-primary transition-colors cursor-pointer"
+          >
+            {part.text}
+          </button>
+        ) : (
+          <span key={i}>{part.text}</span>
+        )
+      )}
+    </span>
+  );
+};
 
 const StoryReader = () => {
   const { storyId } = useParams<{ storyId: string }>();
@@ -19,6 +81,8 @@ const StoryReader = () => {
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<VocabWord | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: story, isLoading: storyLoading } = useQuery({
@@ -89,6 +153,11 @@ const StoryReader = () => {
       audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
+  };
+
+  const handleWordClick = (word: VocabWord) => {
+    setSelectedWord(word);
+    setDrawerOpen(true);
   };
 
   const handleAnswer = (answer: string) => {
@@ -171,7 +240,7 @@ const StoryReader = () => {
           </motion.div>
         )}
 
-        {/* Paragraphs */}
+        {/* Paragraphs with highlighted vocab */}
         <motion.div
           className="space-y-4"
           initial={{ opacity: 0, y: 20 }}
@@ -183,23 +252,27 @@ const StoryReader = () => {
               <BookOpen className="w-5 h-5 text-primary" />
               <h2 className="font-semibold text-foreground">القصة</h2>
             </div>
-            <div className="space-y-3" dir="ltr">
+            <div className="space-y-4" dir="ltr">
               {paragraphs?.map((p, i) => (
                 <motion.p
                   key={p.id}
-                  className="text-foreground/90 leading-relaxed text-base"
+                  className="text-foreground/90 leading-[2] text-lg"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 + i * 0.1 }}
                 >
-                  {p.text}
+                  <HighlightedText
+                    text={p.text}
+                    vocabWords={vocabulary || []}
+                    onWordClick={handleWordClick}
+                  />
                 </motion.p>
               ))}
             </div>
           </Card>
         </motion.div>
 
-        {/* Vocabulary */}
+        {/* Vocabulary Grid */}
         {vocabulary && vocabulary.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -218,7 +291,10 @@ const StoryReader = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 + i * 0.05 }}
                 >
-                  <Card className="p-3 bg-card/80 backdrop-blur-sm border-border/50 text-center space-y-1">
+                  <Card
+                    className="p-3 bg-card/80 backdrop-blur-sm border-border/50 text-center space-y-1 cursor-pointer hover:bg-secondary/50 transition-colors active:scale-95"
+                    onClick={() => handleWordClick(word)}
+                  >
                     <p className="font-bold text-primary text-sm" dir="ltr">{word.word_en}</p>
                     <p className="text-foreground text-sm">{word.meaning_ar}</p>
                     {word.part_of_speech_ar && (
@@ -323,6 +399,50 @@ const StoryReader = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Word Detail Drawer */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent className="max-h-[60vh]">
+          <div className="px-6 pt-4 pb-8 space-y-5" dir="rtl">
+            {/* Handle bar */}
+            <div className="w-10 h-1 bg-border rounded-full mx-auto -mt-1" />
+            
+            {selectedWord && (
+              <>
+                {/* Word header */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <Volume2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-foreground" dir="ltr">
+                        {selectedWord.word_en}
+                      </h3>
+                      {selectedWord.part_of_speech_ar && (
+                        <p className="text-sm text-muted-foreground" dir="ltr">
+                          /{selectedWord.part_of_speech_ar}/
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="h-px bg-border" />
+
+                {/* Translation */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">الترجمة</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {selectedWord.meaning_ar}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AppLayout>
   );
 };
