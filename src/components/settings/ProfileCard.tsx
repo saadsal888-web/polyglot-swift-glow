@@ -1,6 +1,10 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useActiveBadge } from '@/hooks/useBadges';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProfileCardProps {
   profile: {
@@ -11,6 +15,31 @@ interface ProfileCardProps {
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
+  const { user } = useAuth();
+  const { data: userProgress } = useQuery({
+    queryKey: ['user-progress', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('user_progress').select('*').eq('user_id', user.id).single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  const { data: profileData } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('profiles').select('total_xp').eq('id', user.id).single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  const activeBadge = useActiveBadge(
+    profileData?.total_xp || 0,
+    userProgress?.streak_days || 0,
+    userProgress?.daily_completed || 0,
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -27,11 +56,12 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({ profile }) => {
         <h2 className="text-base font-bold mb-0.5">{profile.name}</h2>
         <p className="text-muted-foreground text-xs mb-2">{profile.email}</p>
 
-        <div className="flex items-center gap-1.5 mb-3">
+        <div className="flex items-center gap-1.5 mb-1">
           <span className="level-badge">{profile.level}</span>
-          <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
-            <User size={12} className="text-primary" />
-          </div>
+        </div>
+        <div className="flex items-center gap-1 mb-3 bg-primary/5 px-3 py-1 rounded-full">
+          <span className="text-sm">{activeBadge.emoji}</span>
+          <span className="text-xs font-bold text-primary">{activeBadge.title}</span>
         </div>
 
         <motion.button

@@ -1083,6 +1083,30 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          badge_category: string
+          badge_key: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_category: string
+          badge_key: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_category?: string
+          badge_key?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_conversation_progress: {
         Row: {
           completed: boolean | null

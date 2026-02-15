@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
+import { useActiveBadge } from '@/hooks/useBadges';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
@@ -56,8 +57,10 @@ const Index: React.FC = () => {
 
   const totalXp = profile?.total_xp || 0;
   const streak = userProgress?.streak_days || 0;
+  const lessonsCompleted = userProgress?.daily_completed || 0;
   const currentUnit = userProgress?.current_unit || 1;
   const progressPercent = modulesCount ? Math.round(((currentUnit - 1) / modulesCount) * 100) : 0;
+  const activeBadge = useActiveBadge(totalXp, streak, lessonsCompleted);
 
   return (
     <AppLayout>
@@ -111,15 +114,19 @@ const Index: React.FC = () => {
           )}
         </motion.header>
 
-        {/* Welcome */}
-        <motion.p
+        {/* Badge + Welcome */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.05 }}
-          className="px-4 text-sm text-muted-foreground"
+          className="px-4 flex items-center gap-2"
         >
-          أنت في المكان المناسب — ابدأ عندما تكون مستعداً.
-        </motion.p>
+          <span className="text-lg">{activeBadge.emoji}</span>
+          <div>
+            <p className="text-xs font-bold text-primary">{activeBadge.title}</p>
+            <p className="text-[10px] text-muted-foreground">ابدأ عندما تكون مستعداً</p>
+          </div>
+        </motion.div>
 
         {/* Hero Card - Learning Journey */}
         <motion.div
@@ -166,6 +173,25 @@ const Index: React.FC = () => {
           <div className="flex-1">
             <p className="font-bold text-sm">لوحة المتصدرين</p>
             <p className="text-xs text-muted-foreground">تنافس مع المتعلمين الآخرين</p>
+          </div>
+          <ChevronLeft size={16} className="text-muted-foreground" />
+        </motion.div>
+
+        {/* Badges Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.13 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/badges')}
+          className="mx-4 flex items-center gap-3 bg-card/80 backdrop-blur rounded-2xl px-4 py-3 border border-border/50 shadow-sm cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <span className="text-lg">🏆</span>
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-sm">ألقابي</p>
+            <p className="text-xs text-muted-foreground">اكتشف ألقابك التشجيعية</p>
           </div>
           <ChevronLeft size={16} className="text-muted-foreground" />
         </motion.div>
