@@ -1,50 +1,27 @@
-import React, { useMemo } from 'react';
-import { ChevronRight, Star, BookOpen, Zap, Flame, Crown, Flag } from 'lucide-react';
+import React from 'react';
+import { ChevronRight, Check, Star, BookOpen, Zap, Home, HandMetal, GraduationCap, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Progress } from '@/components/ui/progress';
 
-const STAGE_ICONS = [Star, BookOpen, Zap, Flag, Crown, Flame];
-
-const LEVEL_COLORS: Record<string, { color: string; bg: string; border: string; ring: string }> = {
-  a1: { color: 'text-success', bg: 'bg-success', border: 'border-success/40', ring: 'ring-success/30' },
-  a2: { color: 'text-wc-orange', bg: 'bg-wc-orange', border: 'border-wc-orange/40', ring: 'ring-wc-orange/30' },
-  b1: { color: 'text-wc-purple', bg: 'bg-wc-purple', border: 'border-wc-purple/40', ring: 'ring-wc-purple/30' },
-  b2: { color: 'text-wc-pink', bg: 'bg-wc-pink', border: 'border-wc-pink/40', ring: 'ring-wc-pink/30' },
-};
+const LESSON_ICONS = [HandMetal, BookOpen, Home, Star, Zap, GraduationCap, Flame];
 
 const LessonsHub: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: modules } = useQuery({
-    queryKey: ['curriculum-modules'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('curriculum_modules')
-        .select('*')
-        .order('stage_number');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: lessonCounts } = useQuery({
-    queryKey: ['lesson-counts'],
+  const { data: lessons } = useQuery({
+    queryKey: ['curriculum-lessons-all'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('curriculum_lessons')
-        .select('module_id');
+        .select('*, curriculum_modules!inner(level_band, stage_number)')
+        .order('sort_order');
       if (error) throw error;
-      const counts: Record<string, number> = {};
-      data.forEach(l => {
-        counts[l.module_id] = (counts[l.module_id] || 0) + 1;
-      });
-      return counts;
+      return data;
     },
   });
 
@@ -63,159 +40,160 @@ const LessonsHub: React.FC = () => {
   });
 
   const currentUnit = userProgress?.current_unit || 1;
-  const allModules = modules || [];
-  const totalStages = allModules.length;
-  const totalLessons = useMemo(() => {
-    if (!lessonCounts || !allModules.length) return 0;
-    return allModules.reduce((sum, m) => sum + (lessonCounts[m.id] || 0), 0);
-  }, [lessonCounts, allModules]);
-  const completedStages = allModules.filter(m => m.stage_number < currentUnit).length;
-  const progressPercent = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0;
+  const allLessons = (lessons || []).filter(l => l.title_ar); // filter empty lessons
+
+  // Zigzag X positions for the circles
+  const getCircleX = (idx: number) => {
+    const pattern = [30, 60, 70, 50, 25, 15]; // percentage positions
+    return pattern[idx % pattern.length];
+  };
 
   return (
     <AppLayout>
       <div className="pb-20 min-h-screen" style={{ background: 'linear-gradient(180deg, hsl(var(--background)) 0%, hsl(260 50% 96%) 40%, hsl(260 40% 94%) 70%, hsl(var(--background)) 100%)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-3 pt-3 pb-1">
-          <div className="w-8 h-8 rounded-full bg-card flex items-center justify-center border border-border/40 shadow-sm">
-            <span className="text-[10px] font-bold">{progressPercent}%</span>
-          </div>
-          <h1 className="text-sm font-black">الأكاديمية الشاملة</h1>
+        <div className="flex items-center justify-between px-4 pt-4 pb-3">
+          <div className="w-8 h-8" />
+          <h1 className="text-sm font-black text-foreground">الأكاديمية</h1>
           <button onClick={() => navigate('/')} className="w-8 h-8 rounded-full bg-card flex items-center justify-center border border-border/40 shadow-sm">
             <ChevronRight size={14} />
           </button>
         </div>
 
-        <div className="px-3 mb-3">
-          <Progress value={progressPercent} className="h-1" />
-        </div>
+        {/* Lesson Path */}
+        <div className="relative" style={{ minHeight: allLessons.length * 220 }}>
+          {allLessons.map((lesson, idx) => {
+            const isCompleted = idx < currentUnit - 1;
+            const isCurrent = idx === currentUnit - 1;
+            const IconComp = LESSON_ICONS[idx % LESSON_ICONS.length];
+            const xPos = getCircleX(idx);
+            const levelBand = (lesson as any).curriculum_modules?.level_band || 'a1';
 
-        {/* Hero Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-3 rounded-2xl p-4 text-primary-foreground shadow-md overflow-hidden relative mb-4"
-          style={{
-            background: 'linear-gradient(135deg, hsl(263 84% 55%) 0%, hsl(239 70% 58%) 60%, hsl(263 55% 68%) 100%)'
-          }}
-        >
-          <div className="absolute top-[-20px] left-[-15px] w-24 h-24 rounded-full bg-white/10" />
-          <div className="absolute bottom-[-15px] right-[-8px] w-20 h-20 rounded-full bg-white/5" />
-          <div className="relative z-10">
-            <h2 className="text-lg font-black mb-1">رحلتك نحو الإتقان</h2>
-            <p className="text-[11px] text-primary-foreground/75 leading-relaxed">
-              {totalStages} خطوة مدروسة بعناية لتنتقل من الصفر إلى التحدث بطلاقة وثقة.
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Stats Row */}
-        <div className="px-3 mb-4">
-          <div className="grid grid-cols-3 gap-1.5">
-            {[
-              { icon: Flag, value: totalStages, label: 'مرحلة', color: 'text-primary', bg: 'bg-primary/10' },
-              { icon: BookOpen, value: totalLessons, label: 'درس', color: 'text-wc-purple', bg: 'bg-wc-purple/10' },
-              { icon: Zap, value: `${totalLessons * 3}+`, label: 'تحدي', color: 'text-wc-orange', bg: 'bg-wc-orange/10' },
-            ].map((stat, i) => (
-              <div key={i} className="bg-card/70 rounded-xl py-2 px-2.5 flex items-center gap-2 border border-border/20">
-                <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center flex-shrink-0`}>
-                  <stat.icon size={13} className={stat.color} />
-                </div>
-                <div className="text-right flex-1 min-w-0">
-                  <p className="text-sm font-black leading-none">{stat.value}</p>
-                  <p className="text-[9px] text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Zigzag Path — all modules */}
-        <div className="relative px-3">
-          {allModules.map((mod, idx) => {
-            const isLeft = idx % 2 === 0;
-            const isCompleted = mod.stage_number < currentUnit;
-            const isCurrent = mod.stage_number === currentUnit;
-            const IconComp = STAGE_ICONS[idx % STAGE_ICONS.length];
-            const levelColors = LEVEL_COLORS[mod.level_band] || LEVEL_COLORS.a1;
-
-            const circleColor = isCompleted
-              ? 'bg-success'
-              : isCurrent
-                ? levelColors.bg
-                : levelColors.bg + '/60';
+            const circleSize = isCurrent ? 120 : 110;
+            const innerSize = isCurrent ? 88 : 80;
 
             return (
-              <div key={mod.id} className="relative">
+              <div key={lesson.id} className="relative" style={{ height: 220 }}>
+                {/* Dotted connector line */}
                 {idx > 0 && (
-                  <div className="absolute w-full" style={{ top: -20, height: 28, zIndex: 0 }}>
-                    <svg width="100%" height="28" viewBox="0 0 300 28" preserveAspectRatio="none">
-                      <path
-                        d={isLeft
-                          ? "M 210 0 Q 150 14, 90 28"
-                          : "M 90 0 Q 150 14, 210 28"
-                        }
-                        fill="none"
-                        stroke="hsl(260 40% 82%)"
-                        strokeWidth="2.5"
-                        strokeDasharray="4 4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </div>
+                  <svg
+                    className="absolute top-0 left-0 w-full"
+                    height="120"
+                    style={{ zIndex: 0, marginTop: -60 }}
+                    preserveAspectRatio="none"
+                  >
+                    <line
+                      x1={`${getCircleX(idx - 1)}%`}
+                      y1="0"
+                      x2={`${xPos}%`}
+                      y2="120"
+                      stroke="hsl(260 60% 80%)"
+                      strokeWidth="4"
+                      strokeDasharray="6 8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 )}
 
+                {/* Circle + Label */}
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.03 }}
-                  className={`flex items-start gap-3 mb-6 relative z-[1] ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="absolute flex flex-col items-center"
+                  style={{
+                    left: `${xPos}%`,
+                    transform: 'translateX(-50%)',
+                    top: 20,
+                    zIndex: 2,
+                  }}
                 >
-                  <button
-                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
-                    className="flex flex-col items-center gap-0.5 flex-shrink-0"
+                  {/* Number badge */}
+                  <div
+                    className="absolute z-10 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-md"
+                    style={{ top: -4, right: -4 }}
                   >
-                    <span className={`text-[10px] font-black ${isCurrent ? levelColors.color : isCompleted ? 'text-success' : 'text-foreground'}`}>
-                      {idx + 1}
-                    </span>
-                    <div className={`w-14 h-14 rounded-full ${circleColor} flex items-center justify-center shadow-md ring-[3px] ${
-                      isCompleted ? 'ring-success/20' : isCurrent ? levelColors.ring : 'ring-transparent'
-                    } ring-offset-1 ring-offset-background ${isCurrent ? 'scale-105' : ''} transition-all`}>
-                      <IconComp size={22} className="text-primary-foreground" />
+                    <span className="text-xs font-black text-primary-foreground">{idx + 1}</span>
+                  </div>
+
+                  {/* Main circle button */}
+                  <button
+                    onClick={() => navigate(`/lesson/${lesson.module_id}/1`)}
+                    className="relative flex items-center justify-center rounded-full transition-transform active:scale-95"
+                    style={{ width: circleSize, height: circleSize }}
+                  >
+                    {/* Outer ring */}
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        background: isCompleted
+                          ? 'radial-gradient(circle, transparent 58%, hsl(142 60% 75% / 0.4) 60%, hsl(142 60% 75% / 0.15) 80%, transparent 82%)'
+                          : isCurrent
+                            ? 'radial-gradient(circle, transparent 58%, hsl(263 60% 75% / 0.5) 60%, hsl(263 60% 75% / 0.2) 80%, transparent 82%)'
+                            : 'radial-gradient(circle, transparent 58%, hsl(260 20% 80% / 0.3) 60%, transparent 80%)',
+                      }}
+                    />
+
+                    {/* Middle ring */}
+                    <div
+                      className="absolute rounded-full border-[3px]"
+                      style={{
+                        width: innerSize + 16,
+                        height: innerSize + 16,
+                        borderColor: isCompleted
+                          ? 'hsl(142 55% 65% / 0.5)'
+                          : isCurrent
+                            ? 'hsl(263 55% 70% / 0.5)'
+                            : 'hsl(260 20% 82% / 0.4)',
+                      }}
+                    />
+
+                    {/* Inner circle */}
+                    <div
+                      className="rounded-full flex items-center justify-center shadow-lg"
+                      style={{
+                        width: innerSize,
+                        height: innerSize,
+                        background: isCompleted
+                          ? 'linear-gradient(135deg, hsl(142 60% 50%), hsl(142 55% 42%))'
+                          : isCurrent
+                            ? 'linear-gradient(135deg, hsl(263 70% 58%), hsl(263 65% 48%))'
+                            : 'linear-gradient(135deg, hsl(260 20% 78%), hsl(260 15% 68%))',
+                      }}
+                    >
+                      {isCompleted ? (
+                        <Check size={36} className="text-white" strokeWidth={3} />
+                      ) : (
+                        <IconComp size={32} className="text-white" />
+                      )}
                     </div>
                   </button>
 
-                  <button
-                    onClick={() => navigate(`/lesson/${mod.id}/1`)}
-                    className={`flex-1 bg-card/80 backdrop-blur rounded-xl p-3 border shadow-sm mt-3 text-right ${
-                      isCurrent
-                        ? levelColors.border
-                        : isCompleted
-                          ? 'border-success/20'
-                          : 'border-border/20'
-                    } active:scale-[0.98] transition-transform`}
-                  >
-                    <h4 className="font-bold text-xs mb-0.5">{mod.title_ar}</h4>
-                    <p className="text-[11px] text-primary font-semibold mb-1.5" dir="ltr" style={{ direction: 'ltr', textAlign: 'right' }}>{mod.title_en}</p>
-                    <div className="flex items-center gap-2 justify-end text-[10px] text-muted-foreground">
-                      <div className="flex items-center gap-0.5">
-                        <span>{mod.level_band.toUpperCase()}</span>
-                      </div>
-                      <span>•</span>
-                      <div className="flex items-center gap-0.5">
-                        <span>{lessonCounts?.[mod.id] || 0} دروس</span>
-                        <BookOpen size={10} />
-                      </div>
-                    </div>
-                  </button>
+                  {/* "You are here" indicator */}
+                  {isCurrent && (
+                    <motion.div
+                      initial={{ y: 5, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      className="mt-1 bg-destructive text-destructive-foreground px-3 py-1 rounded-full text-[11px] font-bold shadow-md flex items-center gap-1"
+                    >
+                      <span>▲</span>
+                      <span>أنت هنا</span>
+                    </motion.div>
+                  )}
+
+                  {/* Title card */}
+                  <div className="mt-2 bg-card/90 backdrop-blur-sm rounded-xl px-4 py-2.5 shadow-sm border border-border/20 text-center max-w-[160px]">
+                    <h4 className="font-bold text-sm text-foreground">{lesson.title_ar}</h4>
+                    <p className="text-xs font-semibold text-primary mt-0.5" dir="ltr">{lesson.title_en}</p>
+                  </div>
                 </motion.div>
               </div>
             );
           })}
 
-          {allModules.length === 0 && (
-            <div className="text-center py-10">
-              <p className="text-muted-foreground text-xs">لا توجد مراحل بعد</p>
+          {allLessons.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground text-sm">لا توجد دروس بعد</p>
             </div>
           )}
         </div>
