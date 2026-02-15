@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Gem, User, UserPlus, Crown, Play, ChevronLeft, Trophy, Volume2 } from 'lucide-react';
+import { Heart, Gem, User, UserPlus, Crown, Play, ChevronLeft, Trophy, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +9,6 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import { useActiveBadge } from '@/hooks/useBadges';
-import { useRandomWords } from '@/hooks/useWords';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
@@ -62,7 +61,21 @@ const Index: React.FC = () => {
   const currentUnit = userProgress?.current_unit || 1;
   const progressPercent = modulesCount ? Math.round(((currentUnit - 1) / modulesCount) * 100) : 0;
   const activeBadge = useActiveBadge(totalXp, streak, lessonsCompleted);
-  const { data: randomWords } = useRandomWords(6);
+
+  const { data: stories } = useQuery({
+    queryKey: ['a1-stories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('learning_stories')
+        .select('*')
+        .eq('level', 'A1')
+        .eq('is_active', true)
+        .order('order_index')
+        .limit(4);
+      if (error) throw error;
+      return data;
+    },
+  });
   return (
     <AppLayout>
       <div className="space-y-4 pb-6">
@@ -213,32 +226,33 @@ const Index: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Words Section */}
-        {randomWords && randomWords.length > 0 && (
+        {/* Stories Section */}
+        {stories && stories.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.18 }}
             className="mx-4 space-y-3"
           >
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm">📖 كلمات اليوم</h3>
-              <span className="text-[10px] text-muted-foreground">{randomWords.length} كلمات</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {randomWords.map((word, i) => (
+            <h3 className="font-bold text-sm">📖 قصص للمبتدئين</h3>
+            <div className="space-y-2">
+              {stories.map((story, i) => (
                 <motion.div
-                  key={word.id}
+                  key={story.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + i * 0.04 }}
-                  className="bg-card/80 backdrop-blur rounded-2xl p-3 border border-border/50 shadow-sm"
+                  onClick={() => navigate(`/stories/${story.id}`)}
+                  className="flex items-center gap-3 bg-card/80 backdrop-blur rounded-2xl p-3 border border-border/50 shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
                 >
-                  <p className="font-bold text-sm text-primary">{word.word_en}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{word.word_ar}</p>
-                  {word.pronunciation && (
-                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">/{word.pronunciation}/</p>
-                  )}
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <BookOpen size={18} className="text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{story.title_ar}</p>
+                    <p className="text-[10px] text-muted-foreground">{story.duration_minutes} دقائق • {story.level}</p>
+                  </div>
+                  <ChevronLeft size={14} className="text-muted-foreground shrink-0" />
                 </motion.div>
               ))}
             </div>
