@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_feed: {
+        Row: {
+          achievement_type: string
+          created_at: string
+          display_name: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          achievement_type: string
+          created_at?: string
+          display_name: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          achievement_type?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assessment_questions: {
         Row: {
           assessment_id: string
@@ -103,6 +130,63 @@ export type Database = {
           language?: string
           provider?: string | null
           text?: string
+        }
+        Relationships: []
+      }
+      audio_upload_queue: {
+        Row: {
+          content_type: string
+          created_at: string
+          id: string
+          part_number: number
+          source_id: string | null
+          text_ar: string | null
+          text_en: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          id?: string
+          part_number?: number
+          source_id?: string | null
+          text_ar?: string | null
+          text_en: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          id?: string
+          part_number?: number
+          source_id?: string | null
+          text_ar?: string | null
+          text_en?: string
+        }
+        Relationships: []
+      }
+      canvas_entries: {
+        Row: {
+          created_at: string
+          handwritten_image_path: string | null
+          id: string
+          recognized_text: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          handwritten_image_path?: string | null
+          id?: string
+          recognized_text?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          handwritten_image_path?: string | null
+          id?: string
+          recognized_text?: string
+          source?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -359,6 +443,7 @@ export type Database = {
           subtitle: string | null
           title_ar: string
           title_en: string
+          version: number
         }
         Insert: {
           created_at?: string
@@ -370,6 +455,7 @@ export type Database = {
           subtitle?: string | null
           title_ar: string
           title_en: string
+          version?: number
         }
         Update: {
           created_at?: string
@@ -381,6 +467,7 @@ export type Database = {
           subtitle?: string | null
           title_ar?: string
           title_en?: string
+          version?: number
         }
         Relationships: [
           {
@@ -545,11 +632,169 @@ export type Database = {
           },
         ]
       }
+      dictionary_topic_words: {
+        Row: {
+          created_at: string
+          sort_order: number
+          topic_id: string
+          word_id: string
+        }
+        Insert: {
+          created_at?: string
+          sort_order?: number
+          topic_id: string
+          word_id: string
+        }
+        Update: {
+          created_at?: string
+          sort_order?: number
+          topic_id?: string
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dictionary_topic_words_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "dictionary_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dictionary_topics: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          language: string
+          name_ar: string
+          name_en: string | null
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          language?: string
+          name_ar: string
+          name_en?: string | null
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          language?: string
+          name_ar?: string
+          name_en?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      grammar_lessons: {
+        Row: {
+          card1_when_to_use: string | null
+          card2_structure: Json | null
+          card3_examples: Json | null
+          card4_mistakes: Json | null
+          card4_notes: string | null
+          card5_memory_tip: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          number: number
+          sort_order: number | null
+          title: string
+          title_ar: string | null
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          card1_when_to_use?: string | null
+          card2_structure?: Json | null
+          card3_examples?: Json | null
+          card4_mistakes?: Json | null
+          card4_notes?: string | null
+          card5_memory_tip?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          number: number
+          sort_order?: number | null
+          title: string
+          title_ar?: string | null
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          card1_when_to_use?: string | null
+          card2_structure?: Json | null
+          card3_examples?: Json | null
+          card4_mistakes?: Json | null
+          card4_notes?: string | null
+          card5_memory_tip?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          number?: number
+          sort_order?: number | null
+          title?: string
+          title_ar?: string | null
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grammar_lessons_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "grammar_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grammar_units: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leaderboard: {
         Row: {
           created_at: string | null
           display_name: string
           is_bot: boolean
+          is_plus: boolean | null
           last_activity: string | null
           lessons_completed: number
           level: string
@@ -562,6 +807,7 @@ export type Database = {
           created_at?: string | null
           display_name: string
           is_bot?: boolean
+          is_plus?: boolean | null
           last_activity?: string | null
           lessons_completed?: number
           level?: string
@@ -574,12 +820,31 @@ export type Database = {
           created_at?: string | null
           display_name?: string
           is_bot?: boolean
+          is_plus?: boolean | null
           last_activity?: string | null
           lessons_completed?: number
           level?: string
           streak_days?: number
           total_gems?: number
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      leaderboard_bans: {
+        Row: {
+          banned_at: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_at?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_at?: string
+          reason?: string | null
           user_id?: string
         }
         Relationships: []
@@ -697,6 +962,63 @@ export type Database = {
           },
         ]
       }
+      lesson_step_progress: {
+        Row: {
+          id: string
+          lesson_id: string
+          lesson_version: string | null
+          status: string
+          step_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          lesson_id: string
+          lesson_version?: string | null
+          status?: string
+          step_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          lesson_id?: string
+          lesson_version?: string | null
+          status?: string
+          step_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      lesson_steps: {
+        Row: {
+          content_id: string
+          created_at: string
+          id: string
+          lesson_id: string
+          sort_order: number
+          step_type: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          sort_order?: number
+          step_type: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          sort_order?: number
+          step_type?: string
+        }
+        Relationships: []
+      }
       level_assessments: {
         Row: {
           created_at: string | null
@@ -800,11 +1122,14 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          current_device_id: string | null
           current_level: string | null
           current_unit: number | null
           full_name: string | null
           id: string
           is_premium: boolean | null
+          last_active_at: string | null
+          premium_expires_at: string | null
           revenuecat_entitlement: string | null
           total_xp: number | null
           updated_at: string | null
@@ -813,11 +1138,14 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          current_device_id?: string | null
           current_level?: string | null
           current_unit?: number | null
           full_name?: string | null
           id: string
           is_premium?: boolean | null
+          last_active_at?: string | null
+          premium_expires_at?: string | null
           revenuecat_entitlement?: string | null
           total_xp?: number | null
           updated_at?: string | null
@@ -826,11 +1154,14 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          current_device_id?: string | null
           current_level?: string | null
           current_unit?: number | null
           full_name?: string | null
           id?: string
           is_premium?: boolean | null
+          last_active_at?: string | null
+          premium_expires_at?: string | null
           revenuecat_entitlement?: string | null
           total_xp?: number | null
           updated_at?: string | null
@@ -1142,6 +1473,36 @@ export type Database = {
           },
         ]
       }
+      user_custom_words: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          pronunciation: string | null
+          user_id: string
+          word_ar: string
+          word_en: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pronunciation?: string | null
+          user_id: string
+          word_ar: string
+          word_en: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pronunciation?: string | null
+          user_id?: string
+          word_ar?: string
+          word_en?: string
+        }
+        Relationships: []
+      }
       user_exercise_progress: {
         Row: {
           attempts: number | null
@@ -1182,6 +1543,53 @@ export type Database = {
             columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "lesson_exercises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_lesson_progress: {
+        Row: {
+          completed_at: string | null
+          id: string
+          lesson_id: string
+          lesson_version: number
+          score: number | null
+          started_at: string | null
+          status: string
+          step_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          lesson_id: string
+          lesson_version?: number
+          score?: number | null
+          started_at?: string | null
+          status?: string
+          step_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          lesson_id?: string
+          lesson_version?: number
+          score?: number | null
+          started_at?: string | null
+          status?: string
+          step_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_lesson_progress_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_steps"
             referencedColumns: ["id"]
           },
         ]
@@ -1274,8 +1682,11 @@ export type Database = {
           is_difficult: boolean | null
           last_practiced_at: string | null
           mastery_level: number | null
+          next_review_date: string | null
           phrase_id: string | null
+          times_correct: number | null
           times_practiced: number | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -1285,8 +1696,11 @@ export type Database = {
           is_difficult?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
+          next_review_date?: string | null
           phrase_id?: string | null
+          times_correct?: number | null
           times_practiced?: number | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -1296,8 +1710,11 @@ export type Database = {
           is_difficult?: boolean | null
           last_practiced_at?: string | null
           mastery_level?: number | null
+          next_review_date?: string | null
           phrase_id?: string | null
+          times_correct?: number | null
           times_practiced?: number | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1310,6 +1727,33 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          daily_reminder: boolean
+          id: string
+          preferred_language: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_reminder?: boolean
+          id?: string
+          preferred_language?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_reminder?: boolean
+          id?: string
+          preferred_language?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           created_at: string | null
@@ -1319,7 +1763,10 @@ export type Database = {
           daily_goal: number | null
           id: string
           last_activity_date: string | null
+          longest_streak: number | null
           streak_days: number | null
+          total_phrases_mastered: number | null
+          total_words_mastered: number | null
           total_xp: number | null
           updated_at: string | null
           user_id: string
@@ -1332,7 +1779,10 @@ export type Database = {
           daily_goal?: number | null
           id?: string
           last_activity_date?: string | null
+          longest_streak?: number | null
           streak_days?: number | null
+          total_phrases_mastered?: number | null
+          total_words_mastered?: number | null
           total_xp?: number | null
           updated_at?: string | null
           user_id: string
@@ -1345,7 +1795,10 @@ export type Database = {
           daily_goal?: number | null
           id?: string
           last_activity_date?: string | null
+          longest_streak?: number | null
           streak_days?: number | null
+          total_phrases_mastered?: number | null
+          total_words_mastered?: number | null
           total_xp?: number | null
           updated_at?: string | null
           user_id?: string
